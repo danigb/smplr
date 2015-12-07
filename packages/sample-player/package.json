@@ -1,0 +1,27 @@
+{
+  "name": "sample-player",
+  "version": "0.0.1",
+  "description": "A web audio sample player",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": "https://github.com/danigb/samplr/tree/master/packages/sample-player",
+  "keywords": [
+    "music",
+    "audio",
+    "sample",
+    "player",
+    "webaudio"
+  ],
+  "author": "danigb <danigb@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danigb/samplr/issues"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "nock": "^3.4.0",
+    "web-audio-test-api": "^0.3.6"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "sample-loader",
+  "version": "0.0.1",
+  "description": "A web audio sample loader",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danigb/samplr"
+  },
+  "keywords": [
+    "music",
+    "audio",
+    "sample",
+    "loader",
+    "webaudio"
+  ],
+  "author": "danigb <danigb@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danigb/samplr/issues"
+  },
+  "dependencies": {
+    "sample-player": "file:../sample-player"
+  },
+  "devDependencies": {
+    "nock": "^3.4.0",
+    "web-audio-test-api": "^0.3.6"
+  }
+}
