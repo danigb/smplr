@@ -7,7 +7,7 @@
     "music",
     "audio",
     "sample",
-    "package",
+    "package"
   ],
   "author": "danigb <danigb@gmail.com>",
   "license": "MIT",
@@ -15,6 +15,6 @@
     "url": "https://github.com/danigb/samplr/issues"
   },
   "bin": {
-    "audio-pack": "./bin/audio-pack.js"
+    "audio-pack": "./bin/audio-pack"
   }
 }

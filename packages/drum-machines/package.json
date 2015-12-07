@@ -1,0 +1,23 @@
+{
+  "name": "drum-machines",
+  "version": "0.0.1",
+  "description": "Drum machines collection",
+  "repository": "https://github.com/danigb/samplr/tree/master/packages/drum-machines",
+  "keywords": [
+    "drum",
+    "machine",
+    "samples",
+    "packaged",
+    "audio",
+    "webaudio",
+    "instrument"
+  ],
+  "author": "danigb <danigb@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danigb/samplr/issues"
+  },
+  "devDependencies": {
+    "audio-pack": "file:../audio-pack"
+  }
+}
