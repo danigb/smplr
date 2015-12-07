@@ -21,6 +21,7 @@
     "url": "https://github.com/danigb/samplr/issues"
   },
   "dependencies": {
+    "sample-loader": "file:../sample-loader",
     "sample-player": "file:../sample-player"
   },
   "devDependencies": {

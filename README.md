@@ -1,5 +1,7 @@
 # samplr [![npm](https://img.shields.io/npm/v/samplr.svg)](https://www.npmjs.com/package/samplr)
 
+[![Samplr](https://img.shields.io/badge/samplr-instrument-32bbee.svg)](https://github.com/danigb/samplr)
+
 A web audio sampler instrument:
 
 ```js
