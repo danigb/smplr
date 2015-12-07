@@ -2,10 +2,19 @@
 
 [![Samplr](https://img.shields.io/badge/samplr-instrument-32bbee.svg)](https://github.com/danigb/samplr)
 
-A collection of drum machines.
+A collection of drum machines:
 
-Work in progress.
+```js
+var sampler = require('samplr')
+sampler.load('@drum-machines/maestro').then(function (maestro) {
+  maestro('kick').start()
+})
+```
 
-# License
+## Available instruments
+
+- Maestro Rhythm King MRK-2. [Source](http://www.submodern.com/slowburn/?p=736)
+
+## License
 
 MIT License

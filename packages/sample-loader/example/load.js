@@ -10,8 +10,12 @@ var next = (function (examples) {
     if (current > 0) setTimeout(examples[current - 1], time)
     current--
   }
-})([loadSample, loadObject, loadSoundfont, loadJSON, loadBase64])
+})([loadSample, loadObject, loadSoundfont, loadJSON, loadJSONInst, loadBase64])
 next()
+
+function loadJSONInst() {
+  loader.load('examples/samples/maestro.json')
+}
 
 function loadJSON () {
   loader.load('example/samples/maestro.samples.json').then(function (buffers) {

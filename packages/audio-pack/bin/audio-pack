@@ -16,8 +16,8 @@ var filename = path.join(process.cwd(), args[0])
 var ext = path.extname(filename)
 
 if (ext === '.json') {
-  console.log('JSON config. Not implemented yet')
-} else if (['.wav', '.mp3', '.ogg'].indexOf(ext) > -1) {
+  pipe(pack.build(filename))
+} else if (pack.audioExt(filename)) {
   pipe(pack.encode(filename))
 } else if (ext === '') {
   if (fs.lstatSync(filename).isDirectory()) {

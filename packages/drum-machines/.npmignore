@@ -1,4 +1,5 @@
 node_modules/
+samples/
 *.wav
 *.mp3
 *.ogg

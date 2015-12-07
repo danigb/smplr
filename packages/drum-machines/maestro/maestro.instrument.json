@@ -1,4 +1,7 @@
 {
+  "name": "maestro",
+  "description": "Maestro Rhythm King MRK-2",
+  "repository": "https://github.com/danigb/samplr/tree/master/packages/drum-machines/maestro",
   "readme": "http://www.submodern.com/slowburn/?p=736",
   "license": "Public Domain",
   "sources": [

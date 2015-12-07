@@ -12,11 +12,29 @@ function encode (filename) {
   return prefix + encoded
 }
 
+/**
+ * Return the extension of a filename if its a valid web audio format extension
+ */
 function audioExt (name) {
   var ext = path.extname(name)
   return ['.wav', '.ogg', '.mp3'].indexOf(ext) > -1 ? ext : null
 }
 
+/**
+ * Build a JSON packed file from the instrument.json file
+ */
+function build (instFile) {
+  var dir = path.dirname(instFile)
+  var inst = JSON.parse(fs.readFileSync(instFile))
+  var samplesFile = path.join(dir, inst.name + '.samples.json')
+  var samples = JSON.parse(fs.readFileSync(samplesFile))
+  inst.samples = samples
+  return JSON.stringify(inst, null, 2)
+}
+
+/**
+ * Return a JSON with the audio files from a path encoded in base64
+ */
 function samples (samplesPath) {
   var files = fs.readdirSync(samplesPath).reduce(function (d, name) {
     var ext = audioExt(name)
@@ -47,5 +65,6 @@ function sharedStart (array) {
 module.exports = {
   audioExt: audioExt,
   encode: encode,
-  samples: samples
+  samples: samples,
+  build: build
 }
