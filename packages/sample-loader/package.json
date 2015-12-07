@@ -26,7 +26,6 @@
     "sample-player": "file:../sample-player"
   },
   "devDependencies": {
-    "nock": "^3.4.0",
     "web-audio-test-api": "^0.3.6"
   }
 }
