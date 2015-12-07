@@ -4,19 +4,21 @@ var player = require('sample-player')(ac)
 
 var next = (function (examples) {
   var current = examples.length
-  return function () {
+  return function (time) {
+    time = time || 1000
     console.log('Next', current)
-    if (current > 0) setTimeout(examples[current - 1], 1000)
+    if (current > 0) setTimeout(examples[current - 1], time)
     current--
   }
 })([loadSample, loadObject, loadSoundfont, loadBase64])
 next()
 
-var audioData = require('./samples/piano-note.audio.js')
+var audioData = require('./samples/blip.audio.js')
 function loadBase64 () {
   loader.load(audioData).then(function (buffer) {
     console.log('base64 buffer', buffer)
     player(buffer).connect(ac.destination).start()
+    next()
   })
 }
 
@@ -41,8 +43,11 @@ function loadObject () {
 }
 
 function loadSoundfont () {
-  loader.load('example/samples/acoustic_grand_piano-ogg.js').then(function (samples) {
-    console.log('soundfont samples', samples)
-    player(samples['C4']).connect(ac.destination).start()
+  loader.load('example/samples/piano-oct4-ogg.js').then(function (samples) {
+    var now = ac.currentTime
+    'C4 D4 E4 F4 G4 B4'.split(' ').forEach(function (note, i) {
+      player(samples[note]).connect(ac.destination).start(now + 0.2 * i)
+    })
+    next(2000)
   })
 }

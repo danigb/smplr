@@ -1,6 +1,6 @@
 'use strict'
 
-var base64DecodeToArray = require('./b64decode.js')
+var b64decode = require('./b64decode.js')
 
 /**
  * Create a Sample Loader
@@ -23,7 +23,6 @@ var Loader = function (ac, options) {
       for (var i = len; i > 0; i--) {
         var m = loader.middleware[i - 1]
         if (m.test(type, value)) {
-          console.log('Use: ', m.name, value)
           return m(value, loader)
         }
       }
@@ -46,8 +45,7 @@ loadObject.test = function (t, v) { return t === 'object' }
 
 function decodeBase64Audio (str, loader) {
   var data = str.split(',')[1]
-  var decoded = base64DecodeToArray(data).buffer
-  console.log('decoding base64', data.slice(0, 30), decoded)
+  var decoded = b64decode(data).buffer
   return Promise.resolve(decoded).then(createBuffer(loader.ac))
 }
 decodeBase64Audio.test = function (t, v) { return t === 'string' && /^data:audio/.test(v) }
@@ -81,8 +79,7 @@ loadAudioFile.test = function (t, v) { return t === 'string' }
 function createBuffer (ac) {
   return function (data) {
     return new Promise(function (done, reject) {
-      console.log('creating buffer', data)
-      ac.decodeAudioData(data, function (buffer) { console.log(buffer); done(buffer) },
+      ac.decodeAudioData(data, function (buffer) { done(buffer) },
         function () {
           reject("Can't decode audio data (" + data.slice(0, 30) + '...)')
         })
