@@ -10,8 +10,17 @@ var next = (function (examples) {
     if (current > 0) setTimeout(examples[current - 1], time)
     current--
   }
-})([loadSample, loadObject, loadSoundfont, loadBase64])
+})([loadSample, loadObject, loadSoundfont, loadJSON, loadBase64])
 next()
+
+function loadJSON () {
+  loader.load('example/samples/maestro.samples.json').then(function (buffers) {
+    var now = ac.currentTime
+    Object.keys(buffers).forEach(function (name, i) {
+      player(buffers[name]).connect(ac.destination).start(now * 0.4 * i)
+    })
+  })
+}
 
 var audioData = require('./samples/blip.audio.js')
 function loadBase64 () {

@@ -61,7 +61,8 @@ function loadSoundfont (url, loader) {
 }
 loadSoundfont.test = function (t, v) { return t === 'string' && /\.js$/.test(v) }
 
-function loadJSON (data, loader) {
+function loadJSON (url, loader) {
+  return loader.get(url, 'json').then(loader.load)
 }
 loadJSON.test = function (t, v) { return t === 'string' && /\.json$/.test(v) }
 
