@@ -1,4 +1,4 @@
-# samplr
+# samplr [![npm](https://img.shields.io/npm/v/samplr.svg)](https://www.npmjs.com/package/samplr)
 
 A web audio sampler instrument:
 

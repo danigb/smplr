@@ -1,0 +1,31 @@
+{
+  "name": "sampler-instrument",
+  "version": "0.0.1",
+  "description": "A web audio sampler instrument",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": "https://github.com/danigb/samplr/tree/master/packages/sampler-instrument",
+  "keywords": [
+    "music",
+    "audio",
+    "sampler",
+    "sample",
+    "player",
+    "webaudio"
+  ],
+  "author": "danigb <danigb@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danigb/samplr/issues"
+  },
+  "dependencies": {
+    "sample-player": "file:../sample-player"
+  },
+  "devDependencies": {
+    "sample-loader": "file:../sample-loader",
+    "step-seq": "0.0.1",
+    "web-audio-test-api": "^0.3.6"
+  }
+}
