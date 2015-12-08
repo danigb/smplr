@@ -1,3 +1,4 @@
+/* globals XMLHttpRequest */
 'use strict'
 
 var b64decode = require('./b64decode.js')
@@ -121,7 +122,7 @@ function createBuffer (ac) {
  */
 function getRequest (url, type) {
   return new Promise(function (done, reject) {
-    var req = new window.XMLHttpRequest()
+    var req = new XMLHttpRequest()
     if (type) req.responseType = type
     req.open('GET', url)
 

@@ -30,9 +30,9 @@ run(loadSample, loadObject, loadMidijs, loadJSONInst, loadJSON, loadBase64,
   loadSoundfont, loadDrumMachines)
 
 function loadDrumMachines (done) {
-  loader.load('@drum-machines/maestro').then(function (maestro) {
+  loader.load('@drum-machines/CR-78').then(function (maestro) {
     play('Maestro drum machine!', Object.keys(maestro.samples).reverse(), maestro.samples)
-    done(2000)
+    done(6000)
   })
 }
 function loadSoundfont (done) {
