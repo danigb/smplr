@@ -12,7 +12,7 @@ var Loader = function (ac, options) {
   options = options || {}
   var loader = { ac: ac, get: options.get || getRequest }
   loader.middleware = [loadAudioFile, loadJSON, loadObject, decodeBase64Audio,
-    loadSoundfont]
+    loadRepository]
 
   loader.load = function (promise) {
     if (!promise.then) return loader.load(Promise.resolve(promise))
@@ -32,13 +32,35 @@ var Loader = function (ac, options) {
   return loader
 }
 
+Loader.repositories = {
+  // parse a midi.js file
+  'midijs': function (url, loader) {
+    return loader.get(url, 'text').then(function (data) {
+      var begin = data.indexOf('MIDI.Soundfont.')
+      if (begin < 0) throw Error('Invalid MIDI.js Soundfont format')
+      begin = data.indexOf('=', begin) + 2
+      var end = data.lastIndexOf(',')
+      return JSON.parse(data.slice(begin, end) + '}')
+    }).then(loader.load)
+  },
+
+  // load soundfonts from Benjamin Gleitzman repo using rawgit
+  'soundfont': function (name, loader) {
+    var url = 'https://cdn.rawgit.com/gleitz/midi-js-Soundfonts/master/FluidR3_GM/' + name + '-ogg.js'
+    return loader.load('@midijs/' + url)
+  }
+}
+
 function loadObject (object, loader) {
+  var source = object.samples ? object.samples : object
   var buffers = {}
-  var promises = Object.keys(object).map(function (key) {
-    return loader.load(object[key]).then(function (b) { buffers[key] = b })
+  var promises = Object.keys(source).map(function (key) {
+    return loader.load(source[key]).then(function (b) { buffers[key] = b })
   })
   return Promise.all(promises).then(function () {
-    return buffers
+    if (!object.samples) return buffers
+    object.samples = buffers
+    return object
   })
 }
 loadObject.test = function (t, v) { return t === 'object' }
@@ -50,16 +72,15 @@ function decodeBase64Audio (str, loader) {
 }
 decodeBase64Audio.test = function (t, v) { return t === 'string' && /^data:audio/.test(v) }
 
-function loadSoundfont (url, loader) {
-  return loader.get(url, 'text').then(function (data) {
-    var begin = data.indexOf('MIDI.Soundfont.')
-    if (begin < 0) throw Error('Invalid MIDI.js Soundfont format')
-    begin = data.indexOf('=', begin) + 2
-    var end = data.lastIndexOf(',')
-    return JSON.parse(data.slice(begin, end) + '}')
-  }).then(loader.load)
+var REPO = /^@(\w+)\/(.*)$/
+function loadRepository (repo, loader) {
+  var m = REPO.exec(repo)
+  var name = m[1]
+  var path = m[2]
+  var l = Loader.repositories[name]
+  return l(path, loader)
 }
-loadSoundfont.test = function (t, v) { return t === 'string' && /\.js$/.test(v) }
+loadRepository.test = function (t, v) { return t === 'string' && REPO.test(v) }
 
 function loadJSON (url, loader) {
   return loader.get(url, 'json').then(loader.load)
