@@ -2,6 +2,15 @@ var ac = new window.AudioContext()
 var loader = require('..')(ac)
 var player = require('sample-player')(ac)
 
+function play (name, samples, buffers) {
+  if (typeof samples === 'string') samples = samples.split(' ')
+  var now = ac.currentTime
+  console.log(name, samples, now)
+  samples.forEach(function (name, i) {
+    player(buffers[name]).connect(ac.destination).start(now + 0.3 * i)
+  })
+}
+
 function run () {
   var examples = Array.prototype.slice.call(arguments)
   var current = examples.length - 1
@@ -17,73 +26,66 @@ function run () {
   }
   next()
 }
-run(loadSample, loadObject, loadMidijs, loadJSONInst, loadJSON, loadBase64, loadSoundfont)
+run(loadSample, loadObject, loadMidijs, loadJSONInst, loadJSON, loadBase64,
+  loadSoundfont, loadDrumMachines)
 
-function loadSoundfont (next) {
+function loadDrumMachines (done) {
+  loader.load('@drum-machines/maestro').then(function (maestro) {
+    play('Maestro drum machine!', Object.keys(maestro.samples).reverse(), maestro.samples)
+    done(2000)
+  })
+}
+function loadSoundfont (done) {
   loader.load('@soundfont/marimba').then(function (buffers) {
-    console.log('Marimba!')
-    var now = ac.currentTime
-    'C3 D3 E3 F3 G3 B3 C4 E4 B4 G4'.split(' ').forEach(function (name, i) {
-      player(buffers[name]).connect(ac.destination).start(now + 0.3 * i)
-    })
-  })
-}
-function loadJSONInst (next) {
-  loader.load('example/samples/maestro.json').then(function (maestro) {
-    console.log('Maestro!', maestro)
-    var now = ac.currentTime
-    Object.keys(maestro.samples).forEach(function (name, i) {
-      player(maestro.samples[name]).connect(ac.destination).start(now + 0.3 * i)
-    })
-    next()
+    play('Marimba!', 'C3 D3 E3 F3 G3 B3 C4 E4 B4 G4', buffers)
+    done(2000)
   })
 }
 
-function loadJSON (next) {
+function loadJSONInst (done) {
+  loader.load('example/samples/maestro.json').then(function (maestro) {
+    play('Maestro instrument!', Object.keys(maestro.samples), maestro.samples)
+    done()
+  })
+}
+
+function loadJSON (done) {
   loader.load('example/samples/maestro.samples.json').then(function (buffers) {
-    var now = ac.currentTime
-    Object.keys(buffers).forEach(function (name, i) {
-      player(buffers[name]).connect(ac.destination).start(now + 0.2 * i)
-    })
-    next()
+    play('Maestro buffers', Object.keys(buffers), buffers)
+    done()
   })
 }
 
 var audioData = require('./samples/blip.audio.js')
-function loadBase64 (next) {
+function loadBase64 (done) {
   loader.load(audioData).then(function (buffer) {
     console.log('base64 buffer', buffer)
     player(buffer).connect(ac.destination).start()
-    next()
+    done()
   })
 }
 
-function loadSample (next) {
+function loadSample (done) {
   console.log('Loading sample...')
   loader.load('example/samples/blip.wav').then(function (buffer) {
     var now = ac.currentTime
     var sample = player(buffer).connect(ac.destination)
     sample.start(now).start(now + 0.2).start(now + 0.4)
-    next()
+    done()
   })
 }
 
-function loadObject (next) {
+function loadObject (done) {
   var data = { 'snare': 'example/samples/maesnare.wav', clave: 'example/samples/maeclave.wav' }
-  console.log('Load url object')
-  loader.load(data).then(function (samples) {
-    player(samples['clave']).connect(ac.destination).start()
-    player(samples['snare']).connect(ac.destination).start(ac.currentTime + 0.2)
-    next()
+  loader.load(data).then(function (buffers) {
+    play('Object', 'clave snare', buffers)
+    done()
   })
 }
 
-function loadMidijs (next) {
-  loader.load('@midijs/example/samples/piano-oct4-ogg.js').then(function (samples) {
-    var now = ac.currentTime
-    'C4 D4 E4 F4 G4 B4'.split(' ').forEach(function (note, i) {
-      player(samples[note]).connect(ac.destination).start(now + 0.2 * i)
-    })
-    next(2000)
+function loadMidijs (done) {
+  loader.load('@midijs/example/samples/piano-oct4-ogg.js').then(function (buffers) {
+    play('Piano oct4', 'C4 D4 E4 F4 G4 B4', buffers)
+    done(2000)
   })
 }

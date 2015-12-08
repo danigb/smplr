@@ -10,7 +10,7 @@ var b64decode = require('./b64decode.js')
  */
 var Loader = function (ac, options) {
   options = options || {}
-  var loader = { ac: ac, get: options.get || getRequest }
+  var loader = { ac: ac, read: options.read || getRequest }
   loader.middleware = [loadAudioFile, loadJSON, loadObject, decodeBase64Audio,
     loadRepository]
 
@@ -35,7 +35,7 @@ var Loader = function (ac, options) {
 Loader.repositories = {
   // parse a midi.js file
   'midijs': function (url, loader) {
-    return loader.get(url, 'text').then(function (data) {
+    return loader.read(url, 'text').then(function (data) {
       var begin = data.indexOf('MIDI.Soundfont.')
       if (begin < 0) throw Error('Invalid MIDI.js Soundfont format')
       begin = data.indexOf('=', begin) + 2
@@ -48,6 +48,11 @@ Loader.repositories = {
   'soundfont': function (name, loader) {
     var url = 'https://cdn.rawgit.com/gleitz/midi-js-Soundfonts/master/FluidR3_GM/' + name + '-ogg.js'
     return loader.load('@midijs/' + url)
+  },
+  'drum-machines': function (name, loader) {
+    var path = name + '/' + name + '.json'
+    var url = 'https://cdn.rawgit.com/danigb/samplr/master/packages/drum-machines/' + path
+    return loader.load(url)
   }
 }
 
@@ -72,7 +77,7 @@ function decodeBase64Audio (str, loader) {
 }
 decodeBase64Audio.test = function (t, v) { return t === 'string' && /^data:audio/.test(v) }
 
-var REPO = /^@(\w+)\/(.*)$/
+var REPO = /^@([\w-]+)\/(.*)$/
 function loadRepository (repo, loader) {
   var m = REPO.exec(repo)
   var name = m[1]
@@ -83,12 +88,12 @@ function loadRepository (repo, loader) {
 loadRepository.test = function (t, v) { return t === 'string' && REPO.test(v) }
 
 function loadJSON (url, loader) {
-  return loader.get(url, 'json').then(loader.load)
+  return loader.read(url, 'json').then(loader.load)
 }
 loadJSON.test = function (t, v) { return t === 'string' && /\.json$/.test(v) }
 
 function loadAudioFile (audioFile, loader) {
-  return loader.get(audioFile, 'arraybuffer').then(createBuffer(loader.ac))
+  return loader.read(audioFile, 'arraybuffer').then(createBuffer(loader.ac))
 }
 loadAudioFile.test = function (t, v) { return t === 'string' }
 
