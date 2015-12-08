@@ -13,7 +13,10 @@ sampler.load('@drum-machines/maestro').then(function (maestro) {
 
 ## Available instruments
 
-- Maestro Rhythm King MRK-2. [Source](http://www.submodern.com/slowburn/?p=736)
+- [maestro](https://github.com/danigb/samplr/tree/master/packages/drum-machines/maestro): Maestro Rhythm King MRK-2.
+- [CR-78](https://github.com/danigb/samplr/tree/master/packages/drum-machines/CR-78): Roland CompuRythm CR-78
+
+Feel free to contribute with a pull request.
 
 ## License
 

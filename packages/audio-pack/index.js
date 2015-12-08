@@ -26,16 +26,14 @@ function audioExt (name) {
 function build (instFile) {
   var dir = path.dirname(instFile)
   var inst = JSON.parse(fs.readFileSync(instFile))
-  var samplesFile = path.join(dir, inst.name + '.samples.json')
-  var samples = JSON.parse(fs.readFileSync(samplesFile))
-  inst.samples = samples
+  inst.samples = samples(path.join(dir, 'samples'), true)
   return JSON.stringify(inst, null, 2)
 }
 
 /**
  * Return a JSON with the audio files from a path encoded in base64
  */
-function samples (samplesPath) {
+function samples (samplesPath, obj) {
   var files = fs.readdirSync(samplesPath).reduce(function (d, name) {
     var ext = audioExt(name)
     if (ext) d[name.substring(0, name.length - ext.length)] = name
@@ -48,7 +46,7 @@ function samples (samplesPath) {
     s[name.substring(len)] = encode(path.join(samplesPath, files[name]))
     return s
   }, {})
-  return JSON.stringify(samples, null, 2)
+  return obj ? samples : JSON.stringify(samples, null, 2)
 }
 
 // http://stackoverflow.com/questions/1916218/find-the-longest-common-starting-substring-in-a-set-of-strings/1917041#1917041
