@@ -5,5 +5,8 @@
   },
   "dependencies": {
     "lerna": "^1.0.3"
+  },
+  "devDependencies": {
+    "web-audio-test-api": "^0.3.6"
   }
 }

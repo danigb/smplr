@@ -6,10 +6,13 @@ var fs = {
       else reject('File ' + name + ' not found.')
     })
   },
-  add: function () {
+  addFile: function (name, value) {
+    fs.files[name] = value
+  },
+  addBinaries: function () {
     var names = Array.prototype.slice.call(arguments)
     names.forEach(function (file) {
-      fs.files[file] = stringToArrayBuffer(file + ' audio content')
+      fs.addFile(file, stringToArrayBuffer(file + ' audio content'))
     })
   }
 }

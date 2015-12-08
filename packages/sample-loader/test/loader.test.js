@@ -9,4 +9,12 @@ describe('loader', function () {
     var p = loader.load('anything')
     assert(p.then)
   })
+
+  it('handles invalid values', function (done) {
+    loader.load('@something/invalid').then(function () {
+      assert(false, 'Should not pass')
+    }, function (err) {
+      assert(err)
+    }).then(done, done)
+  })
 })
