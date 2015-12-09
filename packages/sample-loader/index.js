@@ -5,7 +5,11 @@ var b64decode = require('./b64decode.js')
 var PREFIXED = /^(@[\w-]+)\/(.*)$/
 
 /**
- * Load
+ * Create a sample loader
+ *
+ * @param {AudioContext} ac - the audio context
+ * @param {HashMap} options - (Optional) options
+ * @return {Function} a load function
  */
 function loader (ac, options) {
   var opts = options || {}
@@ -118,4 +122,5 @@ function httpRequest (url, type) {
   })
 }
 
-module.exports = loader
+if (typeof module === 'object' && module.exports) module.exports = loader
+if (typeof window !== 'undefined') window.loader = loader

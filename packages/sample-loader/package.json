@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha",
+    "docs": "documentation -f md > API.md",
     "dist": "browserify index.js | uglifyjs > dist/sample-loader.min.js&& ls -hall dist/"
   },
   "repository": {
