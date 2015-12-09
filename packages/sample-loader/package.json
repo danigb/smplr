@@ -17,7 +17,8 @@
     "audio",
     "sample",
     "loader",
-    "webaudio"
+    "webaudio",
+    "smplr"
   ],
   "author": "danigb <danigb@gmail.com>",
   "license": "MIT",

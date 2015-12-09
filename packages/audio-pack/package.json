@@ -7,7 +7,8 @@
     "music",
     "audio",
     "sample",
-    "package"
+    "package",
+    "smplr"
   ],
   "author": "danigb <danigb@gmail.com>",
   "license": "MIT",

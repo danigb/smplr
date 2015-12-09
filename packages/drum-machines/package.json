@@ -10,7 +10,8 @@
     "packaged",
     "audio",
     "webaudio",
-    "instrument"
+    "instrument",
+    "smplr"
   ],
   "author": "danigb <danigb@gmail.com>",
   "license": "MIT",

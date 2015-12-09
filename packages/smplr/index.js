@@ -1,40 +1,40 @@
 var loader = require('sample-loader')
 var sampler = require('sampler-instrument')
 
-function Samplr (ac, options) {
-  if (!(this instanceof Samplr)) return new Samplr(ac, options)
-  this.ac = ac
-  this.instruments = []
-  this.loader = loader(ac)
-  this.nodes = {}
+function Smplr (ac, options) {
+  // private
+  var load = loader(ac)
+  var instruments = []
+  var output = ac.createGain()
+  output.connect(ac.destination)
+  var autoConnected = true
 
-  this.output = ac.createGain()
-  this.output.connect(ac.destination)
-  this.autoConnect = true
-}
+  // instance
+  var smplr = {}
 
-Samplr.prototype.connect = function (destination) {
-  if (this.autoConnect) {
-    this.autoConnect = false
-    this.output.disconnect()
+  smplr.connect = function (destination) {
+    if (autoConnected) {
+      autoConnected = false
+      output.disconnect()
+    }
+    output.connect(destination)
   }
-  this.output.connect(destination)
+
+  smplr.load = function (source) {
+    return load(source).then(function (data) {
+      var instrument = sampler(ac, data).connect(output)
+      instruments.push(instrument)
+      return instrument
+    })
+  }
+
+  smplr.stop = function (source) {
+    instruments.forEach(function (inst) {
+      inst.stop()
+    })
+  }
+  return smplr
 }
 
-Samplr.prototype.load = function (source) {
-  var self = this
-  return this.loader(source).then(function (data) {
-    var instrument = sampler(self.ac, data).connect(self.output)
-    self.instruments.push(instrument)
-    return instrument
-  })
-}
-
-Samplr.prototype.stop = function (source) {
-  this.instruments.forEach(function (inst) {
-    inst.stop()
-  })
-}
-
-if (typeof module === 'object' && module.exports) module.exports = Samplr
-if (typeof window !== 'undefined') window.Samplr = Samplr
+if (typeof module === 'object' && module.exports) module.exports = Smplr
+if (typeof window !== 'undefined') window.Smplr = Smplr

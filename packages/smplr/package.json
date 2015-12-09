@@ -1,7 +1,7 @@
 {
   "name": "smplr",
   "version": "0.1.0",
-  "description": "A web audio sample loader",
+  "description": "Get smplr",
   "main": "index.js",
   "scripts": {
     "test": "mocha",
@@ -17,7 +17,8 @@
     "audio",
     "sample",
     "loader",
-    "webaudio"
+    "webaudio",
+    "smplr"
   ],
   "author": "danigb <danigb@gmail.com>",
   "license": "MIT",
@@ -25,7 +26,8 @@
     "url": "https://github.com/danigb/smplr/issues"
   },
   "dependencies": {
-    "sample-loader": "^0.1.1"
+    "sample-loader": "^0.1.1",
+    "sampler-instrument": "^0.1.0"
   },
   "devDependencies": {
     "web-audio-test-api": "^0.3.6"
