@@ -17,6 +17,8 @@ function loader (ac, options) {
   var prefixes = PREFIXES
 
   return function load (value) {
+    if (value instanceof Promise) return value.then(function (v) { return load(v) })
+
     if (value instanceof ArrayBuffer) return loadArrayBuffer(ac, value)
     else if (Array.isArray(value)) return loadArrayData(value, load)
     else if (typeof value === 'object') return loadObjectData(value, load)

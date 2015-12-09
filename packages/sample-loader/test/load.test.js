@@ -7,8 +7,22 @@ var stub = require('sinon').stub
 
 function base64 (data) { return 'data:audio/mp3;base64,' + data }
 function arrayBuffer (l) { return new ArrayBuffer(l) }
+function serve (value) { return stub().returns(Promise.resolve(value)) }
 
 describe('sample-loader', () => {
+  var load = loader(ac)
+  it('returns a promise', () => {
+    assert(load('blah').then)
+  })
+
+  it('decodes a promise', done => {
+    load(Promise.resolve(base64('audio'))).then(function (buffer) {
+      assert(buffer instanceof AudioBuffer)
+    }).then(done, done)
+  })
+})
+
+describe('Load primitives', () => {
   it('decodes ArrayBuffer', done => {
     var load = loader(ac)
     load(arrayBuffer(10)).then(buffer => {
@@ -24,7 +38,7 @@ describe('sample-loader', () => {
   })
 
   it('load audio file from file names', done => {
-    var load = loader(ac, { fetch: stub().returns(arrayBuffer(10)) })
+    var load = loader(ac, { fetch: serve(arrayBuffer(10)) })
     load('path/to/file.mp3').then(buffer => {
       assert(buffer instanceof AudioBuffer)
     }).then(done, done)
@@ -43,7 +57,7 @@ describe('sample-loader', () => {
 
 describe('Prefixed', () => {
   it('@soundfont instrument names', done => {
-    var fetch = stub().returns(Promise.resolve(MIDIJS))
+    var fetch = serve(MIDIJS)
     var load = loader(ac, { fetch })
     load('@soundfont/piano').then(buffers => {
       assert.equal(fetch.getCall(0).args[0],
@@ -52,7 +66,7 @@ describe('Prefixed', () => {
   })
 
   it('@drum-machies instrument names', done => {
-    var fetch = stub().returns({ 'snare': base64('snare') })
+    var fetch = serve({ 'snare': base64('snare') })
     var load = loader(ac, { fetch })
     load('@drum-machines/808').then(buffers => {
       assert.equal(fetch.getCall(0).args[0],
@@ -62,7 +76,7 @@ describe('Prefixed', () => {
   })
 
   it('@midijs file urls', done => {
-    var fetch = stub().returns(Promise.resolve(MIDIJS))
+    var fetch = serve(MIDIJS)
     var load = loader(ac, { fetch })
     load('@midijs/file.js').then(buffers => {
       assert.deepEqual(Object.keys(buffers), ['A', 'B'])
@@ -73,9 +87,9 @@ describe('Prefixed', () => {
 })
 
 describe('Object as values', () => {
-  it('JSON: fetch object', done => {
+  it('load JSON file', done => {
     var data = { a: base64('a'), b: base64('a') }
-    var load = loader(ac, { fetch: stub().returns(data) })
+    var load = loader(ac, { fetch: serve(data) })
     load('file.json').then(buffers => {
       assert.deepEqual(Object.keys(buffers), ['a', 'b'])
       assert(buffers['a'] instanceof AudioBuffer)
@@ -93,7 +107,7 @@ describe('Object as values', () => {
     }).then(done, done)
   })
   it('load audio file values', done => {
-    var load = loader(ac, { fetch: stub().returns(arrayBuffer(10)) })
+    var load = loader(ac, { fetch: serve(arrayBuffer(10)) })
     var inst = { a: 'a.mp3', b: 'b.mp3' }
     load(inst).then(buffers => {
       assert.deepEqual(Object.keys(buffers), ['a', 'b'])

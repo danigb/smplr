@@ -18,6 +18,5 @@
     "url": "https://github.com/danigb/samplr/issues"
   },
   "devDependencies": {
-    "audio-pack": "file:../audio-pack"
   }
 }

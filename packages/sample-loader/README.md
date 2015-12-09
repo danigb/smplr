@@ -6,6 +6,7 @@ A powerful and easy audio buffer loader for browser:
 
 ```js
 var ac = new AudioContext()
+var load = require('sample-loader')(ac)
 
 // a simple audio buffer player (use `sample-player` instead)
 function play(buffer) {
@@ -15,7 +16,6 @@ function play(buffer) {
   source.start(ac.currentTime)
 }
 
-var load = require('sample-loader')(ac, null)
 load('@drum-machines/maestro').then(function (buffers) {
   play(buffers['snare'])
 })
@@ -39,7 +39,7 @@ Via npm: `npm i --save sample-loader` or grab the [browser ready file](https://r
 ```js
 var loader = require('sample-loader')
 var ac = new AudioContext()
-var load = loader(ac, { /* options */ })
+var load = loader(ac, { /* options (can be null) */ })
 ```
 
 The returned `load` function receives only one parameter: the samples to load and returns always a Promise.
