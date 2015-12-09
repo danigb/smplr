@@ -7,12 +7,15 @@
  * f2 = f1 * 2^( C / 1200 )
  * @private
  */
-function centsToRate (cents) {
-  return Math.pow(2, cents / 1200)
-}
+function centsToRate (cents) { return Math.pow(2, cents / 1200) }
 
 /**
  * Create a sample player
+ *
+ * It accepts the following options:
+ *
+ * - loop: if the audio should be looped
+ * - detune: the cents to detune the sample
  *
  * @param {AudioContext}
  * @param {AudioNode} destination - the destionation
@@ -41,8 +44,12 @@ function SamplePlayer (ac, buffer, options) {
     var source = ac.createBufferSource()
     source.buffer = buffer
     source.loop = options.loop || false
+    // Only works on chrome
+    // source.detune.value = options.detune || 0
+    source.playbackRate.value = centsToRate(options.detune || 0)
+    source.loopStart = options.loopStart || 0
+    source.loopEnd = options.loopEnd || 0
     source.connect(nodes.gain)
-    if (options.detune) source.playbackRate.value = centsToRate(options.detune)
     track(source)
     source.start(when, offset, duration)
 
