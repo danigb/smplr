@@ -2,7 +2,7 @@
   "name": "audio-pack",
   "version": "0.0.1",
   "description": "An audio sample packager",
-  "repository": "https://github.com/danigb/samplr/tree/master/packages/audio-pack",
+  "repository": "https://github.com/danigb/smplr/tree/master/packages/audio-pack",
   "keywords": [
     "music",
     "audio",
@@ -12,7 +12,7 @@
   "author": "danigb <danigb@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/danigb/samplr/issues"
+    "url": "https://github.com/danigb/smplr/issues"
   },
   "bin": {
     "audio-pack": "./bin/audio-pack"

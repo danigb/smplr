@@ -8,7 +8,7 @@
     "test": "mocha",
     "docs": "documentation -f md > API.md"
   },
-  "repository": "https://github.com/danigb/samplr/tree/master/packages/sampler-instrument",
+  "repository": "https://github.com/danigb/smplr/tree/master/packages/sampler-instrument",
   "keywords": [
     "music",
     "audio",
@@ -21,7 +21,7 @@
   "author": "danigb <danigb@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/danigb/samplr/issues"
+    "url": "https://github.com/danigb/smplr/issues"
   },
   "dependencies": {
     "note.midi": "0.0.4",

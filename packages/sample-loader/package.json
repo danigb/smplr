@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/danigb/samplr"
+    "url": "https://github.com/danigb/smplr"
   },
   "keywords": [
     "music",
@@ -22,7 +22,7 @@
   "author": "danigb <danigb@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/danigb/samplr/issues"
+    "url": "https://github.com/danigb/smplr/issues"
   },
   "dependencies": {
   },

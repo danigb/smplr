@@ -1,7 +1,7 @@
 /* global AudioContext */
 var ac = new AudioContext()
-var samplr = require('../')(ac)
-samplr.load('@drum-machines/maestro').then(function (maestro) {
+var smplr = require('../')(ac)
+smplr.load('@drum-machines/maestro').then(function (maestro) {
   console.log('maestro', maestro, maestro.samples())
   var now = ac.currentTime
   maestro('snare').start(now + 0.2)

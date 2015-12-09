@@ -70,7 +70,7 @@ describe('Prefixed', () => {
     var load = loader(ac, { fetch })
     load('@drum-machines/808').then(buffers => {
       assert.equal(fetch.getCall(0).args[0],
-        'https://cdn.rawgit.com/danigb/samplr/master/packages/drum-machines/808/808.json')
+        'https://cdn.rawgit.com/danigb/smplr/master/packages/drum-machines/808/808.json')
       assert(buffers['snare'] instanceof AudioBuffer)
     }).then(done, done)
   })

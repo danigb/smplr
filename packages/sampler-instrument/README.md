@@ -1,6 +1,6 @@
 # sampler-instrument [![npm](https://img.shields.io/npm/v/sampler-instrument.svg)](https://www.npmjs.com/package/sampler-instrument)
 
-[![Samplr](https://img.shields.io/badge/samplr-instrument-32bbee.svg)](https://github.com/danigb/samplr)
+[![smplr](https://img.shields.io/badge/instrument-smplr-32bbee.svg)](https://github.com/danigb/smplr)
 
 A web audio sampler instrument:
 

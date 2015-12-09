@@ -1,7 +1,7 @@
 {
   "name": "CR-78",
   "description": "Roland CompuRythm CR-78",
-  "repository": "https://github.com/danigb/samplr/tree/master/packages/drum-machines/CR-78",
+  "repository": "https://github.com/danigb/smplr/tree/master/packages/drum-machines/CR-78",
   "source": "http://www.boxedear.com/free.html",
   "license": "Public Domain"
 }

@@ -94,7 +94,7 @@ var PREFIXES = {
   },
   '@drum-machines': function (name, load) {
     var path = name + '/' + name + '.json'
-    var url = 'https://cdn.rawgit.com/danigb/samplr/master/packages/drum-machines/' + path
+    var url = 'https://cdn.rawgit.com/danigb/smplr/master/packages/drum-machines/' + path
     return load(url)
   }
 }

@@ -1,6 +1,6 @@
 # sample-loader [![npm](https://img.shields.io/npm/v/sample-loader.svg)](https://www.npmjs.com/package/sample-loader)
 
-[![Samplr](https://img.shields.io/badge/samplr-instrument-32bbee.svg)](https://github.com/danigb/samplr)
+[![smplr](https://img.shields.io/badge/instrument-smplr-32bbee.svg)](https://github.com/danigb/smplr)
 
 A powerful and easy audio buffer loader for browser:
 
@@ -30,7 +30,7 @@ load('@drum-machines/maestro').then(function (buffers) {
 
 ## Install
 
-Via npm: `npm i --save sample-loader` or grab the [browser ready file](https://raw.githubusercontent.com/danigb/samplr/master/packages/sample-loader/dist/sample-loader.min.js) (4kb) which exports `loader` as window globals.
+Via npm: `npm i --save sample-loader` or grab the [browser ready file](https://raw.githubusercontent.com/danigb/smplr/master/packages/sample-loader/dist/sample-loader.min.js) (4kb) which exports `loader` as window globals.
 
 ## User guide
 
@@ -78,7 +78,7 @@ load('@soundfont/acoustic_grand_piano').then(function(buffers) {
 
 #### Other instruments
 
-Can load [drum-machines](https://github.com/danigb/samplr/tree/master/packages/drum-machines) by prepending `@drum-machines` before the instrument name:
+Can load [drum-machines](https://github.com/danigb/smplr/tree/master/packages/drum-machines) by prepending `@drum-machines` before the instrument name:
 
 ```js
 load('@drum-machines/CR-78').then(function (buffers) {

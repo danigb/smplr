@@ -6,7 +6,7 @@
   "scripts": {
     "test": "mocha"
   },
-  "repository": "https://github.com/danigb/samplr/tree/master/packages/sample-player",
+  "repository": "https://github.com/danigb/smplr/tree/master/packages/sample-player",
   "keywords": [
     "music",
     "audio",
@@ -17,7 +17,7 @@
   "author": "danigb <danigb@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/danigb/samplr/issues"
+    "url": "https://github.com/danigb/smplr/issues"
   },
   "dependencies": {},
   "devDependencies": {
