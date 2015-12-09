@@ -1,0 +1,33 @@
+{
+  "name": "samplr",
+  "version": "0.1.0",
+  "description": "A web audio sample loader",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha",
+    "docs": "documentation -f md > API.md",
+    "dist": "browserify index.js | uglifyjs > dist/samplr.min.js&& ls -hall dist/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danigb/samplr"
+  },
+  "keywords": [
+    "music",
+    "audio",
+    "sample",
+    "loader",
+    "webaudio"
+  ],
+  "author": "danigb <danigb@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danigb/samplr/issues"
+  },
+  "dependencies": {
+    "sample-loader": "^0.1.1"
+  },
+  "devDependencies": {
+    "web-audio-test-api": "^0.3.6"
+  }
+}

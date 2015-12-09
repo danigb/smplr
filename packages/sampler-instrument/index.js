@@ -19,6 +19,7 @@ function Sampler (ac, props) {
     output.connect(destination)
     return sampler
   }
+  sampler.samples = function () { return Object.keys(props.samples) }
   return sampler
 }
 
