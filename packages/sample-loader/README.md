@@ -30,7 +30,7 @@ load('@drum-machines/maestro').then(function (buffers) {
 
 ## Install
 
-Via npm: `npm i --save sample-loader`
+Via npm: `npm i --save sample-loader` or grab the [browser ready file](https://raw.githubusercontent.com/danigb/samplr/master/packages/sample-loader/dist/sample-loader.min.js) (4kb) which exports `loader` as window globals.
 
 ## User guide
 
