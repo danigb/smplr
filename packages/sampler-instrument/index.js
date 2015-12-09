@@ -48,12 +48,11 @@ function Sampler (ac, props) {
    * @param {Integer} duration - (Optional) the desired duration
    * @return {Object} the buffer player
    */
-  sampler.play = function (now, sample, delay, duration) {
-    now = now || ac.currentTime
+  sampler.play = function (sample, when, duration) {
     var player = sampler.sample(sample) || sampler.note(sample)
     if (!player) return null
-    if (typeof delay !== 'undefined') {
-      var when = delay ? now + delay : now
+    if (typeof when !== 'undefined') {
+      when = when || ac.currentTime
       player.start(when)
       if (typeof duration !== 'undefined' && duration >= 0) player.stop(when + duration)
     }

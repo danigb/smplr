@@ -13,6 +13,6 @@ load('example/piano-lite.samples.json').then(function (samples) {
   console.log(marimba.samples(), marimba.notes())
   var now = ac.currentTime
   'C Db D D# E E# f# g ab a bb b'.split(' ').forEach(function (note, i) {
-    marimba.play(now, note + '2', i * 0.4, 0.2)
+    marimba.play(note + '2', now + (i * 0.4), 0.2)
   })
 })
