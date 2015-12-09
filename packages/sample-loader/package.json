@@ -1,6 +1,6 @@
 {
   "name": "sample-loader",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A web audio sample loader",
   "main": "index.js",
   "scripts": {
@@ -25,7 +25,6 @@
     "url": "https://github.com/danigb/samplr/issues"
   },
   "dependencies": {
-    "sample-player": "file:../sample-player"
   },
   "devDependencies": {
     "web-audio-test-api": "^0.3.6"
