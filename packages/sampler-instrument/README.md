@@ -5,10 +5,10 @@
 A web audio sampler instrument:
 
 ```js
-var sampler = require('sampler-instrument')
-
 var ac = new AudioContext()
-var drums = sampler(ac, {
+var sampler = require('sampler-instrument')(ac)
+
+var drums = sampler({
   name: 'Drum machine',
   samples: {
     'kick': ... // <- an audio buffer object
@@ -17,10 +17,18 @@ var drums = sampler(ac, {
 })
 drums.connect(ac.destination)
 var now = ac.currentTime
-drums('kick').start(now)
-drums('snare').start(now + 0.5)
+drums.play('kick', now)
+drums.play('snare', now + 0.5)
 ```
 
-# License
+## Install
+
+Via npm only: `npm i --save sampler-instrument`
+
+## User Guide
+
+Not yet. Meanwhile read API.md
+
+## License
 
 MIT License

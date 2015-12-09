@@ -4,12 +4,15 @@
   "description": "A web audio sampler instrument",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "build": "npm test && npm docs",
+    "test": "mocha",
+    "docs": "documentation -f md > API.md"
   },
   "repository": "https://github.com/danigb/samplr/tree/master/packages/sampler-instrument",
   "keywords": [
     "music",
     "audio",
+    "instrument",
     "sampler",
     "sample",
     "player",
@@ -21,6 +24,7 @@
     "url": "https://github.com/danigb/samplr/issues"
   },
   "dependencies": {
+    "note.midi": "0.0.4",
     "sample-player": "0.0.1"
   },
   "devDependencies": {
