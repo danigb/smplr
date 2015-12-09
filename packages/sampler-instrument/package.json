@@ -21,11 +21,9 @@
     "url": "https://github.com/danigb/samplr/issues"
   },
   "dependencies": {
-    "sample-loader": "file:../sample-loader",
-    "sample-player": "file:../sample-player"
+    "sample-player": "0.0.1"
   },
   "devDependencies": {
-    "sample-loader": "file:../sample-loader",
     "step-seq": "0.0.1",
     "web-audio-test-api": "^0.3.6"
   }
