@@ -16,6 +16,10 @@ function play(buffer) {
   source.start(ac.currentTime)
 }
 
+// Load a group of samples
+var kit = {snare: 'http://example.com/snare.wav', kick: 'http://example.com/kick.mp3'}
+loader.load(kit).then(function (buffers) { play(buffers['snare']) })
+
 // Load midi soundfont files
 loader.load('@soundfont/marimba').then(function (buffers) {
   play(buffers['C4'])
@@ -25,11 +29,14 @@ loader.load('@soundfont/marimba').then(function (buffers) {
 loader.load('@drum-machines/maestro').then(function (buffers) {
   play(buffers['snare'])
 })
-
-// Load individual files
-var kit = {snare: 'http://example.com/snare.wav', kick: 'http://example.com/kick.mp3'}
-loader.load(kit).then(function (buffers) { play(buffers['snare']) })
 ```
+
+## Features
+
+- Can load individual o group of audio files
+- Can decode base64 encoded files
+- Compatible with [midi.js]() soundfont files
+- Instant access to instruments without setup
 
 # License
 

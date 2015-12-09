@@ -1,128 +1,100 @@
-/* globals XMLHttpRequest */
+/* global XMLHttpRequest */
 'use strict'
 
 var b64decode = require('./b64decode.js')
-var REPO = /^(@[\w-]+)\/(.*)$/
+var PREFIXED = /^(@[\w-]+)\/(.*)$/
 
 /**
- * Create a Sample Loader
- *
- * @param {AudioContext} ac - the audio context
- * @param {Object} options - the loader options
+ * Load
  */
-var Loader = function (ac, options) {
-  options = options || {}
-  var loader = { ac: ac, read: options.read || getRequest }
+function load (ac, value, options) {
+  if (arguments.length === 1) return function (v, o) { return load(ac, v, o) }
 
-  loader.load = function (promise) {
-    if (!promise.then) return loader.load(Promise.resolve(promise))
-    return promise.then(function (value) {
-      var l = Loader.loaders[getLoader(value)]
-      return l ? l(value, loader) : null
-    })
+  var opts = options || {}
+  var fetch = opts.fetch || httpRequest
+  var prefixes = PREFIXES
+
+  function resolve (value) {
+    if (value instanceof ArrayBuffer) return processArrayBuffer(ac, value)
+    else if (Array.isArray(value)) return processArrayData(value, resolve)
+    else if (typeof value === 'object') return processObjectData(value, resolve)
+    else if (typeof value === 'string') {
+      if (/^data:audio/.test(value)) return decodeBase64(value, resolve)
+      else if (/\.json$/.test(value)) return loadJsonFile(value, resolve, fetch)
+      else if (PREFIXED.test(value)) return processPrefix(prefixes, value, resolve, fetch)
+      else return loadAudioFile(value, resolve, fetch)
+    }
+    else return Promise.reject('Value not valid: ' + value)
   }
-  return loader
+
+  return resolve(value)
 }
 
-/**
- * Given a value, get the appropiate loader name
- */
-function getLoader (value) {
-  switch (typeof value) {
-    case 'object':
-      if (value instanceof ArrayBuffer) return 'arraybuffer'
-      else return 'object'
-      break
-    case 'string':
-      if (/^data:audio/.test(value)) return 'base64'
-      else if (/\.json$/.test(value)) return 'json'
-      else if (REPO.test(value)) return 'custom'
-      else return 'audioFile'
-      break
-    default:
-  }
+function processArrayBuffer (ac, data) {
+  if (!(data instanceof ArrayBuffer)) return null
+  return new Promise(function (done, reject) {
+    ac.decodeAudioData(data,
+      function (buffer) { done(buffer) },
+      function () { reject("Can't decode audio data (" + data.slice(0, 30) + '...)') }
+    )
+  })
 }
 
-/**
- * A collection of loaders mapped by type
- * A loader is a function that given a value returns a promise to an audio buffer
- */
-Loader.loaders = {
-  'unknown': function (value) {
-    return Promise.reject('Invalid value: ' + value)
-  },
+function processArrayData (array, load) {
+  return Promise.all(array.map(load))
+}
 
-  //
-  'arraybuffer': function (data, loader) {
-    return new Promise(function (done, reject) {
-      loader.ac.decodeAudioData(data, function (buffer) { done(buffer) },
-      function () {
-        reject("Can't decode audio data (" + data.slice(0, 30) + '...)')
-      })
-    })
-  },
+function processObjectData (object, load) {
+  if (typeof object !== 'object') return null
+  var source = object.samples ? object.samples : object
+  var buffers = {}
+  var promises = Object.keys(source).map(function (key) {
+    return load(source[key]).then(function (b) { buffers[key] = b })
+  })
+  return Promise.all(promises).then(function () {
+    if (!object.samples) return buffers
+    object.samples = buffers
+    return object
+  })
+}
 
-  'object': function (object, loader) {
-    var source = object.samples ? object.samples : object
-    var buffers = {}
-    var promises = Object.keys(source).map(function (key) {
-      return loader.load(source[key]).then(function (b) { buffers[key] = b })
-    })
-    return Promise.all(promises).then(function () {
-      if (!object.samples) return buffers
-      object.samples = buffers
-      return object
-    })
-  },
+function decodeBase64 (data, load) {
+  var payload = data.split(',')[1]
+  return load(b64decode(payload).buffer)
+}
 
-  // load a base64 encoded audio string
-  'base64': function (str, loader) {
-    var data = str.split(',')[1]
-    var decoded = b64decode(data).buffer
-    return Promise.resolve(decoded).then(loader.load)
-  },
+function loadAudioFile (url, load, fetch) {
+  return load(fetch(url, 'arraybuffer'))
+}
 
-  // load a json file
-  'json': function (url, loader) {
-    return loader.read(url, 'json').then(loader.load)
-  },
+function loadJsonFile (url, load, fetch) {
+  return load(fetch(url, 'json'))
+}
 
-  'audioFile': function (audioFile, loader) {
-    return loader.read(audioFile, 'arraybuffer').then(loader.load)
-  },
+function processPrefix (prefixes, value, load, fetch) {
+  var m = PREFIXED.exec(value)
+  var fn = prefixes[m[1]]
+  return fn ? fn(m[2], load, fetch) : Promise.reject('Unknown prefix: ' + m[1])
+}
 
-  'custom': function (repo, loader) {
-    var m = REPO.exec(repo)
-    var name = m[1]
-    var path = m[2]
-    var l = Loader.loaders[name] || Loader.loaders['unknown']
-    return l(path, loader)
-  },
-
-  // parse a midi.js file
-  '@midijs': function (url, loader) {
-    return loader.read(url, 'text').then(function (data) {
+var PREFIXES = {
+  '@midijs': function (url, load, fetch) {
+    return fetch(url, 'text').then(function (data) {
       var begin = data.indexOf('MIDI.Soundfont.')
       if (begin < 0) throw Error('Invalid MIDI.js Soundfont format')
       begin = data.indexOf('=', begin) + 2
       var end = data.lastIndexOf(',')
       return JSON.parse(data.slice(begin, end) + '}')
-    }).then(loader.load)
+    }).then(load)
   },
-
-  // load soundfonts from Benjamin Gleitzman repo using rawgit
-  '@soundfont': function (name, loader) {
+  '@soundfont': function (name, load) {
     var url = 'https://cdn.rawgit.com/gleitz/midi-js-Soundfonts/master/FluidR3_GM/' + name + '-ogg.js'
-    return loader.load('@midijs/' + url)
+    return load('@midijs/' + url)
   },
-
-  /**
-   * Load instruments from samplr/package/drum-machies repositiory
-   */
-  '@drum-machines': function (name, loader) {
+  '@drum-machines': function (name, load) {
     var path = name + '/' + name + '.json'
     var url = 'https://cdn.rawgit.com/danigb/samplr/master/packages/drum-machines/' + path
-    return loader.load(url)
+    return load(url)
   }
 }
 
@@ -131,7 +103,7 @@ Loader.loaders = {
  *
  * @private
  */
-function getRequest (url, type) {
+function httpRequest (url, type) {
   return new Promise(function (done, reject) {
     var req = new XMLHttpRequest()
     if (type) req.responseType = type
@@ -151,4 +123,4 @@ function getRequest (url, type) {
   })
 }
 
-module.exports = Loader
+module.exports = load

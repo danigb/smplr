@@ -1,12 +1,13 @@
 {
   "private": true,
   "scripts": {
-    "test": "mocha packages/**/*.test.js"
+    "test": "mocha packages/*/test/*.test.js"
   },
   "dependencies": {
     "lerna": "^1.0.3"
   },
   "devDependencies": {
+    "sinon": "^1.17.2",
     "web-audio-test-api": "^0.3.6"
   }
 }
