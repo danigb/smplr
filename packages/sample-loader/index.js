@@ -7,30 +7,26 @@ var PREFIXED = /^(@[\w-]+)\/(.*)$/
 /**
  * Load
  */
-function load (ac, value, options) {
-  if (arguments.length === 1) return function (v, o) { return load(ac, v, o) }
-
+function loader (ac, options) {
   var opts = options || {}
   var fetch = opts.fetch || httpRequest
   var prefixes = PREFIXES
 
-  function resolve (value) {
-    if (value instanceof ArrayBuffer) return processArrayBuffer(ac, value)
-    else if (Array.isArray(value)) return processArrayData(value, resolve)
-    else if (typeof value === 'object') return processObjectData(value, resolve)
+  return function load (value) {
+    if (value instanceof ArrayBuffer) return loadArrayBuffer(ac, value)
+    else if (Array.isArray(value)) return loadArrayData(value, load)
+    else if (typeof value === 'object') return loadObjectData(value, load)
     else if (typeof value === 'string') {
-      if (/^data:audio/.test(value)) return decodeBase64(value, resolve)
-      else if (/\.json$/.test(value)) return loadJsonFile(value, resolve, fetch)
-      else if (PREFIXED.test(value)) return processPrefix(prefixes, value, resolve, fetch)
-      else return loadAudioFile(value, resolve, fetch)
+      if (/^data:audio/.test(value)) return decodeBase64(value, load)
+      else if (/\.json$/.test(value)) return loadJsonFile(value, load, fetch)
+      else if (PREFIXED.test(value)) return loadPrefix(prefixes, value, load, fetch)
+      else return loadAudioFile(value, load, fetch)
     }
     else return Promise.reject('Value not valid: ' + value)
   }
-
-  return resolve(value)
 }
 
-function processArrayBuffer (ac, data) {
+function loadArrayBuffer (ac, data) {
   if (!(data instanceof ArrayBuffer)) return null
   return new Promise(function (done, reject) {
     ac.decodeAudioData(data,
@@ -40,12 +36,11 @@ function processArrayBuffer (ac, data) {
   })
 }
 
-function processArrayData (array, load) {
+function loadArrayData (array, load) {
   return Promise.all(array.map(load))
 }
 
-function processObjectData (object, load) {
-  if (typeof object !== 'object') return null
+function loadObjectData (object, load) {
   var source = object.samples ? object.samples : object
   var buffers = {}
   var promises = Object.keys(source).map(function (key) {
@@ -71,7 +66,7 @@ function loadJsonFile (url, load, fetch) {
   return load(fetch(url, 'json'))
 }
 
-function processPrefix (prefixes, value, load, fetch) {
+function loadPrefix (prefixes, value, load, fetch) {
   var m = PREFIXED.exec(value)
   var fn = prefixes[m[1]]
   return fn ? fn(m[2], load, fetch) : Promise.reject('Unknown prefix: ' + m[1])
@@ -123,4 +118,4 @@ function httpRequest (url, type) {
   })
 }
 
-module.exports = load
+module.exports = loader
