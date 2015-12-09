@@ -1,6 +1,6 @@
 {
   "name": "sample-loader",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A web audio sample loader",
   "main": "index.js",
   "scripts": {
