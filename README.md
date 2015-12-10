@@ -4,7 +4,7 @@
 [![Code Climate](https://codeclimate.com/github/danigb/smplr/badges/gpa.svg)](https://codeclimate.com/github/danigb/smplr)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](https://github.com/feross/standard)
 [![license](https://img.shields.io/npm/l/smplr.svg)](https://www.npmjs.com/package/smplr)
-[![smplr](https://img.shields.io/badge/instrument-smplr-32bbee.svg)](https://github.com/danigb/smplr)
+[![smplr](https://img.shields.io/badge/instrument-smplr-yellow.svg)](https://github.com/danigb/smplr)
 
 A web audio sampler:
 
@@ -39,7 +39,7 @@ Via npm: `npm i --save smplr` or grab the [browser ready file](https://raw.githu
 
 `smplr` is built from modules (basically a sampler-instrument with a sample-loader). This is a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md) with:
 
--[sampler-instrument](https://github.com/danigb/smplr/tree/master/packages/sample-instrument)
+- [sampler-instrument](https://github.com/danigb/smplr/tree/master/packages/sample-instrument)
 A sampler instrument. Manages samples collections and preset configurations
 
 - [sample-loader](https://github.com/danigb/smplr/tree/master/packages/sample-loader)

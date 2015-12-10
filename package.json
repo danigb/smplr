@@ -11,6 +11,7 @@
     "lerna": "^1.0.3"
   },
   "devDependencies": {
+    "mocha": "^2.3.4",
     "sinon": "^1.17.2",
     "web-audio-test-api": "^0.3.6"
   }

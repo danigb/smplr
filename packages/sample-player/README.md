@@ -1,6 +1,6 @@
 # sample-player [![npm](https://img.shields.io/npm/v/sample-player.svg)](https://www.npmjs.com/package/sample-player)
 
-[![smplr](https://img.shields.io/badge/instrument-smplr-32bbee.svg)](https://github.com/danigb/smplr)
+[![smplr](https://img.shields.io/badge/instrument-smplr-yellow.svg)](https://github.com/danigb/smplr)
 
 A web audio sample player:
 

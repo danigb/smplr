@@ -1,6 +1,6 @@
 # sample-loader [![npm](https://img.shields.io/npm/v/sample-loader.svg)](https://www.npmjs.com/package/sample-loader)
 
-[![smplr](https://img.shields.io/badge/instrument-smplr-32bbee.svg)](https://github.com/danigb/smplr)
+[![smplr](https://img.shields.io/badge/instrument-smplr-yellow.svg)](https://github.com/danigb/smplr)
 
 A powerful and easy audio buffer loader for browser:
 
