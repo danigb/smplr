@@ -1,7 +1,11 @@
 {
   "private": true,
   "scripts": {
-    "test": "mocha packages/*/test/*.test.js"
+    "test": "npm run test-loader && npm run test-player && npm run test-instrument && npm run test-smplr",
+    "test-loader": "mocha packages/sample-loader/test/*.test.js",
+    "test-player": "mocha packages/sample-player/test/*.test.js",
+    "test-instrument": "mocha packages/sampler-instrument/test/*.test.js",
+    "test-smplr": "mocha packages/smplr/test/*.test.js"
   },
   "dependencies": {
     "lerna": "^1.0.3"
