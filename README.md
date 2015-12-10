@@ -18,9 +18,12 @@ sampler.load('@drum-machines/maestro').then(function (maestro) {
 })
 ```
 
-The aim of this project is to reduce to the minimum the setup and code to play sampled sounds in web audio.
+The goals of this project are two:
 
-It work out of the box with Benjamin Gleitzman's [package of pre-rendered](https://github.com/gleitz/midi-js-soundfonts) sound fonts, `smplr` get care of load the samples from the git repository (no server setup required), and play them when ready:
+- Reduce to the minimum the setup required to load and play samples (by storing them in github and serve directly via rawgit) using web audio
+- Create a powerful enough sampler instrument
+
+It work out of the box with Benjamin Gleitzman's [package of pre-rendered](https://github.com/gleitz/midi-js-soundfonts) sound fonts. `smplr` get care of load the samples from the git repository (no server setup required), and play them when ready:
 
 ```js
 sampler.load('@soundfont/marimba').then(function (marimba) {
@@ -28,7 +31,7 @@ sampler.load('@soundfont/marimba').then(function (marimba) {
 })
 ```
 
-A collection of ready-to-use drum machines is on progress (currently 2 available).
+A collection of [ready-to-use drum machines](https://github.com/danigb/smplr/tree/master/packages/drum-machines) is in progress.
 
 
 ## Install

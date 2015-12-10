@@ -10,8 +10,5 @@ cache:
 node_js:
  - stable
  - "4.0"
- - iojs
- - "0.10"
- - "0.12"
 
 script: make test-ci
