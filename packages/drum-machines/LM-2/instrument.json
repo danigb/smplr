@@ -1,0 +1,7 @@
+{
+  "name": "LM-2",
+  "description": "LinnDrum LM-2",
+  "repository": "https://github.com/danigb/smplr/tree/master/packages/drum-machines/LM-2",
+  "source": "http://machines.hyperreal.org/manufacturers/Linn/LinnDrum/",
+  "license": "Public Domain"
+}

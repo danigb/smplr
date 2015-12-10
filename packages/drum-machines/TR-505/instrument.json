@@ -1,0 +1,7 @@
+{
+  "name": "TR-505",
+  "description": "Roland TR-505",
+  "repository": "https://github.com/danigb/smplr/tree/master/packages/drum-machines/TR-505",
+  "source": "http://www.progsounds.com/downloads/progsounds-roland-tr-505-samples-pack",
+  "license": "Public Domain"
+}

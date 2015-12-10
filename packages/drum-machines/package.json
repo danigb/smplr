@@ -19,5 +19,6 @@
     "url": "https://github.com/danigb/smplr/issues"
   },
   "devDependencies": {
+    "hyperscript": "^1.4.7"
   }
 }
