@@ -1,3 +1,4 @@
 CHANGELOG
 
-[0.0.1] First version
+[0.1.1] In play, when when is undefined, is assumed to be currentTime
+[0.1.0] First version

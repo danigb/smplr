@@ -1,10 +1,10 @@
 {
   "name": "sampler-instrument",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A web audio sampler instrument",
   "main": "index.js",
   "scripts": {
-    "build": "npm test && npm docs",
+    "build": "npm test && npm run docs",
     "test": "mocha",
     "docs": "documentation -f md > API.md"
   },

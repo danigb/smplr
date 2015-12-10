@@ -20,6 +20,14 @@ describe('sampler-instrument', () => {
     })
   })
 
+  describe('play', () => {
+    var inst = sampler({ samples: { 'a': audio() } })
+    it('start sampler if when is not specified', () => {
+      var note = inst.play('a')
+      assert(note.source.$state, 'PLAYING')
+    })
+  })
+
   describe('notes', () => {
     var piano = sampler({ name: 'piano', samples: { 'C4': audio(), 'D4': audio() } })
 

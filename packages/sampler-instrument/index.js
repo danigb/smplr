@@ -22,7 +22,7 @@ function Sampler (ac, props) {
   var output = ac.createGain()
 
   // instance
-  var sampler = {}
+  var sampler = { props: props }
 
   /**
   * Connect the sample output to the destination
@@ -46,17 +46,15 @@ function Sampler (ac, props) {
    * @param {String|Number} sample - the sample name or midi number
    * @param {Integer} when - (Optional) the time to start playing
    * @param {Integer} duration - (Optional) the desired duration
-   * @return {Object} the buffer player
+   * @return {Object} the triggered sample
    */
   sampler.play = function (sample, when, duration) {
     var player = sampler.sample(sample) || sampler.note(sample)
     if (!player) return null
-    if (typeof when !== 'undefined') {
-      when = when || ac.currentTime
-      player.start(when)
-      if (typeof duration !== 'undefined' && duration >= 0) player.stop(when + duration)
-    }
-    return player
+    when = when || ac.currentTime
+    var trigger = player.start(when)
+    if (typeof duration !== 'undefined' && duration >= 0) player.stop(when + duration)
+    return trigger
   }
 
   /**
