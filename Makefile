@@ -1,4 +1,4 @@
-test:
+test-ci:
 	make bootstrap
 	npm test
 
