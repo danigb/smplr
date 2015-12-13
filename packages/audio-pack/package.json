@@ -17,5 +17,8 @@
   },
   "bin": {
     "audiopack": "./bin/audiopack"
+  },
+  "dependencies": {
+    "yargs": "^3.31.0"
   }
 }

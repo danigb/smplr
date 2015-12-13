@@ -1,0 +1,37 @@
+#!/usr/bin/env node
+
+var fs = require('fs')
+var path = require('path')
+var stream = require('stream')
+var pack = require('../')
+
+var args = process.argv.slice(2)
+
+if (args.length > 1) {
+  console.error('Too many arguments.')
+  process.exit(1)
+}
+
+var filename = path.join(process.cwd(), args[0])
+var ext = path.extname(filename)
+
+if (ext === '.json') {
+  pipe(pack.build(filename))
+} else if (pack.audioExt(filename)) {
+  pipe(pack.encode(filename))
+} else if (ext === '') {
+  if (fs.lstatSync(filename).isDirectory()) {
+    pipe(pack.samples(filename))
+  } else {
+    console.error('Samples directory not valid.')
+  }
+} else {
+  console.error('Unkown file type.')
+}
+
+function pipe (result) {
+  var s = new stream.Readable()
+  s.push(result)
+  s.push(null)
+  s.pipe(process.stdout)
+}

@@ -51,13 +51,13 @@ function samples (samplesPath, obj) {
 
 // http://stackoverflow.com/questions/1916218/find-the-longest-common-starting-substring-in-a-set-of-strings/1917041#1917041
 function sharedStart (array) {
-  var A = array.concat().sort()
-  var a1 = A[0]
-  var a2 = A[A.length - 1]
-  var L = a1.length
+  var sorted = array.concat().sort()
+  var first = sorted[0]
+  var last = sorted[sorted.length - 1]
+  var len = first.length
   var i = 0
-  while (i < L && a1.charAt(i) === a2.charAt(i)) i++
-  return a1.substring(0, i)
+  while (i < len && first.charAt(i) === last.charAt(i)) i++
+  return first.substring(0, i)
 }
 
 module.exports = {
