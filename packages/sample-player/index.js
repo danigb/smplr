@@ -12,14 +12,16 @@ function centsToRate (cents) { return Math.pow(2, cents / 1200) }
 /**
  * Create a sample player
  *
- * It accepts the following options:
+ * @name Player
+ * @function
+ * @param {AudioContext} ac - the web audio context
+ * @param {AudioBuffer} buffer - the sample audio buffer
+ * @param {HashMap} - an options map with any of this values:
  *
  * - loop: if the audio should be looped
  * - detune: the cents to detune the sample
  *
- * @param {AudioContext}
- * @param {AudioNode} destination - the destionation
- * @param {AudioBuffer} the audio buffer
+ * @return {Object} the sample player
  */
 function SamplePlayer (ac, buffer, options) {
   if (arguments.length === 1) return function (b, o) { return SamplePlayer(ac, b, o) }

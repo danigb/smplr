@@ -61,6 +61,19 @@ An [audio-pack](https://github.com/danigb/smplr/tree/master/packages/audio-pack#
 
 Via npm: `npm i --save smplr` or grab the [browser ready file](https://raw.githubusercontent.com/danigb/smplr/master/packages/smplr/dist/smplr.min.js) (4kb) which exports `loader` as window globals.
 
+## Test and examples
+
+To run the test you have to clone this repo and then:
+
+```
+npm i
+./node_modules/.bin/lerna bootstrap
+npm test
+```
+
+To run the examples you need browserify and beefy: `npm i -g browserify beefy`. Go to each module (for example: `cd packages/sampler-instrument`) and run the example: `beefy exaple/example.js`
+
+
 # License
 
 MIT License

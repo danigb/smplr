@@ -1,5 +1,8 @@
 TODO
 
+[general]
+- Create API.md
+
 [sample-loader]
 - Add ability to add new prefixes
 

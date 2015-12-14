@@ -4,20 +4,27 @@ var toMidi = require('note.midi')
 var player = require('sample-player')
 
 /**
-* Create a sampler
+* Create a sampler instrument
 *
-* It uses an audio context and an instrument props.
-*
+* @name Sampler
+* @class Sampler
 * @param {AudioContect} ac - the audio contect
-* @param {Object} props - the instrument properties
+* @param {HashMap} instrument - a sampler instrument definition. It contains:
+*
+* - {HashMap} samples - (required) a map of names to audio buffers
+* - {HashMap} midi - (optional) a hash map of midi notes to sample information
+*
 * @return {Sampler} a sampler instance
 */
-function Sampler (ac, props) {
+function Sampler (ac, inst) {
   if (arguments.length === 1) return function (p) { return Sampler(ac, p) }
-  if (!(this instanceof Sampler)) return new Sampler(ac, props)
+  if (!(this instanceof Sampler)) return new Sampler(ac, inst)
+  if (!inst.samples) throw Error("Sampler instrument must contain 'samples' hash map: " + JSON.stringify(inst, 2, null))
 
   // private
-  props.notes = props.notes || mapNotes(props.samples)
+  var props = {}
+  props.samples = clone(null, inst.samples)
+  props.midi = midiMapToNotes(inst.midi) || samplesToNotes(props.samples)
   var players = {}
   var output = ac.createGain()
 
@@ -29,6 +36,8 @@ function Sampler (ac, props) {
   *
   * This method is chainable
   *
+  * @name sampler.connect
+  * @function
   * @param {AudioNode} destination
   * @return {Sampler} the sampler
   */
@@ -43,17 +52,20 @@ function Sampler (ac, props) {
    * A sugar function to get a sample player and start it. It accepts sample
    * names or midi numbers
    *
-   * @param {String|Number} sample - the sample name or midi number
+   * @name sampler.play
+   * @function
+   * @param {String|Number} name - the note name, midi number or sample name
    * @param {Integer} when - (Optional) the time to start playing
    * @param {Integer} duration - (Optional) the desired duration
    * @return {Object} the triggered sample
    */
-  sampler.play = function (sample, when, duration) {
-    var player = sampler.sample(sample) || sampler.note(sample)
+  sampler.play = function (name, when, duration) {
+    var player = sampler.note(name) || sampler.sample(name)
     if (!player) return null
     when = when || ac.currentTime
     var trigger = player.start(when)
-    if (typeof duration !== 'undefined' && duration >= 0) player.stop(when + duration)
+    console.log(name, when, duration, trigger)
+    if (typeof duration !== 'undefined' && duration >= 0) trigger.stop(when + duration)
     return trigger
   }
 
@@ -84,12 +96,13 @@ function Sampler (ac, props) {
   * @param {String} the note name or midi number
   * @return {SamplePlayer} a sample player
   */
-  sampler.note = function (note) {
-    var midi = toMidi(note)
+  sampler.note = function (name) {
+    var midi = toMidi(name)
     if (players[midi]) return players[midi]
-    var buffer = props.samples[props.notes[midi]]
-    if (!buffer) return null
-    players[midi] = player(ac, buffer).connect(output)
+    var note = props.midi[midi]
+    if (!note) return null
+    var buffer = props.samples[note.sample]
+    players[midi] = player(ac, buffer, note).connect(output)
     return players[midi]
   }
 
@@ -97,14 +110,54 @@ function Sampler (ac, props) {
   * Return the midi available midi note numbers
   * @return {Array<Number>} midi numbers
   */
-  sampler.notes = function () { return Object.keys(props.notes) }
+  sampler.notes = function () { return Object.keys(props.midi) }
   return sampler
 }
 
-function mapNotes (samples) {
+var MIDI_PROPS = ['sample']
+function midiMapToNotes (midiMap) {
+  if (!midiMap) return null
+  var props, midi
+  return Object.keys(midiMap).reduce(function (notes, name) {
+    props = midiMap[name]
+    if (!props.sample) throw Error('midi map must contain a "sample" value: ', notes)
+    mapRange(notes, name, props)
+    midi = toMidi(name)
+    if (midi) notes[midi] = clone(MIDI_PROPS, props)
+    return notes
+  }, {})
+}
+
+/**
+ * process a map range
+ */
+function mapRange (notes, name, props) {
+  var split = name.split(/\s*-\s*/)
+  if (split.length !== 2) return
+  var a = toMidi(split[0])
+  var b = toMidi(split[1])
+  if (!a || !b) throw Error('Invalid midi range: ' + name)
+  var tone = toMidi(props.tone) || a
+  for (var i = a; i <= b; i++) {
+    notes[i] = clone(MIDI_PROPS, props)
+    notes[i].detune = (i - tone) * 100
+  }
+}
+
+function clone (keys, src) {
+  var val
+  keys = keys || Object.keys(src)
+  return keys.reduce(function (props, key) {
+    val = src[key]
+    if (typeof val !== 'undefined') props[key] = val
+    return props
+  }, {})
+}
+
+function samplesToNotes (samples) {
   var midi
   return Object.keys(samples).reduce(function (notes, name) {
-    if ((midi = toMidi(name))) notes[midi] = name
+    if ((midi = toMidi(name))) notes[midi] = { sample: name }
     return notes
   }, {})
 }

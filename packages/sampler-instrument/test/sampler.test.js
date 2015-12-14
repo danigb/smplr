@@ -40,3 +40,36 @@ describe('sampler-instrument', () => {
     })
   })
 })
+
+describe('Midi maps', () => {
+  it('midi map with numbers', () => {
+    var piano = sampler({ name: 'piano', samples: {'a': audio()}, midi: {
+      60: { sample: 'a' },
+      61: { sample: 'b', detune: 100 }
+    }})
+    assert.deepEqual(piano.notes(), [60, 61])
+  })
+
+  it('midi map with notes', () => {
+    var piano = sampler({ name: 'piano', samples: {'a': audio()}, midi: {
+      'c4': { sample: 'a' },
+      'd4': { sample: 'b', detune: 100 }
+    }})
+    assert.deepEqual(piano.notes(), [60, 62])
+  })
+
+  it('accepts midi map with ranges', () => {
+    var piano = sampler({ name: 'piano', samples: {'a': audio()}, midi: {
+      'C3-C4': { sample: 'a', tone: 'C3' }
+    }})
+    assert.deepEqual(piano.notes(), [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60])
+    assert.deepEqual(piano.props.midi[48], { sample: 'a', detune: 0 })
+    assert.deepEqual(piano.props.midi[49], { sample: 'a', detune: 100 })
+    assert.deepEqual(piano.props.midi[60], { sample: 'a', detune: 1200 })
+  })
+  it('throws error if invalid range', () => {
+    assert.throws(() => {
+      sampler({ samples: { 'a': audio() }, midi: { 'a-hg': { sample: 'a' } } })
+    }, /a-hg/)
+  })
+})
