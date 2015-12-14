@@ -1,0 +1,15 @@
+TODO
+
+[sample-loader]
+- Add ability to add new prefixes
+
+[sample-player]
+- add adsr envelope
+- add filter
+
+[sample-instrument]
+- sample-instrument: add midi map
+
+[audio-pack]
+- General rewrite
+- Accept samples folder or samples.json file
