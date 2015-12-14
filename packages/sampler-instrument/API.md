@@ -1,4 +1,34 @@
-## `connect`
+## `mapRange`
+
+process a map range
+
+
+
+
+
+
+## `Sampler`
+
+Create a sampler instrument
+
+### Parameters
+
+* `ac` **`AudioContect`** the audio contect
+* `instrument` **`HashMap`** a sampler instrument definition. It contains:  - {HashMap} samples - (required) a map of names to audio buffers - {HashMap} midi - (optional) a hash map of midi notes to sample information
+
+
+
+Returns `Object` a sampler instance. The sampler has the following methods:
+
+- connect: connect the output of the sampler to an audio node
+- play: play a sample
+- note: get a sample player by note name or midi number
+- sample: get a sampler player by a sampler name
+- notes: get available note midi numbers
+- samples: get available sample names
+
+
+## `sampler.connect`
 
 Connect the sample output to the destination
 
@@ -13,9 +43,9 @@ This method is chainable
 Returns `Sampler` the sampler
 
 
-## `note`
+## `sampler.note`
 
-Get a note (player)
+Get a player for a note
 
 ### Parameters
 
@@ -26,9 +56,9 @@ Get a note (player)
 Returns `SamplePlayer` a sample player
 
 
-## `notes`
+## `sampler.notes`
 
-Return the midi available midi note numbers
+Return the available midi note numbers
 
 
 
@@ -36,7 +66,7 @@ Return the midi available midi note numbers
 Returns  midi numbers
 
 
-## `play`
+## `sampler.play`
 
 Play a sample
 
@@ -45,7 +75,7 @@ names or midi numbers
 
 ### Parameters
 
-* `sample` **`String or Number`** the sample name or midi number
+* `name` **`String or Number`** the note name, midi number or sample name
 * `when` **`Integer`** (Optional) the time to start playing
 * `duration` **`Integer`** (Optional) the desired duration
 
@@ -54,7 +84,7 @@ names or midi numbers
 Returns `Object` the triggered sample
 
 
-## `sample`
+## `sampler.sample`
 
 Get a sample (player)
 
@@ -67,23 +97,7 @@ Get a sample (player)
 Returns `SamplePlayer` a sample player
 
 
-## `Sampler`
-
-Create a sampler
-
-It uses an audio context and an instrument props.
-
-### Parameters
-
-* `ac` **`AudioContect`** the audio contect
-* `props` **`Object`** the instrument properties
-
-
-
-Returns `Sampler` a sampler instance
-
-
-## `samples`
+## `sampler.samples`
 
 Return a list of available sample names
 

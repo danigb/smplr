@@ -14,17 +14,23 @@ var player = require('sample-player')
 * - {HashMap} samples - (required) a map of names to audio buffers
 * - {HashMap} midi - (optional) a hash map of midi notes to sample information
 *
-* @return {Sampler} a sampler instance
+* @return {Object} a sampler instance. The sampler has the following methods:
+*
+* - connect: connect the output of the sampler to an audio node
+* - play: play a sample
+* - note: get a sample player by note name or midi number
+* - sample: get a sampler player by a sampler name
+* - notes: get available note midi numbers
+* - samples: get available sample names
 */
 function Sampler (ac, inst) {
   if (arguments.length === 1) return function (p) { return Sampler(ac, p) }
-  if (!(this instanceof Sampler)) return new Sampler(ac, inst)
   if (!inst.samples) throw Error("Sampler instrument must contain 'samples' hash map: " + JSON.stringify(inst, 2, null))
 
   // private
   var props = {}
   props.samples = clone(null, inst.samples)
-  props.midi = midiMapToNotes(inst.midi) || samplesToNotes(props.samples)
+  props.midi = midiMapToNotes(inst.midi, props.samples) || samplesToNotes(props.samples)
   var players = {}
   var output = ac.createGain()
 
@@ -64,14 +70,16 @@ function Sampler (ac, inst) {
     if (!player) return null
     when = when || ac.currentTime
     var trigger = player.start(when)
-    console.log(name, when, duration, trigger)
-    if (typeof duration !== 'undefined' && duration >= 0) trigger.stop(when + duration)
+    if (typeof duration !== 'undefined' && duration >= 0) {
+      trigger.stop(when + duration)
+    }
     return trigger
   }
 
   /**
   * Get a sample (player)
   *
+  * @name sampler.sample
   * @param {String} the sample name
   * @return {SamplePlayer} a sample player
   */
@@ -86,13 +94,15 @@ function Sampler (ac, inst) {
   /**
   * Return a list of available sample names
   *
+  * @name sampler.samples
   * @return {Array<String>} the sample names
   */
   sampler.samples = function () { return Object.keys(props.samples) }
 
   /**
-  * Get a note (player)
+  * Get a player for a note
   *
+  * @name sampler.note
   * @param {String} the note name or midi number
   * @return {SamplePlayer} a sample player
   */
@@ -107,7 +117,10 @@ function Sampler (ac, inst) {
   }
 
   /**
-  * Return the midi available midi note numbers
+  * Return the available midi note numbers
+  *
+  * @name sampler.notes
+  * @function
   * @return {Array<Number>} midi numbers
   */
   sampler.notes = function () { return Object.keys(props.midi) }
@@ -115,15 +128,17 @@ function Sampler (ac, inst) {
 }
 
 var MIDI_PROPS = ['sample']
-function midiMapToNotes (midiMap) {
+function midiMapToNotes (midiMap, samples) {
   if (!midiMap) return null
   var props, midi
   return Object.keys(midiMap).reduce(function (notes, name) {
     props = midiMap[name]
-    if (!props.sample) throw Error('midi map must contain a "sample" value: ', notes)
-    mapRange(notes, name, props)
+    if (!props.sample) throw Error('midi MUST contain a "sample" value: ', notes)
+    if (!samples[props.sample]) throw Error('Sample ' + props.sample + ' not found: ', JSON.stringify(samples, null, 2))
+
     midi = toMidi(name)
     if (midi) notes[midi] = clone(MIDI_PROPS, props)
+    else mapRange(notes, name, props)
     return notes
   }, {})
 }

@@ -45,7 +45,7 @@ describe('Midi maps', () => {
   it('midi map with numbers', () => {
     var piano = sampler({ name: 'piano', samples: {'a': audio()}, midi: {
       60: { sample: 'a' },
-      61: { sample: 'b', detune: 100 }
+      61: { sample: 'a', detune: 100 }
     }})
     assert.deepEqual(piano.notes(), [60, 61])
   })
@@ -53,7 +53,7 @@ describe('Midi maps', () => {
   it('midi map with notes', () => {
     var piano = sampler({ name: 'piano', samples: {'a': audio()}, midi: {
       'c4': { sample: 'a' },
-      'd4': { sample: 'b', detune: 100 }
+      'd4': { sample: 'a', detune: 100 }
     }})
     assert.deepEqual(piano.notes(), [60, 62])
   })

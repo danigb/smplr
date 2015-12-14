@@ -57,7 +57,7 @@ function SamplePlayer (ac, buffer, options) {
 
     return {
       source: source,
-      stop: function (when) { source.stop() },
+      stop: function (when) { source.stop(when) },
       start: player.start
     }
   }

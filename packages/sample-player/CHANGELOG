@@ -1,3 +1,4 @@
 CHANGELOG
 
+[0.0.2] Bug fixed: stop method of a trigger accepts when parameter
 [0.0.1] First version

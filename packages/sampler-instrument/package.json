@@ -1,6 +1,6 @@
 {
   "name": "sampler-instrument",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A web audio sampler instrument",
   "main": "index.js",
   "scripts": {
@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "note.midi": "0.0.4",
-    "sample-player": "0.0.1"
+    "sample-player": "0.0.x"
   },
   "devDependencies": {
     "step-seq": "0.0.1",
