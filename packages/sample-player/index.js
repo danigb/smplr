@@ -1,13 +1,6 @@
 'use strict'
 
-/**
- * Get playback rate for a given pitch change (in cents)
- *
- * Basic [math](http://www.birdsoft.demon.co.uk/music/samplert.htm):
- * f2 = f1 * 2^( C / 1200 )
- * @private
- */
-function centsToRate (cents) { return Math.pow(2, cents / 1200) }
+var Tracker = require('./tracker')
 
 /**
  * Create a sample player
@@ -28,8 +21,7 @@ function SamplePlayer (ac, buffer, options) {
   if (!buffer) throw Error('AudioBuffer is required')
 
   options = options || {}
-  var nextId = 0
-  var tracked = {}
+  var tracker = Tracker()
   var player = {}
   var nodes = {}
   nodes.gain = ac.createGain()
@@ -52,7 +44,7 @@ function SamplePlayer (ac, buffer, options) {
     source.loopStart = options.loopStart || 0
     source.loopEnd = options.loopEnd || 0
     source.connect(nodes.gain)
-    track(source)
+    tracker.track(source)
     source.start(when, offset, duration)
 
     return {
@@ -62,30 +54,20 @@ function SamplePlayer (ac, buffer, options) {
     }
   }
 
-  player.stop = function (when) {
-    when = when || 0
-    Object.keys(tracked).forEach(function (id) {
-      tracked[id].stop(when)
-      delete tracked[id]
-    })
-  }
+  player.stop = function () { tracker.stop() }
   player.nodes = function () { return nodes }
 
   return player
-
-  function track (source) {
-    source.id = nextId++
-    source.onended = handleBufferEnded
-    tracked[source.id] = source
-  }
-
-  function handleBufferEnded (e) {
-    var source = e.target
-    source.stop()
-    source.disconnect()
-    delete tracked[source.id]
-  }
 }
+
+/**
+ * Get playback rate for a given pitch change (in cents)
+ *
+ * Basic [math](http://www.birdsoft.demon.co.uk/music/samplert.htm):
+ * f2 = f1 * 2^( C / 1200 )
+ * @private
+ */
+function centsToRate (cents) { return Math.pow(2, cents / 1200) }
 
 if (typeof module === 'object' && module.exports) module.exports = SamplePlayer
 if (typeof window !== 'undefined') window.SamplePlayer = SamplePlayer
