@@ -1,5 +1,6 @@
 CHANGELOG
 
+[0.2.0] Split in files. Simplify API
 [0.1.2] Implement midi ranges
 [0.1.1] In play, when when is undefined, is assumed to be currentTime
 [0.1.0] First version

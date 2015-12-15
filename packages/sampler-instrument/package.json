@@ -1,8 +1,8 @@
 {
   "name": "sampler-instrument",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A web audio sampler instrument",
-  "main": "index.js",
+  "main": "lib/sampler.js",
   "scripts": {
     "build": "npm test && npm run docs",
     "test": "mocha",
