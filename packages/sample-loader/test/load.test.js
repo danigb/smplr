@@ -11,14 +11,18 @@ function serve (value) { return stub().returns(Promise.resolve(value)) }
 
 describe('sample-loader', () => {
   var load = loader(ac)
-  it('returns a promise', () => {
-    assert(load('blah').then)
-  })
 
-  it('decodes a promise', done => {
-    load(Promise.resolve(base64('audio'))).then(function (buffer) {
-      assert(buffer instanceof AudioBuffer)
-    }).then(done, done)
+  describe('Promises', function () {
+    it('always returns a promise', () => {
+      assert(load('blah').then)
+    })
+
+    it('accepst a promise as argument', done => {
+      load(Promise.resolve(base64('audio'))).then(function (buffer) {
+        console.log(buffer, buffer.prototype, AudioBuffer)
+        assert(buffer instanceof AudioBuffer)
+      }).then(done, done)
+    })
   })
 })
 
@@ -61,7 +65,7 @@ describe('Prefixed', () => {
     var load = loader(ac, { fetch })
     load('@soundfont/piano').then(buffers => {
       assert.equal(fetch.getCall(0).args[0],
-        'https://cdn.rawgit.com/gleitz/midi-js-Soundfonts/master/FluidR3_GM/piano-ogg.js')
+      'https://cdn.rawgit.com/gleitz/midi-js-Soundfonts/master/FluidR3_GM/piano-ogg.js')
     }).then(done, done)
   })
 
@@ -70,7 +74,7 @@ describe('Prefixed', () => {
     var load = loader(ac, { fetch })
     load('@drum-machines/808').then(buffers => {
       assert.equal(fetch.getCall(0).args[0],
-        'https://cdn.rawgit.com/danigb/smplr/master/packages/drum-machines/808/808.json')
+      'https://cdn.rawgit.com/danigb/smplr/master/packages/drum-machines/808/808.json')
       assert(buffers['snare'] instanceof AudioBuffer)
     }).then(done, done)
   })
@@ -106,6 +110,7 @@ describe('Object as values', () => {
       assert(buffers['b'] instanceof AudioBuffer)
     }).then(done, done)
   })
+
   it('load audio file values', done => {
     var load = loader(ac, { fetch: serve(arrayBuffer(10)) })
     var inst = { a: 'a.mp3', b: 'b.mp3' }
@@ -115,14 +120,19 @@ describe('Object as values', () => {
       assert(buffers['b'] instanceof AudioBuffer)
     }).then(done, done)
   })
-  it('load samples object', done => {
+
+  it('load deep object', done => {
     var load = loader(ac)
-    var inst = { name: 'name', samples: { a: base64('a'), b: base64('b') } }
+    var inst = { name: 'name', samples: { a: base64('a'), b: base64('b') },
+      deep: { name: 'deep', value: 2, audio: base64('a') } }
     load(inst).then(result => {
-      assert(inst === result)
-      assert.deepEqual(Object.keys(inst.samples), ['a', 'b'])
-      assert(inst.samples['a'] instanceof AudioBuffer)
-      assert(inst.samples['b'] instanceof AudioBuffer)
+      assert(inst !== result)
+      assert.equal(result.name, 'name')
+      assert(result.samples['a'] instanceof AudioBuffer)
+      assert(result.samples['b'] instanceof AudioBuffer)
+      assert.equal(result.deep.name, 'deep')
+      assert.equal(result.deep.value, 2)
+      assert(result.deep.audio instanceof AudioBuffer)
     }).then(done, done)
   })
 })

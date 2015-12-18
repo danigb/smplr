@@ -3,12 +3,13 @@
 
 var b64decode = require('./b64decode.js')
 var PREFIXED = /^(@[\w-]+)\/(.*)$/
+var AUDIO = /\.(mp3|wav|ogg)/
 
 /**
  * Create a sample loader
  *
  * @param {AudioContext} ac - the audio context
- * @param {HashMap} options - (Optional) options
+ * @param {HashMap} options - (Optional) options. The options can include:
  * @return {Function} a load function
  */
 function loader (ac, options) {
@@ -26,9 +27,10 @@ function loader (ac, options) {
       if (/^data:audio/.test(value)) return decodeBase64(value, load)
       else if (/\.json$/.test(value)) return loadJsonFile(value, load, fetch)
       else if (PREFIXED.test(value)) return loadPrefix(prefixes, value, load, fetch)
-      else return loadAudioFile(value, load, fetch)
+      else if (AUDIO.test(value)) return loadAudioFile(value, load, fetch)
+      else return Promise.resolve(value)
     }
-    else return Promise.reject('Value not valid: ' + value)
+    else return Promise.resolve(value)
   }
 }
 
@@ -46,16 +48,13 @@ function loadArrayData (array, load) {
   return Promise.all(array.map(load))
 }
 
-function loadObjectData (object, load) {
-  var source = object.samples ? object.samples : object
-  var buffers = {}
+function loadObjectData (source, load) {
+  var dest = {}
   var promises = Object.keys(source).map(function (key) {
-    return load(source[key]).then(function (b) { buffers[key] = b })
+    return load(source[key]).then(function (result) { dest[key] = result })
   })
   return Promise.all(promises).then(function () {
-    if (!object.samples) return buffers
-    object.samples = buffers
-    return object
+    return dest
   })
 }
 

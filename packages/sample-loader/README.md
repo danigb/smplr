@@ -2,39 +2,31 @@
 
 [![smplr](https://img.shields.io/badge/instrument-smplr-yellow.svg)](https://github.com/danigb/smplr)
 
-A powerful and easy audio buffer loader for browser:
+A powerful but easy audio buffer loader for browser:
 
 ```js
 var ac = new AudioContext()
 var load = require('sample-loader')(ac)
 
-// a simple audio buffer player (use `sample-player` instead)
-function play(buffer) {
-  var source = ac.createBufferSource()
-  source.buffer = buffer
-  source.connect(ac.destinaton)
-  source.start(ac.currentTime)
-}
-
-load('@drum-machines/maestro').then(function (buffers) {
-  play(buffers['snare'])
+load({ snare: 'samples/snare.wav', kick: 'samples/kick.wav' }).then(loaded) {
+  console.log(loaded) // => { snare: <AudioBuffer>, kick: <AudioBuffer> }
 })
 ```
 
 ## Features
 
-- Load individual audio files or collection of them
+- Load single audio files or collection of them (either using arrays or data objects)
 - Load base64 encoded audio strings
-- Compatile with midi.js soundfonts
-- Ready to use instruments with no setup
+- Compatible with midi.js pre-rendered soundfonts packages
+- Can load from a server or from a github repository
 
 ## Install
 
 Via npm: `npm i --save sample-loader` or grab the [browser ready file](https://raw.githubusercontent.com/danigb/smplr/master/packages/sample-loader/dist/sample-loader.min.js) (4kb) which exports `loader` as window globals.
 
-## User guide
+## Usage
 
-`sample-loader` is a flexible function to load samples from server. You can create a loader with an AudioContext instance and an (optional) options hash map:
+`sample-loader` is a flexible function to load audio samples. You can create a loader with an AudioContext instance and an (optional) options hash map:
 
 ```js
 var loader = require('sample-loader')
@@ -62,6 +54,19 @@ load(['samples/snare.mp3', 'samples/kick.mp3']).then(function (buffers) {
 load({ snare: 'samples/snare.mp3', kick: 'samples/kick.mp3' }).then(function (buffers) {
   // buffers is a hash of names to AudioBuffers
   play(buffers['snare'])
+})
+```
+
+#### Using data objets to load audio files
+
+You can use any data object and `sample-loader` will load the values that references audio files while keep the rest of the data intact:
+
+```js
+var inst = { name: 'piano', gain: 0.2, audio: 'samples/piano.mp3' }
+load(inst).then(function (piano) {
+  console.log(piano.name) // => 'piano' (it's not an audio file)
+  console.log(piano.gain) // => 0.2 (it's not an audio file)
+  console.log(piano.audio) // => <AudioBuffer> (it loaded the file)
 })
 ```
 

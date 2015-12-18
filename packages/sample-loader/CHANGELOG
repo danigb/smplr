@@ -1,5 +1,6 @@
 CHANGELOG
 
+[0.1.2] Now it try to load any value of an object
 [0.1.1] Remove unnecessary dependency
 [0.1.0] You can pass a promise as value
 [0.0.1] First version
