@@ -31,8 +31,13 @@ Via npm: `npm i --save sample-loader` or grab the [browser ready file](https://r
 ```js
 var loader = require('sample-loader')
 var ac = new AudioContext()
-var load = loader(ac, { /* options (can be null) */ })
+var load = loader(ac, { /* options, not required */ })
 ```
+
+The options is an (optional) hash map with the following:
+
+- <HashMap> sources: (Optional) a hash map of audio sources (see below)
+- <Function> fetch: a function to retrieve data from urls
 
 The returned `load` function receives only one parameter: the samples to load and returns always a Promise.
 
@@ -70,6 +75,39 @@ load(inst).then(function (piano) {
 })
 ```
 
+#### Add audio sources
+
+You can define audio sources with the sources options:
+
+```js
+var load = loader(ac, { sources: {
+  '@drums': 'http://server1.com/audio/drums',
+  '@percussion': 'http://server2.com/samples/percussion'
+}})
+```
+
+and then:
+
+```js
+load({ kick: '@drums/kick.mp3', snare: '@drums/snare.mp3', clave: '@percussion/clave.mp3'}
+```
+
+The source definition can be a function:
+
+```js
+var load = loader(ac, { sources: {
+  '@hi-res': function (name, load) {
+    return load('http://server.com/audio/' + name + '.wav')
+  },
+  '@lo-res': function (name, load) {
+    return load('http://server.com/audio/' + name + '.mp3')
+  }
+}})
+
+load('@hi-res/drum-loop').then(...)
+load('@lo-res/drum-loop').then(...)
+```
+
 #### Load soundfont files
 
 You can load [midi.js](https://github.com/mudcube/MIDI.js) soundfont files, and works out of the box with Benjamin Gleitzman's package of
@@ -89,22 +127,6 @@ Can load [drum-machines](https://github.com/danigb/smplr/tree/master/packages/dr
 load('@drum-machines/CR-78').then(function (buffers) {
   play(buffers['snare'])
 })
-```
-
-#### Add instrument sources
-
-You can add you own server samples repositories with the `options` parameter:
-
-```js
-var load = loader(ac, { repositories: {
-  '@my-repo': 'http://myserver.com/samples'
-}})
-```
-
-and then:
-
-```js
-load('@my-repo/file.mp3')
 ```
 
 

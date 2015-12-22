@@ -1,31 +1,31 @@
+'use strict'
 
 function Tracker (polyphony) {
-  if (!(this instanceof Tracker)) return new Tracker(polyphony)
-  this.nextId = 0
-  this.tracked = []
-}
-var proto = Tracker.prototype
+  var nextId = 0
+  var tracked = []
 
-proto.track = function (source) {
-  source.id = this.nextId++
-  source.onended = this.onended
-  this.tracked[source.id] = source
-}
+  function tracker () {}
+  tracker.track = function (source) {
+    source.id = nextId++
+    source.onended = onended
+    tracked[source.id] = source
+  }
 
-proto.stop = function (when) {
-  when = when || 0
-  var tracked = this.tracked
-  Object.keys(tracked).forEach(function (id) {
-    tracked[id].stop(when)
-    delete tracked[id]
-  })
-}
+  tracker.stop = function (when) {
+    when = when || 0
+    Object.keys(tracked).forEach(function (id) {
+      tracked[id].stop(when)
+      delete tracked[id]
+    })
+  }
 
-proto.onended = function (e) {
-  var source = e.target
-  source.stop()
-  source.disconnect()
-  delete this.tracked[source.id]
+  function onended (e) {
+    var source = e.target
+    source.stop()
+    source.disconnect()
+    delete tracked[source.id]
+  }
+  return tracker
 }
 
 module.exports = Tracker

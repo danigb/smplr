@@ -3,5 +3,10 @@
   "description": "LinnDrum LM-2",
   "repository": "https://github.com/danigb/smplr/tree/master/packages/drum-machines/LM-2",
   "source": "http://machines.hyperreal.org/manufacturers/Linn/LinnDrum/",
-  "license": "Public Domain"
+  "license": "Public Domain",
+  "default": {
+    "adsr": [0.1, 2, 1, 0],
+    "filter": 500,
+    "gain": 0.7
+  }
 }

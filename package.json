@@ -1,16 +1,39 @@
 {
-  "private": true,
+  "name": "smplr",
+  "version": "0.2.0",
+  "description": "A web audio sampler instrument",
+  "main": "lib/index.js",
   "scripts": {
-    "test": "npm run test-loader && npm run test-player && npm run test-instrument && npm run test-smplr",
-    "test-loader": "mocha packages/sample-loader/test/*.test.js",
-    "test-player": "mocha packages/sample-player/test/*.test.js",
-    "test-instrument": "mocha packages/sampler-instrument/test/*.test.js",
-    "test-smplr": "mocha packages/smplr/test/*.test.js"
+    "build": "lerna bootstrap",
+    "test": "mocha",
+    "docs": "documentation -f md > API.md",
+    "dist": "browserify index.js | uglifyjs > dist/smplr.min.js&& ls -hall dist/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danigb/smplr"
+  },
+  "keywords": [
+    "music",
+    "audio",
+    "sample",
+    "loader",
+    "webaudio",
+    "smplr"
+  ],
+  "author": "danigb <danigb@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danigb/smplr/issues"
   },
   "dependencies": {
-    "lerna": "^1.0.3"
+    "note-midi": "^1.0.0",
+    "sample-loader": "file:packages/sample-loader",
+    "sample-player": "file:packages/sample-player",
+    "sampler-instrument": "^0.1.0"
   },
   "devDependencies": {
+    "lerna": "^1.0.3",
     "mocha": "^2.3.4",
     "sinon": "^1.17.2",
     "web-audio-test-api": "^0.3.6"

@@ -5,6 +5,11 @@ var b64decode = require('./b64decode.js')
 var PREFIXED = /^(@[\w-]+)\/(.*)$/
 var AUDIO = /\.(mp3|wav|ogg)/
 
+function merge (dest, src) {
+  Object.keys(src).forEach(function (k) { dest[k] = src[k] })
+  return dest
+}
+
 /**
  * Create a sample loader
  *
@@ -15,7 +20,8 @@ var AUDIO = /\.(mp3|wav|ogg)/
 function loader (ac, options) {
   var opts = options || {}
   var fetch = opts.fetch || httpRequest
-  var prefixes = PREFIXES
+  var prefixes = merge({}, PREFIXES)
+  if (opts.sources) merge(prefixes, opts.sources)
 
   return function load (value) {
     if (value instanceof Promise) return value.then(function (v) { return load(v) })
@@ -73,8 +79,12 @@ function loadJsonFile (url, load, fetch) {
 
 function loadPrefix (prefixes, value, load, fetch) {
   var m = PREFIXED.exec(value)
-  var fn = prefixes[m[1]]
-  return fn ? fn(m[2], load, fetch) : Promise.reject('Unknown prefix: ' + m[1])
+  var prefix = m[1]
+  var path = m[2]
+  var fn = prefixes[prefix]
+  if (!fn) return Promise.reject('Unknown prefix: ' + prefix)
+  else if (typeof fn === 'function') return fn(path, load, fetch)
+  else return load(fn + '/' + path)
 }
 
 var PREFIXES = {

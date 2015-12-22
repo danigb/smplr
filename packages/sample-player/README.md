@@ -13,6 +13,26 @@ var now = ac.currentTime
 snare.start(now).start(now + 0.5).start(now + 1)
 ```
 
+## Options
+
+```js
+{
+  pitch: 0,
+  loop: false,
+  reverse: false,
+  amp: {
+    gain: 0.2
+    adsr: [0.001, 0, 1, 0.1]
+  },
+  filter: {
+    type: "lowpass"
+    freq: 20
+    oct: 10
+    adsr: [0.001, 0.001, 1, 0.5]
+  }
+}
+```
+
 ## Features
 
 - Retrigger sample without re-creating nodes

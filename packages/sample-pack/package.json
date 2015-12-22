@@ -1,21 +1,19 @@
 {
-  "name": "sampler-instrument",
-  "version": "0.2.0",
-  "description": "A web audio sampler instrument",
-  "main": "lib/sampler.js",
+  "name": "sample-pack",
+  "version": "0.1.0",
+  "description": "Pack samples into a single .json file",
+  "main": "index.js",
   "scripts": {
     "build": "npm test && npm run docs",
     "test": "mocha",
     "docs": "documentation -f md > API.md"
   },
-  "repository": "https://github.com/danigb/smplr/tree/master/packages/sampler-instrument",
+  "repository": "https://github.com/danigb/smplr/tree/master/packages/sample-pack",
   "keywords": [
     "music",
     "audio",
-    "instrument",
-    "sampler",
     "sample",
-    "player",
+    "package",
     "webaudio",
     "smplr"
   ],

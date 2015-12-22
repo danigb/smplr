@@ -6,17 +6,55 @@
 [![license](https://img.shields.io/npm/l/smplr.svg)](https://www.npmjs.com/package/smplr)
 [![smplr](https://img.shields.io/badge/instrument-smplr-yellow.svg)](https://github.com/danigb/smplr)
 
-A web audio sampler instrument. It can load and trigger audio files, map them to midi with pitch change, apply envelopes and filters. You can group a collection of samples and treat them as a single instrument:
+A web audio sampler instrument. It can load and trigger audio files, map them to midi notes, apply pitch change, envelopes and filters. Treat a collection of samples as a single instrument.
 
-A simple but real example (no server setup required, the samples are loaded from github):
+__This is alpha software, use at your own risk__
+
+## Examples
+
+#### One note sampler
 
 ```js
-var ac = new AudioContext()
-var sampler = require('smplr')(ac)
-sampler.load('@drum-machines/maestro').then(function (maestro) {
+var smplr = require('smplr')(ac.destination)
+
+smplr.addSource('@server', 'http://myserver.com/samples')
+
+smplr(midi: { 'C2-C4': { sample: '@server/uke.wav', tone: 'C2' } }.then(function (uke) {
+  // play chord C9 chord
+  ['C2', 'E2', 'G2', 'Bb2', 'D3'].forEach(function (note) {
+    uke.play(note)
+  })
+})
+```
+
+#### Load sound font instrument
+
+```js
+smplr('@soundfont/marimba').then(function (marimba) {
+  marimba.connect(ac.destination)
+  marimba.play('Eb2')
+  marimba.play('Ab5')
+})
+```
+
+#### Load a drum machine
+
+```js
+smplr('@drum-machines/maestro').then(function (maestro) {
+  maestro.connect(ac.destination)
   var now = ac.currentTime
   maestro.play('kick', now)
   maestro.play('snare', now + 0.2)
+  maestro.play('kick', now + 0.4)
+  maestro.play('snare', now + 0.6)
+})
+```
+
+#### Build layers
+
+```js
+smplr.layer('@soundfont/marimba', '@soundfont/piano').then(function (inst) {
+  inst.play('C4')
 })
 ```
 
@@ -63,13 +101,7 @@ Via npm: `npm i --save smplr` or grab the [browser ready file](https://raw.githu
 
 ## Test and examples
 
-To run the test you have to clone this repo and then:
-
-```
-npm i
-./node_modules/.bin/lerna bootstrap
-npm test
-```
+To run the test you have to clone this repo and then `make`
 
 To run the examples you need browserify and beefy: `npm i -g browserify beefy`. Go to each module (for example: `cd packages/sampler-instrument`) and run the example: `beefy exaple/example.js`
 
