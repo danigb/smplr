@@ -1,4 +1,8 @@
 node_modules/
 dist
 .vscode
+out/
+_next/
 src/**/*.js
+.next
+.DS_Store

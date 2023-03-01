@@ -17,7 +17,7 @@ const marimba = new Soundfont(context, { instrument: "marimba" });
 marimba.start({ note: 60, velocity: 80 });
 ```
 
-See demo: https://smplr.github.io/samples/
+See demo: https://danigb.github.io/smplr/
 
 Install with npm or your favourite package manager:
 

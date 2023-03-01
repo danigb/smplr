@@ -1,0 +1,141 @@
+import { useState } from "react";
+import { Reverb, Soundfont, SoundfontLibraries } from "smplr";
+import { getAudioContext } from "./audio-context";
+import { ConnectMidi } from "./ConnectMidi";
+import { PianoKeyboard } from "./PianoKeyboard";
+import { LoadWithStatus, useStatus } from "./useStatus";
+
+const libNames = Object.keys(SoundfontLibraries);
+
+let reverb: Reverb | undefined;
+
+export function SoundfontExample({ className }: { className?: string }) {
+  const [status, setStatus] = useStatus();
+  const [libraryName, setLibraryName] = useState(libNames[1]);
+  const [instrumentName, setInstrumentName] = useState("marimba");
+  const [instrument, setInstrument] = useState<Soundfont | undefined>(
+    undefined
+  );
+  const [reverbMix, setReverbMix] = useState(0.0);
+  const [volume, setVolume] = useState(100);
+  const library = SoundfontLibraries[libraryName];
+
+  function loadSoundfont(libraryName: string, instrumentName: string) {
+    const library = SoundfontLibraries[libraryName];
+    const context = getAudioContext();
+    reverb ??= new Reverb(context);
+    const soundfont = new Soundfont(context, {
+      instrument: instrumentName,
+      library: library,
+    });
+    soundfont.output.addSend("reverb", reverb, 0.0);
+    soundfont
+      .loaded()
+      .then(() => {
+        setStatus("ready");
+        setInstrument(soundfont);
+      })
+      .catch((err) => {
+        setStatus("error");
+        console.log("Instrument error", err);
+      });
+  }
+
+  return (
+    <div className={className}>
+      <div className="flex gap-2 items-end mb-2">
+        <h1 className="text-3xl">Soundfont</h1>
+        <LoadWithStatus
+          status={status}
+          onClick={() => {
+            loadSoundfont(libraryName, instrumentName);
+          }}
+        />
+        <ConnectMidi instrument={instrument} />
+      </div>
+      <div
+        className={status !== "ready" ? "opacity-30 no-select" : "no-select"}
+      >
+        <div className="flex gap-4 mb-2">
+          <select
+            className="bg-zinc-700 rounded"
+            value={libraryName}
+            onChange={(e) => {
+              const libraryName = e.target.value;
+              loadSoundfont(libraryName, instrumentName);
+              setLibraryName(libraryName);
+            }}
+          >
+            {libNames.map((libName) => (
+              <option key={libName} value={libName}>
+                {libName}
+              </option>
+            ))}
+          </select>
+          <select
+            className="bg-zinc-700 rounded"
+            value={instrumentName}
+            onChange={(e) => {
+              const instrumentName = e.target.value;
+              loadSoundfont(libraryName, instrumentName);
+              setInstrumentName(instrumentName);
+            }}
+          >
+            {library.instruments.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <button
+            className="bg-zinc-700 rounded px-3 py-0.5 shadow"
+            onClick={() => {
+              instrument?.stop();
+            }}
+          >
+            Stop all
+          </button>
+        </div>
+        <div className="flex gap-4 mb-2">
+          <div>Volume:</div>
+          <input
+            type="range"
+            min={0}
+            max={127}
+            step={1}
+            value={volume}
+            onChange={(e) => {
+              const volume = e.target.valueAsNumber;
+              instrument?.output.setVolume(volume);
+              setVolume(volume);
+            }}
+          />
+          <div>Reverb:</div>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.001}
+            value={reverbMix}
+            onChange={(e) => {
+              const mix = e.target.valueAsNumber;
+              instrument?.output.setSend("reverb", mix);
+              setReverbMix(mix);
+            }}
+          />
+        </div>
+        <PianoKeyboard
+          borderColor="border-teal-600"
+          onPress={(note) => {
+            if (!instrument) return;
+            note.time = (note.time ?? 0) + instrument.context.currentTime;
+            instrument.start(note);
+          }}
+          onRelease={(midi) => {
+            instrument?.stop({ stopId: "" + midi });
+          }}
+        />
+      </div>
+    </div>
+  );
+}
