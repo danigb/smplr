@@ -33,9 +33,9 @@ async function createDattorroReverbEffect(context: AudioContext) {
   return reverb;
 }
 
-export class DattorroReverb {
+export class Reverb {
   #effect: AudioWorkletNode | undefined;
-  #ready: Promise<DattorroReverb>;
+  #ready: Promise<this>;
   public readonly input: AudioNode;
   #output: AudioNode;
 
@@ -62,7 +62,7 @@ export class DattorroReverb {
     return this.#effect !== undefined;
   }
 
-  ready(): Promise<DattorroReverb> {
+  ready(): Promise<this> {
     return this.#ready;
   }
 

@@ -111,13 +111,25 @@ piano.setVolume(80);
 
 Bear in mind that `volume` is global to the instrument, but `velocity` is specific for each note.
 
-### Add effects
+### Effects
+
+An packed version of [DattorroReverbNode](https://github.com/khoin/DattorroReverbNode) algorithmic reverb is included.
+
+```js
+import { Reverb } from "smplr";
+
+const reverb = new Reverb(new AudioContext());
+const oscillator = context.createOscillator();
+oscillator.connect(reverb);
+```
+
+### Connect an effect
 
 Use `output.addSend(name, effect, mix)` to create connect an effect using a send bus:
 
 ```js
-import { DattorroReverb, SplendidGrandPiano } from "smplr";
-const reverb = new DatorroReverb(context);
+import { Reverb, SplendidGrandPiano } from "smplr";
+const reverb = new Reverb(context);
 const piano = new SplendidGrandPiano(context, { volume });
 piano.output.addSend("reverb", reverb, 0.2);
 ```
@@ -172,20 +184,6 @@ import { SplendidGrandPiano } from "smplr";
 const piano = new SplendidGrandPiano(new AudioContext());
 
 piano.start({ note: "C4" });
-```
-
-## Effects
-
-### Dattorro Reverb
-
-An algorithmic reverb. It uses a modified version of [DatorroReverbNode](https://github.com/khoin/DattorroReverbNode).
-
-```js
-import { DattorroReverb } from "smplr";
-
-const reverb = new DattorroReverb(new AudioContext());
-const oscillator = context.createOscillator();
-oscillator.connect(reverb);
 ```
 
 ## License
