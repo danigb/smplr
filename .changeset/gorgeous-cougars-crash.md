@@ -1,0 +1,5 @@
+---
+"smplr": minor
+---
+
+Add SplendidGrandPiano
