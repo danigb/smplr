@@ -28,7 +28,7 @@ export function SoundfontExample({ className }: { className?: string }) {
       instrument: instrumentName,
       library: library,
     });
-    soundfont.output.addSend("reverb", reverb, 0.0);
+    soundfont.output.addEffect("reverb", reverb, 0.0);
     soundfont
       .loaded()
       .then(() => {
@@ -119,7 +119,7 @@ export function SoundfontExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              instrument?.output.setSend("reverb", mix);
+              instrument?.output.sendEffect("reverb", mix);
               setReverbMix(mix);
             }}
           />

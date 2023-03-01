@@ -37,7 +37,7 @@ export function SamplerExample({ className }: { className?: string }) {
       return samples;
     }, {} as Record<string, string>);
     const sampler = new Sampler(context, { buffers });
-    sampler.output.addSend("reverb", reverb, reverbMix);
+    sampler.output.addEffect("reverb", reverb, reverbMix);
 
     sampler
       .loaded()
@@ -88,7 +88,7 @@ export function SamplerExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              sampler?.output.setSend("reverb", mix);
+              sampler?.output.sendEffect("reverb", mix);
               setReverbMix(mix);
             }}
           />

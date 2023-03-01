@@ -68,7 +68,7 @@ export class Channel {
     ]);
   }
 
-  addSend(
+  addEffect(
     name: string,
     effect: AudioNode | { input: AudioNode },
     mixValue: number
@@ -82,7 +82,7 @@ export class Channel {
     this.#sends.push({ name, mix, disconnect });
   }
 
-  setSend(name: string, mix: number) {
+  sendEffect(name: string, mix: number) {
     const send = this.#sends?.find((send) => send.name === name);
     if (send) {
       send.mix.gain.value = mix;

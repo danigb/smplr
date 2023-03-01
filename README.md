@@ -2,12 +2,12 @@
 
 [![npm version](https://img.shields.io/npm/v/smplr)](https://www.npmjs.com/package/smplr)
 
-> `smplr` is a collection of sampled instruments for Web Audio API ready to be used with no setup.
+> `smplr` is a collection of sampled instruments for Web Audio API ready to be used with no setup required.
 
 Example:
 
 ```js
-import { SplendidGrandPiano, Soundfont } from "smplr";
+import { SplendidGrandPiano, Soundfont, Reverb } from "smplr";
 
 const context = new AudioContext();
 const piano = new SplendidGrandPiano(context);
@@ -15,6 +15,11 @@ piano.start({ note: "C4" });
 
 const marimba = new Soundfont(context, { instrument: "marimba" });
 marimba.start({ note: 60, velocity: 80 });
+
+// Optionally, add reverb...
+piano.output.addEffect("reverb", new Reverb(context), 0.1);
+// ... and change how much
+piano.output.sendEffect("reverb", 0.2);
 ```
 
 See demo: https://danigb.github.io/smplr/
@@ -25,9 +30,9 @@ Install with npm or your favourite package manager:
 npm i smplr
 ```
 
-## Documentation
+Samples are published at: https://github.com/danigb/samples
 
-⚠️ Sill on < 1.0 version. API might change. Some features are still not documented.
+## Documentation
 
 ### Create an instrument
 
@@ -115,31 +120,19 @@ Bear in mind that `volume` is global to the instrument, but `velocity` is specif
 
 An packed version of [DattorroReverbNode](https://github.com/khoin/DattorroReverbNode) algorithmic reverb is included.
 
-```js
-import { Reverb } from "smplr";
-
-const reverb = new Reverb(new AudioContext());
-const oscillator = context.createOscillator();
-oscillator.connect(reverb);
-```
-
-### Connect an effect
-
-Use `output.addSend(name, effect, mix)` to create connect an effect using a send bus:
+Use `output.addEffect(name, effect, mix)` to create connect an effect using a send bus:
 
 ```js
 import { Reverb, SplendidGrandPiano } from "smplr";
 const reverb = new Reverb(context);
 const piano = new SplendidGrandPiano(context, { volume });
-piano.output.addSend("reverb", reverb, 0.2);
+piano.output.addEffect("reverb", reverb, 0.2);
 ```
 
-### Change effects send
-
-Use `output.setSend(name, mix)` to change the mix level:
+Use `output.sendEffect(name, mix)` to change the mix level:
 
 ```js
-piano.output.setSend("reverb", 0.5);
+piano.output.sendEffect("reverb", 0.5);
 ```
 
 ## Instruments
@@ -161,7 +154,7 @@ sampler.start({ note: "kick" });
 
 ### Soundfont
 
-A Soundfont player. A Soundfont player. By default it loads audio from Benjamin Gleitzman's package of
+A Soundfont player. By default it loads audio from Benjamin Gleitzman's package of
 [pre-rendered sound fonts](https://github.com/gleitz/midi-js-soundfonts).
 
 ```js

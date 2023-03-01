@@ -12,7 +12,8 @@ let reverb: Reverb | undefined;
 export function ElectricPianoExample({ className }: { className?: string }) {
   const [piano, setPiano] = useState<ElectricPiano | undefined>(undefined);
   const [status, setStatus] = useStatus();
-  const [reverbMix, setReverbMix] = useState(0.0);
+  const [reverbMix, setReverbMix] = useState(0);
+  const [tremolo, setTremolo] = useState(0);
   const [volume, setVolume] = useState(100);
 
   function loadPiano() {
@@ -20,12 +21,8 @@ export function ElectricPianoExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const newPiano = new ElectricPiano(
-      context,
-      "https://danigb.github.io/samples/jlearman/rhodes-mki/jrhodes3dsv.websfz.json",
-      { volume }
-    );
-    newPiano.output.addSend("reverb", reverb, reverbMix);
+    const newPiano = new ElectricPiano(context, "CP80", { volume });
+    newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
     newPiano.loaded().then(() => {
       setStatus("ready");
@@ -65,6 +62,19 @@ export function ElectricPianoExample({ className }: { className?: string }) {
               setVolume(volume);
             }}
           />
+          <div>Tremolo:</div>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.001}
+            value={tremolo}
+            onChange={(e) => {
+              const mix = e.target.valueAsNumber;
+              piano?.tremolo.setMix(mix);
+              setTremolo(mix);
+            }}
+          />
           <div>Reverb:</div>
           <input
             type="range"
@@ -74,7 +84,7 @@ export function ElectricPianoExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              piano?.output.setSend("reverb", mix);
+              piano?.output.sendEffect("reverb", mix);
               setReverbMix(mix);
             }}
           />

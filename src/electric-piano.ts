@@ -1,5 +1,7 @@
+import { createControl } from "./sampler/signals";
 import { SfzSampler, SfzSamplerConfig } from "./sfz-sampler";
 import { SfzInstrument } from "./sfz/sfz-kits";
+import { createTremolo } from "./tremolo";
 
 const ElectricPianoInstruments: Record<string, SfzInstrument> = {
   RhodesMkI: {
@@ -25,11 +27,18 @@ const ElectricPianoInstruments: Record<string, SfzInstrument> = {
 };
 
 export class ElectricPiano extends SfzSampler {
+  public readonly tremolo: Readonly<{ setMix: (value: number) => void }>;
   constructor(
     context: AudioContext,
     instrument: string,
     options: Partial<SfzSamplerConfig>
   ) {
     super(context, ElectricPianoInstruments[instrument] ?? instrument, options);
+    const depth = createControl(0);
+    this.tremolo = {
+      setMix: depth.set,
+    };
+    const tremolo = createTremolo(context, depth.subscribe);
+    this.output.addInsert(tremolo);
   }
 }

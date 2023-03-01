@@ -21,7 +21,7 @@ export function PianoExample({ className }: { className?: string }) {
     const context = getAudioContext();
     reverb ??= new Reverb(context);
     const newPiano = new SplendidGrandPiano(context, { volume });
-    newPiano.output.addSend("reverb", reverb, reverbMix);
+    newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
     newPiano.loaded().then(() => {
       setStatus("ready");
@@ -70,7 +70,7 @@ export function PianoExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              piano?.output.setSend("reverb", mix);
+              piano?.output.sendEffect("reverb", mix);
               setReverbMix(mix);
             }}
           />
