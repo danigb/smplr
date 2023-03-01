@@ -1,5 +1,5 @@
 import { Sampler, SamplerAudioLoader } from "./sampler";
-import { AudioBuffers, loadAudioAudioBuffer } from "./sampler/audio-buffers";
+import { AudioBuffers, loadAudioBuffer } from "./sampler/audio-buffers";
 
 /**
  * Splendid Grand Piano options
@@ -78,7 +78,7 @@ function splendidGrandPianoLoader(
       await Promise.all(
         layer.samples.map(async ([midi, name]) => {
           const url = `${baseUrl}/${name}.${format}`;
-          const buffer = await loadAudioAudioBuffer(context, url);
+          const buffer = await loadAudioBuffer(context, url);
           if (buffer) buffers[layer.name + midi] = buffer;
         })
       );

@@ -1,6 +1,6 @@
 export type AudioBuffers = Record<string | number, AudioBuffer>;
 
-export async function loadAudioAudioBuffer(
+export async function loadAudioBuffer(
   context: BaseAudioContext,
   url: string
 ): Promise<AudioBuffer | undefined> {

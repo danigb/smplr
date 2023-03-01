@@ -1,4 +1,4 @@
-import { AudioBuffers, loadAudioAudioBuffer } from "./sampler/audio-buffers";
+import { AudioBuffers, loadAudioBuffer } from "./sampler/audio-buffers";
 import { Channel } from "./sampler/channel";
 import { midiVelToGain } from "./sampler/note";
 import { createTrigger, Trigger } from "./sampler/signals";
@@ -124,7 +124,7 @@ function createAudioBuffersLoader(
         if (value instanceof AudioBuffer) {
           buffers[key] = value;
         } else if (typeof value === "string") {
-          const buffer = await loadAudioAudioBuffer(context, value);
+          const buffer = await loadAudioBuffer(context, value);
           if (buffer) buffers[key] = buffer;
         }
       }),
