@@ -3,6 +3,7 @@ import Head from "next/head";
 import { ElectricPianoExample } from "src/ElectricPianoExample";
 import { SamplerExample } from "src/SamplerExample";
 import { SoundfontExample } from "src/SoundfontExample";
+import { VersilianExample } from "src/VersilianExample";
 import { PianoExample } from "../src/PianoExample";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -26,6 +27,7 @@ export default function Home() {
           <PianoExample />
           <SoundfontExample />
           <ElectricPianoExample />
+          <VersilianExample />
         </div>
       </main>
     </>
