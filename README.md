@@ -179,6 +179,29 @@ const piano = new SplendidGrandPiano(new AudioContext());
 piano.start({ note: "C4" });
 ```
 
+### Electric Piano
+
+A sampled electric pianos. Samples from https://github.com/sfzinstruments/GregSullivan.E-Pianos
+
+```js
+import { ElectricPiano } from "smplr";
+
+const epiano = new ElectricPiano(new AudioContext(), {
+  instrument: "PianetT",
+});
+
+epiano.start({ note: "C4" });
+
+// Includes a (basic) tremolo effect:
+epiano.tremolo.level(30);
+```
+
+Available instruments:
+
+- `CP80`: Yamaha CP80 Electric Grand Piano v1.3 (29-Sep-2004)
+- `PianetT`: Hohner Pianet T (type 2) v1.3 (24-Sep-2004)
+- `WurlitzerEP200`: Wurlitzer EP200 Electric Piano v1.1 (16-May-1999)
+
 ## License
 
 MIT License
