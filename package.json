@@ -1,6 +1,6 @@
 {
   "name": "smplr",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "homepage": "https://github.com/danigb/smplr#readme",
   "description": "A Sampled collection of instruments",
   "main": "dist/index.js",
@@ -35,6 +35,9 @@
     "tsup": "^6.5.0",
     "turbo": "latest",
     "typedoc": "^0.23.24"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsup src/index.ts  --sourcemap --dts --format esm,cjs",
