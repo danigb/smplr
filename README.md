@@ -202,6 +202,18 @@ Available instruments:
 - `PianetT`: Hohner Pianet T (type 2) v1.3 (24-Sep-2004)
 - `WurlitzerEP200`: Wurlitzer EP200 Electric Piano v1.1 (16-May-1999)
 
+### Mallets
+
+Samples from [The Versilian Community Sample Library](https://github.com/sgossner/VCSL)
+
+```js
+import { Mallet, getMalletNames } from "smplr";
+
+const mallet = new Mallet(new AudioContext(), {
+  instrument: getMalletNames()[0],
+});
+```
+
 ## License
 
 MIT License

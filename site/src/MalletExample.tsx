@@ -1,30 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { getVersilianNames, Reverb, Versilian } from "smplr";
+import { getMalletNames, Mallet, Reverb } from "smplr";
 import { getAudioContext } from "./audio-context";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
 let reverb: Reverb | undefined;
-let instrumentNames = getVersilianNames();
+let instrumentNames = getMalletNames();
 
-export function VersilianExample({ className }: { className?: string }) {
-  const [instrument, setInstrument] = useState<Versilian | undefined>(
-    undefined
-  );
-  const [instrumentName, setInstrumentName] = useState("CP80");
+export function MalletExample({ className }: { className?: string }) {
+  const [instrument, setInstrument] = useState<Mallet | undefined>(undefined);
+  const [instrumentName, setInstrumentName] = useState(instrumentNames[0]);
   const [status, setStatus] = useStatus();
   const [reverbMix, setReverbMix] = useState(0);
   const [volume, setVolume] = useState(100);
 
-  function loadVersilian(instrumentName: string) {
+  function loadMallet(instrumentName: string) {
     if (instrument) instrument.disconnect();
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const newPiano = new Versilian(context, {
+    const newPiano = new Mallet(context, {
       instrument: instrumentName,
       volume,
     });
@@ -38,10 +36,11 @@ export function VersilianExample({ className }: { className?: string }) {
   return (
     <div className={className}>
       <div className="flex gap-2 items-end mb-2">
-        <h1 className="text-3xl">Versilian Community</h1>
+        <h1 className="text-3xl">Mallet</h1>
+
         <LoadWithStatus
           status={status}
-          onClick={() => loadVersilian(instrumentName)}
+          onClick={() => loadMallet(instrumentName)}
         />
         <ConnectMidi instrument={instrument} />
       </div>
@@ -53,7 +52,7 @@ export function VersilianExample({ className }: { className?: string }) {
             value={instrumentName}
             onChange={(e) => {
               const instrumentName = e.target.value;
-              loadVersilian(instrumentName);
+              loadMallet(instrumentName);
               setInstrumentName(instrumentName);
             }}
           >
