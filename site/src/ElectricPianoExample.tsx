@@ -1,27 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { ElectricPiano, Reverb } from "smplr";
+import { ElectricPiano, ElectricPianoInstruments, Reverb } from "smplr";
 import { getAudioContext } from "./audio-context";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
 let reverb: Reverb | undefined;
+let instrumentNames = Object.keys(ElectricPianoInstruments);
 
 export function ElectricPianoExample({ className }: { className?: string }) {
   const [piano, setPiano] = useState<ElectricPiano | undefined>(undefined);
+  const [instrumentName, setInstrumentName] = useState("CP80");
   const [status, setStatus] = useStatus();
   const [reverbMix, setReverbMix] = useState(0);
   const [tremolo, setTremolo] = useState(0);
   const [volume, setVolume] = useState(100);
 
-  function loadPiano() {
-    if (piano) return;
+  function loadPiano(instrument: string) {
+    if (piano) piano.disconnect();
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const newPiano = new ElectricPiano(context, "CP80", { volume });
+    const newPiano = new ElectricPiano(context, { instrument, volume });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
     newPiano.loaded().then(() => {
@@ -33,12 +35,30 @@ export function ElectricPianoExample({ className }: { className?: string }) {
     <div className={className}>
       <div className="flex gap-2 items-end mb-2">
         <h1 className="text-3xl">Electric Piano</h1>
-        <LoadWithStatus status={status} onClick={loadPiano} />
+        <LoadWithStatus
+          status={status}
+          onClick={() => loadPiano(instrumentName)}
+        />
         <ConnectMidi instrument={piano} />
       </div>
       <div></div>
       <div className={status !== "ready" ? "opacity-30" : ""}>
         <div className="flex gap-4 mb-2 no-select">
+          <select
+            className="bg-zinc-700 rounded"
+            value={instrumentName}
+            onChange={(e) => {
+              const instrumentName = e.target.value;
+              loadPiano(instrumentName);
+              setInstrumentName(instrumentName);
+            }}
+          >
+            {instrumentNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
           <button
             className="bg-zinc-700 rounded px-3 py-0.5 shadow"
             onClick={() => {
@@ -53,7 +73,7 @@ export function ElectricPianoExample({ className }: { className?: string }) {
           <input
             type="range"
             min={0}
-            max={128}
+            max={127}
             step={1}
             value={volume}
             onChange={(e) => {
@@ -66,13 +86,13 @@ export function ElectricPianoExample({ className }: { className?: string }) {
           <input
             type="range"
             min={0}
-            max={1}
-            step={0.001}
+            max={127}
+            step={1}
             value={tremolo}
             onChange={(e) => {
-              const mix = e.target.valueAsNumber;
-              piano?.tremolo.setMix(mix);
-              setTremolo(mix);
+              const level = e.target.valueAsNumber;
+              piano?.tremolo.level(level);
+              setTremolo(level);
             }}
           />
           <div>Reverb:</div>

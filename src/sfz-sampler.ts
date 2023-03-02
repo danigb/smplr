@@ -13,6 +13,7 @@ import { Websfz } from "./sfz/websfz";
  * Splendid Grand Piano options
  */
 export type SfzSamplerConfig = {
+  instrument: SfzInstrument | Websfz | string;
   destination: AudioNode;
   volume: number;
   velocity: number;
@@ -38,10 +39,10 @@ export class SfzSampler {
 
   constructor(
     public readonly context: AudioContext,
-    instrument: SfzInstrument | Websfz | string,
-    options: Partial<SfzSamplerConfig>
+    options: Partial<SfzSamplerConfig> & Pick<SfzSamplerConfig, "instrument">
   ) {
     this.#config = {
+      instrument: options.instrument,
       destination: options.destination ?? context.destination,
       detune: 0,
       volume: options.volume ?? 100,
@@ -52,7 +53,7 @@ export class SfzSampler {
     this.#stop = createTrigger();
 
     this.#websfz = EMPTY_WEBSFZ;
-    this.#load = loadSfzInstrument(instrument).then((result) => {
+    this.#load = loadSfzInstrument(options.instrument).then((result) => {
       this.#websfz = Object.freeze(result);
       return loadSfzBuffers(context, this.buffers, this.#websfz);
     });
@@ -72,10 +73,7 @@ export class SfzSampler {
     const velocity = _note.velocity ?? this.#config.velocity;
     const regions = findRegions(this.#websfz, { midi, velocity });
 
-    console.log(">>>", note, regions.length);
-
     const stopAll = regions.map(([group, region]) => {
-      console.log(">>>", region, this.buffers[region.sample]);
       let target = region.pitch_keycenter ?? region.key ?? midi;
       const detune = (midi - target) * 100;
 
@@ -99,5 +97,10 @@ export class SfzSampler {
   stop(note?: StopSample | string | number) {
     const note_ = typeof note === "object" ? note : { stopId: note };
     this.#stop.trigger(note_);
+  }
+
+  disconnect() {
+    this.stop();
+    this.#output.disconnect();
   }
 }
