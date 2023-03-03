@@ -3,7 +3,7 @@ export type DrumMachineInstrument = {
   name: string;
   samples: string[];
   sampleNames: string[];
-  nameToSample: Record<string | number, string | undefined>;
+  nameToSample: Record<string, string | undefined>;
   sampleNameVariations: Record<string, string[]>;
 };
 export const EMPTY_INSTRUMENT: DrumMachineInstrument = {
@@ -25,7 +25,9 @@ export async function fetchDrumMachineInstrument(
   json.sampleNames = [];
   json.nameToSample = {};
   json.sampleNameVariations = {};
-  for (const sample of json.samples) {
+  for (const sampleSrc of json.samples) {
+    const sample =
+      sampleSrc.indexOf("/") !== -1 ? sampleSrc : sampleSrc.replace("-", "/");
     json.nameToSample[sample] = sample;
     const [base, variation] = sample.split("/");
     if (!json.sampleNames.includes(base)) {
@@ -33,7 +35,9 @@ export async function fetchDrumMachineInstrument(
     }
     json.nameToSample[base] ??= sample;
     json.sampleNameVariations[base] ??= [];
-    json.sampleNameVariations[base].push(variation);
+    if (variation) {
+      json.sampleNameVariations[base].push(`${base}/${variation}`);
+    }
   }
 
   return json;

@@ -114,7 +114,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
                     className="bg-zinc-600 w-4 h-4 rounded"
                     onMouseDown={() => {
                       drums?.start({
-                        note: `${sample}/${variation}`,
+                        note: variation,
                       });
                     }}
                   ></button>

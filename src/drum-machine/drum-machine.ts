@@ -18,6 +18,18 @@ export const DrumMachineInstruments: Record<
     name: "Casio-RZ1",
     url: "https://danigb.github.io/samples/drum-machines/Casio-RZ1/dm.json",
   },
+  "LM-2": {
+    name: "LM-2",
+    url: "https://danigb.github.io/samples/drum-machines/LM-2/dm.json",
+  },
+  "MFB-512": {
+    name: "MFB-512",
+    url: "https://danigb.github.io/samples/drum-machines/MFB-512/dm.json",
+  },
+  "Roland CR-8000": {
+    name: "Roland CR-8000",
+    url: "https://danigb.github.io/samples/drum-machines/Roland-CR-8000/dm.json",
+  },
 };
 
 export type DrumMachineConfig = {
@@ -73,8 +85,10 @@ function drumMachineLoader(
     await Promise.all(
       dm.samples.map(async (sample) => {
         const url = `${dm.baseUrl}/${sample}.${format}`;
+        const sampleName =
+          sample.indexOf("/") !== -1 ? sample : sample.replace("-", "/");
         const buffer = await loadAudioBuffer(context, url);
-        if (buffer) buffers[sample] = buffer;
+        if (buffer) buffers[sampleName] = buffer;
       })
     );
   };
