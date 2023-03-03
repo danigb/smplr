@@ -1,6 +1,6 @@
 import { midiVelToGain } from "./sampler/note";
 import { createControl } from "./sampler/signals";
-import { SfzSampler, SfzSamplerConfig } from "./sfz-sampler";
+import { SfzSampler, SfzSamplerConfig } from "./sfz/sfz-sampler";
 import { createTremolo } from "./tremolo";
 
 export function getElectricPianoNames() {

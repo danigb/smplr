@@ -1,13 +1,13 @@
-import { AudioBuffers } from "./sampler/audio-buffers";
-import { Channel } from "./sampler/channel";
-import { midiVelToGain, toMidi } from "./sampler/note";
-import { SamplerNote } from "./sampler/sampler";
-import { createTrigger, Trigger } from "./sampler/signals";
-import { startSample, StopSample } from "./sampler/start-sample";
-import { SfzInstrument } from "./sfz/sfz-kits";
-import { loadSfzBuffers, loadSfzInstrument } from "./sfz/sfz-load";
-import { findRegions } from "./sfz/sfz-regions";
-import { Websfz } from "./sfz/websfz";
+import { AudioBuffers } from "../sampler/audio-buffers";
+import { Channel } from "../sampler/channel";
+import { midiVelToGain, toMidi } from "../sampler/note";
+import { SamplerNote } from "../sampler/sampler";
+import { createTrigger, Trigger } from "../sampler/signals";
+import { startSample, StopSample } from "../sampler/start-sample";
+import { SfzInstrument } from "./sfz-kits";
+import { loadSfzBuffers, loadSfzInstrument } from "./sfz-load";
+import { findRegions } from "./sfz-regions";
+import { Websfz } from "./websfz";
 
 /**
  * Splendid Grand Piano options
