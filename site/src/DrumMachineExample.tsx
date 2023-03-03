@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { DrumMachine, DrumMachineInstruments, Reverb } from "smplr";
+import { DrumMachine, getDrumMachineNames, Reverb } from "smplr";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
 let context: AudioContext | undefined;
 let reverb: Reverb | undefined;
-const kitNames = Object.keys(DrumMachineInstruments);
 
 export function DrumMachineExample({ className }: { className?: string }) {
   const [status, setStatus] = useStatus();
-  const [kitName, setKitName] = useState(kitNames[0]);
+  const [dmName, setDmName] = useState(getDrumMachineNames()[0]);
   const [drums, setDrumMachine] = useState<DrumMachine | undefined>(undefined);
   const [reverbMix, setReverbMix] = useState(0.0);
   const [volume, setVolume] = useState(100);
@@ -39,7 +38,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
         <LoadWithStatus
           status={status}
           onClick={() => {
-            loadDrumMachine(kitName);
+            loadDrumMachine(dmName);
           }}
         />
       </div>
@@ -49,18 +48,18 @@ export function DrumMachineExample({ className }: { className?: string }) {
         <div className="flex gap-4 mb-2">
           <select
             className="bg-zinc-700 rounded"
-            value={kitName}
+            value={dmName}
             onChange={(e) => {
               const newName = e.target.value;
-              if (newName !== kitName) {
-                setKitName(newName);
+              if (newName !== dmName) {
+                setDmName(newName);
                 loadDrumMachine(newName);
               }
             }}
           >
-            {kitNames.map((kitName) => (
-              <option key={kitName} value={kitName}>
-                {kitName}
+            {getDrumMachineNames().map((dmName) => (
+              <option key={dmName} value={dmName}>
+                {dmName}
               </option>
             ))}
           </select>

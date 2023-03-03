@@ -6,10 +6,11 @@ import {
   fetchDrumMachineInstrument,
 } from "./dm-instrument";
 
-export const DrumMachineInstruments: Record<
-  string,
-  { name: string; url: string }
-> = {
+export function getDrumMachineNames() {
+  return Object.keys(DrumMachineInstruments);
+}
+
+const DrumMachineInstruments: Record<string, { name: string; url: string }> = {
   "TR-808": {
     name: "TR-808",
     url: "https://danigb.github.io/samples/drum-machines/TR-808/dm.json",

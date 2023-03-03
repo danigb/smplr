@@ -209,9 +209,23 @@ Samples from [The Versilian Community Sample Library](https://github.com/sgossne
 ```js
 import { Mallet, getMalletNames } from "smplr";
 
+const instruments = getMalletNames();
+
 const mallet = new Mallet(new AudioContext(), {
-  instrument: getMalletNames()[0],
+  instrument: instruments[0],
 });
+```
+
+### Drum Machines
+
+Sampled drum machines. Samples from different sources:
+
+```js
+import { DrumMachine, getDrumMachineNames } from "smplr";
+
+const instruments = getDrumMachineNames();
+
+const drums = new DrumMachine(new AudioContext(), { instrument: "TR-808" });
 ```
 
 ## License
