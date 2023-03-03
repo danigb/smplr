@@ -21,7 +21,7 @@ export async function fetchDrumMachineInstrument(
   const res = await fetch(url);
   const json = await res.json();
   // need to fix json
-  json.baseUrl = json.baseUrl.replace("tr-808", "TR-808");
+  json.baseUrl = url.replace("/dm.json", "");
   json.sampleNames = [];
   json.nameToSample = {};
   json.sampleNameVariations = {};

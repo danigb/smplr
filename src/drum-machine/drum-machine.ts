@@ -14,6 +14,10 @@ export const DrumMachineInstruments: Record<
     name: "TR-808",
     url: "https://danigb.github.io/samples/drum-machines/TR-808/dm.json",
   },
+  "Casio-RZ1": {
+    name: "Casio-RZ1",
+    url: "https://danigb.github.io/samples/drum-machines/Casio-RZ1/dm.json",
+  },
 };
 
 export type DrumMachineConfig = {

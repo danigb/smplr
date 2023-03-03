@@ -13,11 +13,11 @@ export function DrumMachineExample({ className }: { className?: string }) {
   const [reverbMix, setReverbMix] = useState(0.0);
   const [volume, setVolume] = useState(100);
 
-  function loadDrumMachine() {
+  function loadDrumMachine(instrument: string) {
     setStatus("loading");
     context ??= new window.AudioContext();
     reverb ??= new Reverb(context);
-    const drums = new DrumMachine(context, { instrument: kitName });
+    const drums = new DrumMachine(context, { instrument });
     drums.output.addEffect("reverb", reverb, reverbMix);
 
     drums
@@ -39,7 +39,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
         <LoadWithStatus
           status={status}
           onClick={() => {
-            loadDrumMachine();
+            loadDrumMachine(kitName);
           }}
         />
       </div>
@@ -54,7 +54,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
               const newName = e.target.value;
               if (newName !== kitName) {
                 setKitName(newName);
-                loadDrumMachine();
+                loadDrumMachine(newName);
               }
             }}
           >
