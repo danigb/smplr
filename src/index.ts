@@ -3,5 +3,5 @@ export * from "./electric-piano";
 export * from "./mallet";
 export * from "./reverb/reverb";
 export * from "./sampler/sampler";
-export * from "./soundfont";
+export * from "./soundfont/soundfont";
 export * from "./splendid-grand-piano";
