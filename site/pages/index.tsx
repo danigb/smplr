@@ -3,7 +3,6 @@ import Head from "next/head";
 import { DrumMachineExample } from "src/DrumMachineExample";
 import { ElectricPianoExample } from "src/ElectricPianoExample";
 import { MalletExample } from "src/MalletExample";
-import { SamplerExample } from "src/SamplerExample";
 import { SoundfontExample } from "src/SoundfontExample";
 import { PianoExample } from "../src/PianoExample";
 
@@ -24,7 +23,6 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col gap-8">
-          <SamplerExample />
           <PianoExample />
           <SoundfontExample />
           <ElectricPianoExample />

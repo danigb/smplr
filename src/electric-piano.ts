@@ -4,7 +4,11 @@ import { SfzSampler, SfzSamplerConfig } from "./sfz-sampler";
 import { SfzInstrument } from "./sfz/sfz-kits";
 import { createTremolo } from "./tremolo";
 
-export const ElectricPianoInstruments: Record<string, SfzInstrument> = {
+export function getElectricPianoNames() {
+  return Object.keys(ElectricPianoInstruments);
+}
+
+const ElectricPianoInstruments: Record<string, SfzInstrument> = {
   // RhodesMkI: {
   //   name: "RhodesMkI",
   //   websfzUrl:

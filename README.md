@@ -184,7 +184,9 @@ piano.start({ note: "C4" });
 A sampled electric pianos. Samples from https://github.com/sfzinstruments/GregSullivan.E-Pianos
 
 ```js
-import { ElectricPiano } from "smplr";
+import { ElectricPiano, getElectricPianoNames } from "smplr";
+
+const instruments = getElectricPianoNames(); // => ["CP80", "PianetT", "WurlitzerEP200"]
 
 const epiano = new ElectricPiano(new AudioContext(), {
   instrument: "PianetT",
@@ -225,7 +227,15 @@ import { DrumMachine, getDrumMachineNames } from "smplr";
 
 const instruments = getDrumMachineNames();
 
-const drums = new DrumMachine(new AudioContext(), { instrument: "TR-808" });
+const context = new AudioContext();
+const drums = new DrumMachine(context, { instrument: "TR-808" });
+drums.start({ note: "kick" });
+
+// Drum samples could have variations:
+const now = context.currentTime;
+drums.getVariations("kick").forEach((variation, index) => {
+  drums.start({ note: variation, time: now + index });
+});
 ```
 
 ## License
