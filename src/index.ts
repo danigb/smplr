@@ -1,4 +1,4 @@
-export * from "./drum-machine";
+export * from "./drum-machine/index";
 export * from "./electric-piano";
 export * from "./mallet";
 export * from "./reverb";
