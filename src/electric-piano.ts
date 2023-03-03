@@ -9,6 +9,8 @@ export const ElectricPianoInstruments: Record<string, SfzInstrument> = {
   //   name: "RhodesMkI",
   //   websfzUrl:
   //     "https://danigb.github.io/samples/jlearman/rhodes-mki/jrhodes3dst.websfz.json",
+  //   baseUrl:
+  //     "https://danigb.github.io/samples/jlearman/rhodes-mki/jRhodes3d-st/",
   // },
   CP80: {
     name: "CP80",
@@ -24,6 +26,12 @@ export const ElectricPianoInstruments: Record<string, SfzInstrument> = {
     name: "WurlitzerEP200",
     websfzUrl:
       "https://danigb.github.io/samples/gs-e-pianos/Wurlitzer EP200/wurlitzer-ep200.websfz.json",
+  },
+  TX81Z: {
+    name: "TX81Z - FM Piano",
+    websfzUrl:
+      "https://danigb.github.io/samples/vcsl/TX81Z/tx81z-fm-piano.websfz.json",
+    baseUrl: "https://danigb.github.io/samples/vcsl/",
   },
 };
 
