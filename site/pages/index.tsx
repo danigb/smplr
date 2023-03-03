@@ -1,5 +1,6 @@
 import { Inter } from "@next/font/google";
 import Head from "next/head";
+import { DrumMachineExample } from "src/DrumMachineExample";
 import { ElectricPianoExample } from "src/ElectricPianoExample";
 import { MalletExample } from "src/MalletExample";
 import { SamplerExample } from "src/SamplerExample";
@@ -28,6 +29,7 @@ export default function Home() {
           <SoundfontExample />
           <ElectricPianoExample />
           <MalletExample />
+          <DrumMachineExample />
         </div>
       </main>
     </>
