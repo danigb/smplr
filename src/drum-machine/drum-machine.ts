@@ -1,5 +1,5 @@
-import { Sampler, SamplerAudioLoader } from "../sampler";
 import { loadAudioBuffer } from "../sampler/audio-buffers";
+import { Sampler, SamplerAudioLoader } from "../sampler/sampler";
 import {
   DrumMachineInstrument,
   EMPTY_INSTRUMENT,
@@ -7,30 +7,17 @@ import {
 } from "./dm-instrument";
 
 export function getDrumMachineNames() {
-  return Object.keys(DrumMachineInstruments);
+  return Object.keys(INSTRUMENTS);
 }
 
-const DrumMachineInstruments: Record<string, { name: string; url: string }> = {
-  "TR-808": {
-    name: "TR-808",
-    url: "https://danigb.github.io/samples/drum-machines/TR-808/dm.json",
-  },
-  "Casio-RZ1": {
-    name: "Casio-RZ1",
-    url: "https://danigb.github.io/samples/drum-machines/Casio-RZ1/dm.json",
-  },
-  "LM-2": {
-    name: "LM-2",
-    url: "https://danigb.github.io/samples/drum-machines/LM-2/dm.json",
-  },
-  "MFB-512": {
-    name: "MFB-512",
-    url: "https://danigb.github.io/samples/drum-machines/MFB-512/dm.json",
-  },
-  "Roland CR-8000": {
-    name: "Roland CR-8000",
-    url: "https://danigb.github.io/samples/drum-machines/Roland-CR-8000/dm.json",
-  },
+const INSTRUMENTS: Record<string, string> = {
+  "TR-808": "https://danigb.github.io/samples/drum-machines/TR-808/dm.json",
+  "Casio-RZ1":
+    "https://danigb.github.io/samples/drum-machines/Casio-RZ1/dm.json",
+  "LM-2": "https://danigb.github.io/samples/drum-machines/LM-2/dm.json",
+  "MFB-512": "https://danigb.github.io/samples/drum-machines/MFB-512/dm.json",
+  "Roland CR-8000":
+    "https://danigb.github.io/samples/drum-machines/Roland-CR-8000/dm.json",
 };
 
 export type DrumMachineConfig = {
@@ -51,9 +38,10 @@ export class DrumMachine extends Sampler {
     context: AudioContext,
     options: Partial<DrumMachineConfig>
   ) {
-    const kit = DrumMachineInstruments[options.instrument ?? "TR-808"];
-    if (!kit) throw new Error("Invalid instrument: " + options.instrument);
-    const instrument = fetchDrumMachineInstrument(kit.url);
+    const url = INSTRUMENTS[options.instrument ?? "TR-808"];
+    if (!url) throw new Error("Invalid instrument: " + options.instrument);
+    const instrument = fetchDrumMachineInstrument(url);
+
     super(context, {
       ...options,
       buffers: drumMachineLoader(instrument, options.format ?? "ogg"),

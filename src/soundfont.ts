@@ -1,6 +1,6 @@
-import { Sampler, SamplerAudioLoader } from "./sampler";
 import { findNearestMidi } from "./sampler/audio-buffers";
 import { toMidi } from "./sampler/note";
+import { Sampler, SamplerAudioLoader } from "./sampler/sampler";
 
 export type SoundfontConfig = {
   library: SoundfontLibrary | LibraryUrlBuilder;
