@@ -1,5 +1,5 @@
-import { Sampler, SamplerAudioLoader } from "./sampler";
 import { AudioBuffers, loadAudioBuffer } from "./sampler/audio-buffers";
+import { Sampler, SamplerAudioLoader } from "./sampler/sampler";
 
 /**
  * Splendid Grand Piano options

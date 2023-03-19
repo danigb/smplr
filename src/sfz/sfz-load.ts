@@ -29,9 +29,9 @@ export async function loadSfzInstrument(
   } else if (isSfzInstrument(instrument)) {
     const websfz = await fetchWebSfz(instrument.websfzUrl);
     websfz.meta ??= {};
-    websfz.meta.name ??= instrument.name;
-    websfz.meta.baseUrl ??= instrument.baseUrl;
-    websfz.meta.formats ??= instrument.formats;
+    if (instrument.name) websfz.meta.name = instrument.name;
+    if (instrument.baseUrl) websfz.meta.baseUrl = instrument.baseUrl;
+    if (instrument.formats) websfz.meta.formats = instrument.formats;
     return websfz;
   } else {
     throw new Error("Invalid instrument: " + JSON.stringify(instrument));

@@ -1,4 +1,4 @@
-import { PROCESSOR } from "./reverb/processor.min";
+import { PROCESSOR } from "./processor.min";
 
 const PARAMS = [
   "preDelay",

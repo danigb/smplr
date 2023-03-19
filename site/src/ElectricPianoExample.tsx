@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ElectricPiano, ElectricPianoInstruments, Reverb } from "smplr";
+import { ElectricPiano, getElectricPianoNames, Reverb } from "smplr";
 import { getAudioContext } from "./audio-context";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
 let reverb: Reverb | undefined;
-let instrumentNames = Object.keys(ElectricPianoInstruments);
+let instrumentNames = getElectricPianoNames();
 
 export function ElectricPianoExample({ className }: { className?: string }) {
   const [piano, setPiano] = useState<ElectricPiano | undefined>(undefined);

@@ -1,8 +1,8 @@
-import { SfzSampler, SfzSamplerConfig } from "./sfz-sampler";
 import { SfzInstrument } from "./sfz/sfz-kits";
+import { SfzSampler, SfzSamplerConfig } from "./sfz/sfz-sampler";
 
 export function getMalletNames() {
-  return Object.keys(DATA);
+  return Object.keys(DATA) as MalletName[];
 }
 
 export class Mallet extends SfzSampler {

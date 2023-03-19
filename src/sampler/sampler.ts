@@ -1,8 +1,8 @@
-import { AudioBuffers, loadAudioBuffer } from "./sampler/audio-buffers";
-import { Channel } from "./sampler/channel";
-import { midiVelToGain } from "./sampler/note";
-import { createTrigger, Trigger } from "./sampler/signals";
-import { startSample, StopSample } from "./sampler/start-sample";
+import { AudioBuffers, loadAudioBuffer } from "./audio-buffers";
+import { Channel } from "./channel";
+import { midiVelToGain } from "./note";
+import { createTrigger, Trigger } from "./signals";
+import { startSample, StopSample } from "./start-sample";
 
 /**
  * A function that downloads audio

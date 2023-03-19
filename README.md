@@ -4,25 +4,43 @@
 
 > `smplr` is a collection of sampled instruments for Web Audio API ready to be used with no setup required.
 
-Example:
+Examples:
 
 ```js
-import { SplendidGrandPiano, Soundfont, Reverb } from "smplr";
+import { Soundfont } from "smplr";
+
+const context = new AudioContext();
+const marimba = new Soundfont(context, { instrument: "marimba" });
+marimba.start({ note: 60, velocity: 80 });
+```
+
+```js
+import { DrumMachine } from "smplr";
+
+const context = new AudioContext();
+const dm = new DrumMachine(context);
+dm.start({ note: "kick" });
+```
+
+```js
+import { SplendidGrandPiano, Reverb } from "smplr";
 
 const context = new AudioContext();
 const piano = new SplendidGrandPiano(context);
+piano.output.addEffect("reverb", new Reverb(context), 0.2);
+
 piano.start({ note: "C4" });
-
-const marimba = new Soundfont(context, { instrument: "marimba" });
-marimba.start({ note: 60, velocity: 80 });
-
-// Optionally, add reverb...
-piano.output.addEffect("reverb", new Reverb(context), 0.1);
-// ... and change how much
-piano.output.sendEffect("reverb", 0.2);
 ```
 
 See demo: https://danigb.github.io/smplr/
+
+#### Library goals
+
+- No setup: specifically, all samples are online, so no need for a server.
+- Easy to use: everything should be intuitive for non-experienced developers
+- Decent sounding: use high quality open source samples. For good or worst, is sample based 🤷
+
+#### Installation
 
 Install with npm or your favourite package manager:
 
@@ -70,7 +88,7 @@ The `start` function accepts a bunch of options:
 piano.start({ note: "C4", velocity: 80, time: 5, duration: 1 });
 ```
 
-The `velocity` is a number between 0 and 128 the represents at which velocity the key is pressed. The bigger the number, louder the sound. But `velocity` not only controls the loudness. In some instruments, it also affects the timbre.
+The `velocity` is a number between 0 and 127 the represents at which velocity the key is pressed. The bigger the number, louder the sound. But `velocity` not only controls the loudness. In some instruments, it also affects the timbre.
 
 The `start` function returns a `stop` function for the given note:
 
@@ -81,34 +99,36 @@ stopNote({ time: 10 });
 
 Bear in mind that you may need to call [`context.resume()` before playing a note](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices#autoplay_policy)
 
+Instruments have a global `stop` function that can be used to stop all notes:
+
+```js
+// This will stop all notes
+piano.stop();
+```
+
+Or stop the specified one:
+
+```js
+// This will stop C4 note
+piano.stop(60);
+```
+
 ### Schedule notes
 
-You can schedule notes using `time` and `duration` properties:
+You can schedule notes using `time` and `duration` properties. Both are measured in seconds, and time is the number of seconds since the AudioContext was created.
+
+For example, next example plays a C major arpeggio, one note per second:
 
 ```js
 const now = context.currentTime;
-[60, 62, 64, 65, 67].forEach((note, i) => {
+["C4", "E4", "G4", "C5"].forEach((note, i) => {
   piano.start({ note, time: now + i, duration: 0.5 });
 });
 ```
 
-### Stop all notes
-
-Instruments have a global `stop` function that stops all notes:
-
-```js
-button.onclick = () => piano.stop();
-```
-
-It can stop only the specified note:
-
-```js
-piano.stop(60);
-```
-
 ### Change volume
 
-`setVolume` uses a scale where 0 means no volume, and 128 is max volume without amplification:
+`setVolume` uses a scale where 0 means no volume, and 127 is max volume without amplification:
 
 ```js
 piano.setVolume(80);
@@ -120,7 +140,7 @@ Bear in mind that `volume` is global to the instrument, but `velocity` is specif
 
 An packed version of [DattorroReverbNode](https://github.com/khoin/DattorroReverbNode) algorithmic reverb is included.
 
-Use `output.addEffect(name, effect, mix)` to create connect an effect using a send bus:
+Use `output.addEffect(name, effect, mix)` to connect an effect using a send bus:
 
 ```js
 import { Reverb, SplendidGrandPiano } from "smplr";
@@ -129,7 +149,7 @@ const piano = new SplendidGrandPiano(context, { volume });
 piano.output.addEffect("reverb", reverb, 0.2);
 ```
 
-Use `output.sendEffect(name, mix)` to change the mix level:
+To change the mix level, use `output.sendEffect(name, mix)`:
 
 ```js
 piano.output.sendEffect("reverb", 0.5);
@@ -160,7 +180,7 @@ A Soundfont player. By default it loads audio from Benjamin Gleitzman's package 
 ```js
 import { Soundfont } from "smplr";
 
-const marimba = new Soundfont(new AudioContext(), "marimba");
+const marimba = new Soundfont(new AudioContext(), { instrument: "marimba" });
 marimba.start({ note: "C4" });
 ```
 
@@ -184,7 +204,9 @@ piano.start({ note: "C4" });
 A sampled electric pianos. Samples from https://github.com/sfzinstruments/GregSullivan.E-Pianos
 
 ```js
-import { ElectricPiano } from "smplr";
+import { ElectricPiano, getElectricPianoNames } from "smplr";
+
+const instruments = getElectricPianoNames(); // => ["CP80", "PianetT", "WurlitzerEP200"]
 
 const epiano = new ElectricPiano(new AudioContext(), {
   instrument: "PianetT",
@@ -209,8 +231,30 @@ Samples from [The Versilian Community Sample Library](https://github.com/sgossne
 ```js
 import { Mallet, getMalletNames } from "smplr";
 
+const instruments = getMalletNames();
+
 const mallet = new Mallet(new AudioContext(), {
-  instrument: getMalletNames()[0],
+  instrument: instruments[0],
+});
+```
+
+### Drum Machines
+
+Sampled drum machines. Samples from different sources:
+
+```js
+import { DrumMachine, getDrumMachineNames } from "smplr";
+
+const instruments = getDrumMachineNames();
+
+const context = new AudioContext();
+const drums = new DrumMachine(context, { instrument: "TR-808" });
+drums.start({ note: "kick" });
+
+// Drum samples could have variations:
+const now = context.currentTime;
+drums.getVariations("kick").forEach((variation, index) => {
+  drums.start({ note: variation, time: now + index });
 });
 ```
 

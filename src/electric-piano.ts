@@ -1,30 +1,20 @@
 import { midiVelToGain } from "./sampler/note";
 import { createControl } from "./sampler/signals";
-import { SfzSampler, SfzSamplerConfig } from "./sfz-sampler";
-import { SfzInstrument } from "./sfz/sfz-kits";
+import { SfzSampler, SfzSamplerConfig } from "./sfz/sfz-sampler";
 import { createTremolo } from "./tremolo";
 
-export const ElectricPianoInstruments: Record<string, SfzInstrument> = {
-  // RhodesMkI: {
-  //   name: "RhodesMkI",
-  //   websfzUrl:
-  //     "https://danigb.github.io/samples/jlearman/rhodes-mki/jrhodes3dst.websfz.json",
-  // },
-  CP80: {
-    name: "CP80",
-    websfzUrl:
-      "https://danigb.github.io/samples/gs-e-pianos/CP80/cp80.websfz.json",
-  },
-  PianetT: {
-    name: "PianetT",
-    websfzUrl:
-      "https://danigb.github.io/samples/gs-e-pianos/Pianet T/pianet-t.websfz.json",
-  },
-  WurlitzerEP200: {
-    name: "WurlitzerEP200",
-    websfzUrl:
-      "https://danigb.github.io/samples/gs-e-pianos/Wurlitzer EP200/wurlitzer-ep200.websfz.json",
-  },
+export function getElectricPianoNames() {
+  return Object.keys(INSTRUMENTS);
+}
+
+const INSTRUMENTS: Record<string, string> = {
+  CP80: "https://danigb.github.io/samples/gs-e-pianos/CP80/cp80.websfz.json",
+  PianetT:
+    "https://danigb.github.io/samples/gs-e-pianos/Pianet T/pianet-t.websfz.json",
+  WurlitzerEP200:
+    "https://danigb.github.io/samples/gs-e-pianos/Wurlitzer EP200/wurlitzer-ep200.websfz.json",
+  TX81Z:
+    "https://danigb.github.io/samples/vcsl/TX81Z/tx81z-fm-piano.websfz.json",
 };
 
 export class ElectricPiano extends SfzSampler {
@@ -35,8 +25,7 @@ export class ElectricPiano extends SfzSampler {
   ) {
     super(context, {
       ...options,
-      instrument:
-        ElectricPianoInstruments[options.instrument] ?? options.instrument,
+      instrument: INSTRUMENTS[options.instrument] ?? options.instrument,
     });
     const depth = createControl(0);
     this.tremolo = {
