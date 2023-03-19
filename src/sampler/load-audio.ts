@@ -22,3 +22,24 @@ export async function loadAudioBuffer(
     console.warn("Error loading buffer", error, url);
   }
 }
+
+export function findFirstSupportedFormat(formats: string[]): string | null {
+  if (typeof document === "undefined") return null;
+
+  const audio = document.createElement("audio");
+  for (let i = 0; i < formats.length; i++) {
+    const format = formats[i];
+    const canPlay = audio.canPlayType(`audio/${format}`);
+    if (canPlay === "probably" || canPlay === "maybe") {
+      return format;
+    }
+    // check Safari for aac format
+    if (format === "m4a") {
+      const canPlay = audio.canPlayType(`audio/aac`);
+      if (canPlay === "probably" || canPlay === "maybe") {
+        return format;
+      }
+    }
+  }
+  return null;
+}
