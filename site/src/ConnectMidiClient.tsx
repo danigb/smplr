@@ -81,7 +81,7 @@ export function ConnectMidi({
         MIDI
       </button>
       <select
-        className="bg-zinc-700 rounded py-[2px]"
+        className="appearance-none bg-zinc-700 text-zinc-200 rounded border border-gray-400 py-2 px-3 leading-tight focus:outline-none focus:border-blue-500 py-[2px]"
         value={midiDeviceName}
         onChange={(e) => {
           const name = e.target.value;

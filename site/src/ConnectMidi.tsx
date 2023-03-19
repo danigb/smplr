@@ -9,7 +9,7 @@ const Midi = dynamic(
 );
 
 export function ConnectMidi(props: {
-  shouldRenderComponent: boolean;
+  shouldRenderComponent?: boolean;
   instrument: MidiInstrument | undefined;
 }) {
   const { shouldRenderComponent } = props;
