@@ -24,7 +24,6 @@ const INSTRUMENTS: Record<string, string> = {
 };
 
 export type DrumMachineConfig = {
-  format: "ogg" | "m4a";
   instrument: string;
   destination: AudioNode;
 
@@ -47,7 +46,7 @@ export class DrumMachine extends Sampler {
 
     super(context, {
       ...options,
-      buffers: drumMachineLoader(instrument, options.format),
+      buffers: drumMachineLoader(instrument),
       noteToSample: (note, buffers, config) => {
         const sample = this.#instrument.nameToSample[note.note];
         return [sample ?? "", 0];
@@ -68,10 +67,9 @@ export class DrumMachine extends Sampler {
 }
 
 function drumMachineLoader(
-  instrument: Promise<DrumMachineInstrument>,
-  format?: string
+  instrument: Promise<DrumMachineInstrument>
 ): SamplerAudioLoader {
-  format ??= findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
+  const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
   return async (context, buffers) => {
     const dm = await instrument;
     await Promise.all(
