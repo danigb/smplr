@@ -1,4 +1,8 @@
-import { AudioBuffers, loadAudioBuffer } from "./sampler/load-audio";
+import {
+  AudioBuffers,
+  findFirstSupportedFormat,
+  loadAudioBuffer,
+} from "./sampler/load-audio";
 import { Sampler, SamplerAudioLoader } from "./sampler/sampler";
 
 /**
@@ -18,7 +22,6 @@ export type SplendidGrandPianoConfig = {
 };
 
 const BASE_URL = "https://danigb.github.io/samples/splendid-grand-piano";
-const FORMAT = "ogg";
 
 export class SplendidGrandPiano extends Sampler {
   constructor(
@@ -36,7 +39,7 @@ export class SplendidGrandPiano extends Sampler {
 
       buffers: splendidGrandPianoLoader(
         options.baseUrl ?? BASE_URL,
-        options.format ?? FORMAT
+        options.format
       ),
 
       noteToSample: (note, buffers, config) => {
@@ -71,8 +74,9 @@ function findNearestMidiInLayer(
 
 function splendidGrandPianoLoader(
   baseUrl: string,
-  format: string
+  format?: string
 ): SamplerAudioLoader {
+  format ??= findFirstSupportedFormat(["ogg", "m4a"]) ?? "";
   return async (context: AudioContext, buffers: AudioBuffers) => {
     for (const layer of LAYERS) {
       await Promise.all(

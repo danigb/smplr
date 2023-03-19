@@ -1,4 +1,7 @@
-import { loadAudioBuffer } from "../sampler/load-audio";
+import {
+  findFirstSupportedFormat,
+  loadAudioBuffer,
+} from "../sampler/load-audio";
 import { SfzInstrument } from "./sfz-kits";
 import { Websfz, WebsfzGroup } from "./websfz";
 
@@ -68,13 +71,10 @@ async function fetchWebSfz(url: string): Promise<Websfz> {
 }
 
 // @private
-export function getWebsfzGroupUrls(
-  websfz: Websfz,
-  group: WebsfzGroup,
-  format = ".ogg"
-) {
+export function getWebsfzGroupUrls(websfz: Websfz, group: WebsfzGroup) {
   const urls: Record<string, string> = {};
   const baseUrl = websfz.meta.baseUrl ?? "";
+  const format = findFirstSupportedFormat(websfz.meta.formats ?? []) ?? "ogg";
 
   const prefix = websfz.global["default_path"] ?? "";
 
@@ -82,7 +82,7 @@ export function getWebsfzGroupUrls(
 
   return group.regions.reduce((urls, region) => {
     if (region.sample) {
-      urls[region.sample] = `${baseUrl}/${prefix}${region.sample}${format}`;
+      urls[region.sample] = `${baseUrl}/${prefix}${region.sample}.${format}`;
     }
     return urls;
   }, urls);
