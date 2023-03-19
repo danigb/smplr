@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Listener, WebMidi } from "webmidi";
 
+function supportsMidi() {
+  return navigator.requestMIDIAccess !== undefined;
+}
+
 type Instrument = {
   start(note: { note: number; velocity: number }): void;
   stop(note: { stopId: number }): void;
@@ -20,6 +24,7 @@ export function ConnectMidi({
   const [lastNote, setLastNote] = useState("");
 
   useEffect(() => {
+    if (!supportsMidi()) return;
     WebMidi.enable().then(() => {
       const deviceNames = WebMidi.inputs.map((device) => device.name);
       setMidiDeviceNames(deviceNames);
@@ -28,6 +33,8 @@ export function ConnectMidi({
   }, []);
 
   inst.current = instrument ?? null;
+
+  if (!supportsMidi()) return null;
 
   return (
     <>
