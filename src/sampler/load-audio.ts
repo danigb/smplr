@@ -23,15 +23,23 @@ export async function loadAudioBuffer(
   }
 }
 
-export function findNearestMidi(
-  midi: number,
-  buffers: AudioBuffers
-): [number, number] {
-  let i = 0;
-  while (buffers[midi + i] === undefined && i < 128) {
-    if (i > 0) i = -i;
-    else i = -i + 1;
-  }
+export function findFirstSupportedFormat(formats: string[]): string | null {
+  if (typeof document === "undefined") return null;
 
-  return i === 127 ? [midi, 0] : [midi + i, -i * 100];
+  const audio = document.createElement("audio");
+  for (let i = 0; i < formats.length; i++) {
+    const format = formats[i];
+    const canPlay = audio.canPlayType(`audio/${format}`);
+    if (canPlay === "probably" || canPlay === "maybe") {
+      return format;
+    }
+    // check Safari for aac format
+    if (format === "m4a") {
+      const canPlay = audio.canPlayType(`audio/aac`);
+      if (canPlay === "probably" || canPlay === "maybe") {
+        return format;
+      }
+    }
+  }
+  return null;
 }

@@ -1,5 +1,12 @@
 # smplr
 
+## 0.4.0
+
+### Minor Changes
+
+- b64f4f1: Add DrumMachine instrument
+- format selected based on browser compatibility
+
 ## 0.3.0
 
 Full rewrite. Samples stored at https://github.com/danigb/samples

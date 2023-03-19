@@ -1,5 +1,5 @@
 import { connectSerial } from "./connect";
-import { toMidi } from "./note";
+import { toMidi } from "./midi";
 import { Subscribe, unsubscribeAll } from "./signals";
 
 export type StopSample = {

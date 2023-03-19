@@ -1,11 +1,9 @@
-import { findNearestMidi } from "../sampler/audio-buffers";
-import { toMidi } from "../sampler/note";
+import { findNearestMidi, toMidi } from "../sampler/midi";
 import { Sampler, SamplerAudioLoader } from "../sampler/sampler";
 
 export type SoundfontConfig = {
   library: SoundfontLibrary | LibraryUrlBuilder;
   instrument: string;
-  format: string;
 
   destination: AudioNode;
 
@@ -23,7 +21,7 @@ export class Soundfont extends Sampler {
     options: Partial<SoundfontConfig> & { instrument: string }
   ) {
     const urlBuilder = getUrlBuilder(options.library);
-    const url = urlBuilder(options.instrument, options.format);
+    const url = urlBuilder(options.instrument);
     super(context, {
       destination: options.destination,
 

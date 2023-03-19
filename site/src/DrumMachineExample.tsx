@@ -47,7 +47,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
       >
         <div className="flex gap-4 mb-2">
           <select
-            className="bg-zinc-700 rounded"
+            className="appearance-none bg-zinc-700 text-zinc-200 rounded border border-gray-400 py-2 px-3 leading-tight focus:outline-none focus:border-blue-500"
             value={dmName}
             onChange={(e) => {
               const newName = e.target.value;
