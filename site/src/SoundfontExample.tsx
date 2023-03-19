@@ -132,7 +132,7 @@ export function SoundfontExample({ className }: { className?: string }) {
             instrument.start(note);
           }}
           onRelease={(midi) => {
-            instrument?.stop({ stopId: "" + midi });
+            instrument?.stop({ stopId: midi });
           }}
         />
       </div>
