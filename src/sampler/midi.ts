@@ -12,25 +12,28 @@ function noteNameToMidi(note: string): number | undefined {
   return [0, 2, 4, 5, 7, 9, 11][step] + alt + 12 * (oct + 1);
 }
 
-type Note = {
-  midi?: number;
-  name?: string;
-};
-
-export function toMidi(
-  note: string | number | Note | undefined
-): number | undefined {
+export function toMidi(note: string | number | undefined): number | undefined {
   return note === undefined
     ? undefined
     : typeof note === "number"
     ? note
-    : typeof note === "string"
-    ? noteNameToMidi(note)
-    : toMidi(note.midi ?? note.name);
+    : noteNameToMidi(note);
 }
 
 /// This is how the MIDI association converts midi velocity [0..127] into gain [0..1]
 /// @see https://www.midi.org/specifications/file-format-specifications/dls-downloadable-sounds/dls-level-1
 export function midiVelToGain(vel: number) {
   return (vel * vel) / 16129; // 16129 = 127 * 127
+}
+export function findNearestMidi(
+  midi: number,
+  isAvailable: Record<string | number, unknown>
+): [number, number] {
+  let i = 0;
+  while (isAvailable[midi + i] === undefined && i < 128) {
+    if (i > 0) i = -i;
+    else i = -i + 1;
+  }
+
+  return i === 127 ? [midi, 0] : [midi + i, -i * 100];
 }

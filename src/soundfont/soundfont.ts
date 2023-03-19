@@ -1,5 +1,4 @@
-import { findNearestMidi } from "../sampler/audio-buffers";
-import { toMidi } from "../sampler/note";
+import { findNearestMidi, toMidi } from "../sampler/midi";
 import { Sampler, SamplerAudioLoader } from "../sampler/sampler";
 
 export type SoundfontConfig = {

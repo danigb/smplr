@@ -1,5 +1,5 @@
 import { AudioInsert, connectSerial } from "./connect";
-import { midiVelToGain } from "./note";
+import { midiVelToGain } from "./midi";
 import { createControl } from "./signals";
 
 type ChannelOptions = {

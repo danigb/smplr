@@ -1,6 +1,6 @@
-import { AudioBuffers } from "../sampler/audio-buffers";
 import { Channel } from "../sampler/channel";
-import { midiVelToGain, toMidi } from "../sampler/note";
+import { AudioBuffers } from "../sampler/load-audio";
+import { midiVelToGain, toMidi } from "../sampler/midi";
 import { SamplerNote } from "../sampler/sampler";
 import { createTrigger, Trigger } from "../sampler/signals";
 import { startSample, StopSample } from "../sampler/start-sample";

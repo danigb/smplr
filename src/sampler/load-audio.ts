@@ -22,16 +22,3 @@ export async function loadAudioBuffer(
     console.warn("Error loading buffer", error, url);
   }
 }
-
-export function findNearestMidi(
-  midi: number,
-  buffers: AudioBuffers
-): [number, number] {
-  let i = 0;
-  while (buffers[midi + i] === undefined && i < 128) {
-    if (i > 0) i = -i;
-    else i = -i + 1;
-  }
-
-  return i === 127 ? [midi, 0] : [midi + i, -i * 100];
-}

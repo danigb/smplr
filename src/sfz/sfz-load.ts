@@ -1,4 +1,4 @@
-import { loadAudioBuffer } from "../sampler/audio-buffers";
+import { loadAudioBuffer } from "../sampler/load-audio";
 import { SfzInstrument } from "./sfz-kits";
 import { Websfz, WebsfzGroup } from "./websfz";
 

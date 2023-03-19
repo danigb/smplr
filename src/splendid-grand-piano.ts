@@ -1,4 +1,4 @@
-import { AudioBuffers, loadAudioBuffer } from "./sampler/audio-buffers";
+import { AudioBuffers, loadAudioBuffer } from "./sampler/load-audio";
 import { Sampler, SamplerAudioLoader } from "./sampler/sampler";
 
 /**
