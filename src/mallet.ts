@@ -2,7 +2,7 @@ import { SfzInstrument } from "./sfz/sfz-kits";
 import { SfzSampler, SfzSamplerConfig } from "./sfz/sfz-sampler";
 
 export function getMalletNames() {
-  return Object.keys(DATA) as MalletName[];
+  return Object.keys(NAME_TO_PATH) as MalletName[];
 }
 
 export class Mallet extends SfzSampler {
@@ -19,18 +19,18 @@ export class Mallet extends SfzSampler {
 }
 
 function getMallet(name: MalletName | string): SfzInstrument {
-  if (!DATA[name]) throw Error(`Mallet instrument "${name}" not valid`);
+  if (!NAME_TO_PATH[name]) throw Error(`Mallet instrument "${name}" not valid`);
   return {
     name: name,
-    websfzUrl: BASE_URL + DATA[name] + EXT,
+    websfzUrl: BASE_URL + NAME_TO_PATH[name] + EXT,
   };
 }
 const BASE_URL = "https://danigb.github.io/samples/vcsl/";
 const EXT = ".websfz.json";
 
-type MalletName = keyof typeof DATA;
+type MalletName = keyof typeof NAME_TO_PATH;
 
-export const DATA = {
+export const NAME_TO_PATH: Record<string, string | undefined> = {
   "Balafon - Hard Mallet": "Struck Idiophones/balafon-hard-mallet",
   "Balafon - Keyswitch": "Struck Idiophones/balafon-keyswitch",
   "Balafon - Soft Mallet": "Struck Idiophones/balafon-soft-mallet",
