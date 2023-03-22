@@ -20,7 +20,7 @@ type SampleNote = {
 
 export type StartSample = {
   stopId?: string | number;
-  buffer: AudioBuffer | null;
+  buffer: AudioBuffer;
   destination: AudioNode;
   time?: number;
   duration?: number;
@@ -44,8 +44,6 @@ export function getSampleNote<T extends SampleNote>(
 }
 
 export function startSample(sample: StartSample) {
-  if (sample.buffer === null) return () => undefined;
-
   const context = sample.destination.context;
   // Buffer source
   const source = context.createBufferSource();

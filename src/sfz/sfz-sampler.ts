@@ -79,8 +79,14 @@ export class SfzSampler {
 
       const destination = (this.output as Channel).input;
 
+      let buffer = this.buffers[region.sample];
+      if (!buffer) {
+        console.warn(`Sample not found: ${region.sample}`);
+        return () => undefined;
+      }
+
       return startSample({
-        buffer: this.buffers[region.sample] ?? null,
+        buffer,
         destination,
         decayTime: _note.decayTime ?? this.#config.decayTime,
         detune: detune + (_note.detune ?? this.#config.detune),

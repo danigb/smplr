@@ -1,4 +1,4 @@
-export type AudioBuffers = Record<string | number, AudioBuffer>;
+export type AudioBuffers = Record<string | number, AudioBuffer | undefined>;
 
 export async function loadAudioBuffer(
   context: BaseAudioContext,

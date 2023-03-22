@@ -1,6 +1,7 @@
 function noteNameToMidi(note: string): number | undefined {
   const REGEX = /^([a-gA-G]?)(#{1,}|b{1,}|)(-?\d+)$/;
-  const m = REGEX.exec(note) as string[];
+  const m = REGEX.exec(note);
+  if (!m) return;
   const letter = m[1].toUpperCase();
   if (!letter) return;
 
