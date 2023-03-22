@@ -3,6 +3,7 @@ import {
   findFirstSupportedFormat,
   loadAudioBuffer,
 } from "./sampler/load-audio";
+import { toMidi } from "./sampler/midi";
 import { Sampler, SamplerAudioLoader } from "./sampler/sampler";
 
 /**
@@ -38,7 +39,8 @@ export class SplendidGrandPiano extends Sampler {
       buffers: splendidGrandPianoLoader(options.baseUrl ?? BASE_URL),
 
       noteToSample: (note, buffers, config) => {
-        if (typeof note.note === "string") return [note.note, 0];
+        const midi = toMidi(note.note);
+        if (!midi) return [note.note, 0];
 
         const vel = note.velocity ?? config.velocity;
         const layerIdx = LAYERS.findIndex(
@@ -47,7 +49,7 @@ export class SplendidGrandPiano extends Sampler {
         const layer = LAYERS[layerIdx];
         if (!layer) return ["", 0];
 
-        return findNearestMidiInLayer(layer.name, note.note, buffers);
+        return findNearestMidiInLayer(layer.name, midi, buffers);
       },
     });
   }
