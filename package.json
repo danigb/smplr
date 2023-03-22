@@ -42,7 +42,9 @@
   "scripts": {
     "build": "tsup src/index.ts  --sourcemap --dts --format esm,cjs",
     "build:worklet:reverb": "esbuild src/reverb/worklet-processor.ts --bundle --minify > src/reverb/processor.min.js",
-    "test": "jest"
+    "test": "yarn test:unit && yarn test:types",
+    "test:unit": "jest",
+    "test:types": "tsc --noEmit"
   },
   "engines": {
     "node": ">=14.0.0"
