@@ -1,15 +1,14 @@
 import {
+  AudioBuffers,
   findFirstSupportedFormat,
   loadAudioBuffer,
 } from "../sampler/load-audio";
 import { SfzInstrument } from "./sfz-kits";
 import { Websfz, WebsfzGroup } from "./websfz";
 
-export type BuffersCache = Record<string, AudioBuffer>;
-
 export async function loadSfzBuffers(
   context: AudioContext,
-  buffers: BuffersCache,
+  buffers: AudioBuffers,
   websfz: Websfz
 ) {
   websfz.groups.forEach((group) => {
@@ -44,7 +43,7 @@ export async function loadSfzInstrument(
 // @private
 async function loadAudioBuffers(
   context: AudioContext,
-  buffers: BuffersCache,
+  buffers: AudioBuffers,
   urls: Record<string, string>
 ) {
   await Promise.all(

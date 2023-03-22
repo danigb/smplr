@@ -90,7 +90,11 @@ export class Sampler {
       this.buffers,
       this.#config
     );
-    const buffer = this.buffers[sample] ?? null;
+    const buffer = this.buffers[sample];
+    if (!buffer) {
+      console.warn(`Sample not found: '${sample}'`);
+      return () => undefined;
+    }
     return startSample({
       buffer,
       destination: this.#output.input,
