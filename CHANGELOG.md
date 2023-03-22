@@ -1,5 +1,12 @@
 # smplr
 
+## 0.4.1
+
+### Patch Changes
+
+- - Accept note name in SplendidGrandPiano
+  - Show a console.warning if the buffer is not found
+
 ## 0.4.0
 
 ### Minor Changes
