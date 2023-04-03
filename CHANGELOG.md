@@ -1,5 +1,9 @@
 # smplr
 
+## 0.4.3
+
+- Rename getSoundfontInstrumentNames to getSoundfontNames to keep naming consistency
+
 ## 0.4.2
 
 - Ensure mp3 Soundfonts are loaded in Safari
