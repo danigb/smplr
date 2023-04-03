@@ -1,6 +1,6 @@
 {
   "name": "smplr",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "homepage": "https://github.com/danigb/smplr#readme",
   "description": "A Sampled collection of instruments",
   "main": "dist/index.js",
@@ -24,7 +24,6 @@
   "bugs": {
     "url": "https://github.com/danigb/smplr/issues"
   },
-  "dependencies": {},
   "devDependencies": {
     "@changesets/cli": "^2.25.2",
     "@types/audioworklet": "^0.0.36",

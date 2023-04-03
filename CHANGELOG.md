@@ -1,15 +1,15 @@
 # smplr
 
+## 0.4.2
+
+- Ensure mp3 Soundfonts are loaded in Safari
+
 ## 0.4.1
 
-### Patch Changes
-
-- - Accept note name in SplendidGrandPiano
-  - Show a console.warning if the buffer is not found
+- Accept note name in SplendidGrandPiano
+- Show a console.warning if the buffer is not found
 
 ## 0.4.0
-
-### Minor Changes
 
 - b64f4f1: Add DrumMachine instrument
 - format selected based on browser compatibility
