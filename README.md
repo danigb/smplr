@@ -178,15 +178,35 @@ A Soundfont player. By default it loads audio from Benjamin Gleitzman's package 
 [pre-rendered sound fonts](https://github.com/gleitz/midi-js-soundfonts).
 
 ```js
-import { Soundfont, getSoundfontInstrumentNames } from "smplr";
+import { Soundfont, getSoundfontNames } from "smplr";
 
 const marimba = new Soundfont(new AudioContext(), { instrument: "marimba" });
 marimba.start({ note: "C4" });
 ```
 
-Use `getSoundfontInstrumentNames` to get all available instrument names.
-
 It's intended to be a modern replacement of [soundfont-player](https://github.com/danigb/soundfont-player)
+
+#### Soundfont instruments and kits
+
+Use `getSoundfontNames` to get all available instrument names.
+
+Two kits are available: `MusyngKit` or `FluidR3_GM`. The first is used by default: it sounds better but it weights more.
+
+```js
+const marimba = new Soundfont(context, {
+  instrument: "clavinet",
+  kit: "FluidR3_GM", // "MusyngKit" is used by default if not specified
+});
+```
+
+Alternatively, you can pass your custom url as the instrument. In that case, the `kit` is ignored:
+
+```js
+const marimba = new Soundfont(context, {
+  instrument:
+    "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/marimba-mp3.js",
+});
+```
 
 ### Piano
 

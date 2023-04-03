@@ -97,7 +97,7 @@ function gleitzKitUrl(
   return `https://gleitz.github.io/midi-js-soundfonts/${kit}/${name}-${format}.js`;
 }
 
-export function getSoundfontInstrumentNames() {
+export function getSoundfontNames() {
   return [
     "accordion",
     "acoustic_bass",
