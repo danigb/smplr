@@ -178,11 +178,13 @@ A Soundfont player. By default it loads audio from Benjamin Gleitzman's package 
 [pre-rendered sound fonts](https://github.com/gleitz/midi-js-soundfonts).
 
 ```js
-import { Soundfont } from "smplr";
+import { Soundfont, getSoundfontInstrumentNames } from "smplr";
 
 const marimba = new Soundfont(new AudioContext(), { instrument: "marimba" });
 marimba.start({ note: "C4" });
 ```
+
+Use `getSoundfontInstrumentNames` to get all available instrument names.
 
 It's intended to be a modern replacement of [soundfont-player](https://github.com/danigb/soundfont-player)
 
