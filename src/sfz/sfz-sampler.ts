@@ -85,6 +85,8 @@ export class SfzSampler {
         return () => undefined;
       }
 
+      const onEnded = _note.onEnded;
+
       return startSample({
         buffer,
         destination,
@@ -95,6 +97,7 @@ export class SfzSampler {
         duration: _note.duration,
         stop: this.#stop.subscribe,
         stopId: _note.stopId ?? _note.note,
+        onEnded: onEnded ? () => onEnded(note) : undefined,
       });
     });
     return (time?: number) => stopAll.forEach((stop) => stop(time));
