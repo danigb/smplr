@@ -126,6 +126,22 @@ const now = context.currentTime;
 });
 ```
 
+### onEnded event
+
+You can add a `onEnded` callback that will be invoked when the note ends:
+
+```js
+piano.start({
+  note: "C4",
+  duration: 1,
+  onEnded: () => {
+    // will be called after 1 second
+  },
+});
+```
+
+The callback will receive as parameter the same object you pass to the `start` function;
+
 ### Change volume
 
 `setVolume` uses a scale where 0 means no volume, and 127 is max volume without amplification:
