@@ -30,14 +30,15 @@ export type SamplerConfig = {
 };
 
 export type SamplerNote = {
-  note: string | number;
-  stopId?: string | number;
-  time?: number;
-  duration?: number;
   decayTime?: number;
   detune?: number;
-  velocity?: number;
+  duration?: number;
   lpfCutoffHz?: number;
+  note: string | number;
+  onEnded?: (note: SamplerNote | string | number) => void;
+  stopId?: string | number;
+  time?: number;
+  velocity?: number;
 };
 
 /**
@@ -95,6 +96,7 @@ export class Sampler {
       console.warn(`Sample not found: '${sample}'`);
       return () => undefined;
     }
+    const onEnded = _note.onEnded;
     return startSample({
       buffer,
       destination: this.#output.input,
@@ -109,6 +111,7 @@ export class Sampler {
 
       stop: this.#stop.subscribe,
       stopId: _note.stopId ?? _note.note,
+      onEnded: onEnded ? () => onEnded(note) : undefined,
     });
   }
 

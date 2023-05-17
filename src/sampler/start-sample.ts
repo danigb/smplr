@@ -19,16 +19,17 @@ type SampleNote = {
 };
 
 export type StartSample = {
-  stopId?: string | number;
   buffer: AudioBuffer;
-  destination: AudioNode;
-  time?: number;
-  duration?: number;
   decayTime?: number;
+  destination: AudioNode;
   detune?: number;
+  duration?: number;
   gain?: number;
   lpfCutoffHz?: number;
+  onEnded?: () => void;
   stop?: Subscribe<StopSample | undefined>;
+  stopId?: string | number;
+  time?: number;
 };
 
 export function getSampleNote<T extends SampleNote>(
@@ -65,7 +66,7 @@ export function startSample(sample: StartSample) {
   // Release decay
   const [decay, startDecay] = createDecayEnvelope(context, sample.decayTime);
 
-  source.onended = unsubscribeAll([
+  const cleanup = unsubscribeAll([
     connectSerial([source, lpf, volume, decay, sample.destination]),
     sample.stop?.((sampleStop) => {
       if (
@@ -77,6 +78,10 @@ export function startSample(sample: StartSample) {
       }
     }),
   ]);
+  source.onended = () => {
+    cleanup();
+    sample.onEnded?.();
+  };
 
   const startAt = sample.time || context.currentTime;
   source.start(startAt);
