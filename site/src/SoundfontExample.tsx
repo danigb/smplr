@@ -1,32 +1,28 @@
 import { useState } from "react";
-import { Reverb, Soundfont, SoundfontLibraries } from "smplr";
+import { Reverb, Soundfont, getSoundfontKits, getSoundfontNames } from "smplr";
 import { getAudioContext } from "./audio-context";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
-const libNames = Object.keys(SoundfontLibraries);
-
 let reverb: Reverb | undefined;
 
 export function SoundfontExample({ className }: { className?: string }) {
   const [status, setStatus] = useStatus();
-  const [libraryName, setLibraryName] = useState(libNames[1]);
+  const [libraryName, setLibraryName] = useState(getSoundfontKits()[0]);
   const [instrumentName, setInstrumentName] = useState("marimba");
   const [instrument, setInstrument] = useState<Soundfont | undefined>(
     undefined
   );
   const [reverbMix, setReverbMix] = useState(0.0);
   const [volume, setVolume] = useState(100);
-  const library = SoundfontLibraries[libraryName];
 
-  function loadSoundfont(libraryName: string, instrumentName: string) {
-    const library = SoundfontLibraries[libraryName];
+  function loadSoundfont(kit: string, instrument: string) {
     const context = getAudioContext();
     reverb ??= new Reverb(context);
     const soundfont = new Soundfont(context, {
-      instrument: instrumentName,
-      library: library,
+      kit,
+      instrument,
     });
     soundfont.output.addEffect("reverb", reverb, 0.0);
     soundfont
@@ -66,7 +62,7 @@ export function SoundfontExample({ className }: { className?: string }) {
               setLibraryName(libraryName);
             }}
           >
-            {libNames.map((libName) => (
+            {getSoundfontKits().map((libName) => (
               <option key={libName} value={libName}>
                 {libName}
               </option>
@@ -81,7 +77,7 @@ export function SoundfontExample({ className }: { className?: string }) {
               setInstrumentName(instrumentName);
             }}
           >
-            {library.instruments.map((name) => (
+            {getSoundfontNames().map((name) => (
               <option key={name} value={name}>
                 {name}
               </option>

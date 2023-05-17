@@ -3,7 +3,7 @@ import { findNearestMidi, toMidi } from "../sampler/midi";
 import { Sampler, SamplerAudioLoader } from "../sampler/sampler";
 
 export type SoundfontConfig = {
-  kit: "FluidR3_GM" | "MusyngKite";
+  kit: "FluidR3_GM" | "MusyngKite" | string;
   instrument: string;
 
   destination: AudioNode;
@@ -23,7 +23,7 @@ export class Soundfont extends Sampler {
   ) {
     const url = options.instrument.startsWith("http")
       ? options.instrument
-      : gleitzKitUrl(options.instrument, options.kit);
+      : gleitzKitUrl(options.instrument, options.kit ?? "MusyngKite");
     super(context, {
       destination: options.destination,
 
@@ -89,12 +89,13 @@ function base64ToArrayBuffer(base64: string) {
   return bytes.buffer;
 }
 
-function gleitzKitUrl(
-  name: string,
-  kit: "FluidR3_GM" | "MusyngKite" = "MusyngKite"
-) {
+function gleitzKitUrl(name: string, kit: string) {
   const format = findFirstSupportedFormat(["ogg", "mp3"]) ?? "mp3";
   return `https://gleitz.github.io/midi-js-soundfonts/${kit}/${name}-${format}.js`;
+}
+
+export function getSoundfontKits() {
+  return ["MusyngKite", "FluidR3_GM"];
 }
 
 export function getSoundfontNames() {
