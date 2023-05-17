@@ -194,7 +194,7 @@ A Soundfont player. By default it loads audio from Benjamin Gleitzman's package 
 [pre-rendered sound fonts](https://github.com/gleitz/midi-js-soundfonts).
 
 ```js
-import { Soundfont, getSoundfontNames } from "smplr";
+import { Soundfont, getSoundfontNames, getSoundfontKits } from "smplr";
 
 const marimba = new Soundfont(new AudioContext(), { instrument: "marimba" });
 marimba.start({ note: "C4" });
@@ -204,14 +204,14 @@ It's intended to be a modern replacement of [soundfont-player](https://github.co
 
 #### Soundfont instruments and kits
 
-Use `getSoundfontNames` to get all available instrument names.
+Use `getSoundfontNames` to get all available instrument names and `getSoundfontKits` to get kit names.
 
-Two kits are available: `MusyngKit` or `FluidR3_GM`. The first is used by default: it sounds better but it weights more.
+There are two kits available: `MusyngKite` or `FluidR3_GM`. The first one is used by default: it sounds better but samples weights more.
 
 ```js
 const marimba = new Soundfont(context, {
   instrument: "clavinet",
-  kit: "FluidR3_GM", // "MusyngKit" is used by default if not specified
+  kit: "FluidR3_GM", // "MusyngKite" is used by default if not specified
 });
 ```
 
