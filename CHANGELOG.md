@@ -1,14 +1,16 @@
 # smplr
 
+## 0.5.1
+
+- fe05f48: Ensure `options` is optional when possible
+
 ## 0.5.0
 
-### Minor Changes
-
-- Add onEnded property to the start note object
+- Add `onEnded` property to the start note object
 
 ## 0.4.3
 
-- Rename getSoundfontInstrumentNames to getSoundfontNames to keep naming consistency
+- Rename `getSoundfontInstrumentNames` to `getSoundfontNames` to keep naming consistency
 
 ## 0.4.2
 
