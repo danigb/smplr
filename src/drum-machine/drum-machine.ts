@@ -38,7 +38,7 @@ export class DrumMachine extends Sampler {
   #instrument = EMPTY_INSTRUMENT;
   public constructor(
     context: AudioContext,
-    options: Partial<DrumMachineConfig>
+    options: Partial<DrumMachineConfig> = {}
   ) {
     const url = INSTRUMENTS[options.instrument ?? "TR-808"];
     if (!url) throw new Error("Invalid instrument: " + options.instrument);
