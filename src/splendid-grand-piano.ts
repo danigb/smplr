@@ -25,7 +25,7 @@ const BASE_URL = "https://danigb.github.io/samples/splendid-grand-piano";
 export class SplendidGrandPiano extends Sampler {
   constructor(
     context: AudioContext,
-    options: Partial<SplendidGrandPianoConfig>
+    options: Partial<SplendidGrandPianoConfig> = {}
   ) {
     super(context, {
       destination: options.destination,
