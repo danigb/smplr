@@ -56,7 +56,7 @@ export class Sampler {
 
   public constructor(
     public readonly context: AudioContext,
-    options: Partial<SamplerConfig>
+    options: Partial<SamplerConfig> = {}
   ) {
     this.#config = {
       destination: options.destination ?? context.destination,
