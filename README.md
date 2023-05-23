@@ -38,7 +38,7 @@ See demo: https://danigb.github.io/smplr/
 
 - No setup: specifically, all samples are online, so no need for a server.
 - Easy to use: everything should be intuitive for non-experienced developers
-- Decent sounding: use high quality open source samples. For good or worst, is sample based 🤷
+- Decent sounding: uses high quality open source samples. For better or worse, it is sample based 🤷
 
 #### Installation
 
@@ -66,7 +66,7 @@ const marimba = new Soundfont(context, { instrument: "marimba" });
 
 ### Wait for audio loading
 
-You can start playing notes as soon as one audio is loaded. But if you want to wait for all of them, you can use `loaded()` function that returns a promise:
+You can start playing notes as soon as one audio is loaded. But if you want to wait for all of them, you can use the `loaded()` function that returns a promise:
 
 ```js
 piano.loaded().then(() => {
@@ -147,7 +147,7 @@ The callback will receive as parameter the same object you pass to the `start` f
 `setVolume` uses a scale where 0 means no volume, and 127 is max volume without amplification:
 
 ```js
-piano.setVolume(80);
+piano.output.setVolume(80);
 ```
 
 Bear in mind that `volume` is global to the instrument, but `velocity` is specific for each note.
