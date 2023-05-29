@@ -50,11 +50,13 @@ npm i smplr
 
 Samples are published at: https://github.com/danigb/samples
 
+`smplr` is still under development and features are considered unstable. See [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md) for changes.
+
 ## Documentation
 
 ### Create an instrument
 
-All instruments follows the same pattern: `new Instrument(context, options)`. For example:
+All instruments follows the same pattern: `new Instrument(context, options?)`. For example:
 
 ```js
 import { SplendidGrandPiano, Soundfont } from "smplr";
