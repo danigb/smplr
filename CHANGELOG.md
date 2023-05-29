@@ -1,5 +1,11 @@
 # smplr
 
+## 0.6.0
+
+### Minor Changes
+
+- Add `CacheStorage` object for caching http requests
+
 ## 0.5.1
 
 - fe05f48: Ensure `options` is optional when possible
