@@ -3,6 +3,7 @@ import {
   loadAudioBuffer,
 } from "../sampler/load-audio";
 import { Sampler, SamplerAudioLoader } from "../sampler/sampler";
+import { HttpStorage, Storage } from "../storage";
 import {
   DrumMachineInstrument,
   EMPTY_INSTRUMENT,
@@ -26,6 +27,7 @@ const INSTRUMENTS: Record<string, string> = {
 export type DrumMachineConfig = {
   instrument: string;
   destination: AudioNode;
+  storage?: Storage;
 
   detune: number;
   volume: number;
@@ -40,13 +42,17 @@ export class DrumMachine extends Sampler {
     context: AudioContext,
     options: Partial<DrumMachineConfig> = {}
   ) {
+    const storage: Storage = options.storage ?? HttpStorage;
     const url = INSTRUMENTS[options.instrument ?? "TR-808"];
     if (!url) throw new Error("Invalid instrument: " + options.instrument);
-    const instrument = fetchDrumMachineInstrument(url);
+    const instrument = fetchDrumMachineInstrument(
+      url,
+      options.storage ?? HttpStorage
+    );
 
     super(context, {
       ...options,
-      buffers: drumMachineLoader(instrument),
+      buffers: drumMachineLoader(instrument, storage),
       noteToSample: (note, buffers, config) => {
         const sample = this.#instrument.nameToSample[note.note];
         return [sample ?? "", 0];
@@ -67,7 +73,8 @@ export class DrumMachine extends Sampler {
 }
 
 function drumMachineLoader(
-  instrument: Promise<DrumMachineInstrument>
+  instrument: Promise<DrumMachineInstrument>,
+  storage: Storage
 ): SamplerAudioLoader {
   const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
   return async (context, buffers) => {
@@ -77,7 +84,7 @@ function drumMachineLoader(
         const url = `${dm.baseUrl}/${sample}.${format}`;
         const sampleName =
           sample.indexOf("/") !== -1 ? sample : sample.replace("-", "/");
-        const buffer = await loadAudioBuffer(context, url);
+        const buffer = await loadAudioBuffer(context, url, storage);
         if (buffer) buffers[sampleName] = buffer;
       })
     );

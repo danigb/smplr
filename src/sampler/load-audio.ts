@@ -1,11 +1,14 @@
+import { Storage } from "../storage";
+
 export type AudioBuffers = Record<string | number, AudioBuffer | undefined>;
 
 export async function loadAudioBuffer(
   context: BaseAudioContext,
-  url: string
+  url: string,
+  storage: Storage
 ): Promise<AudioBuffer | undefined> {
   url = url.replace(/#/g, "%23").replace(/([^:]\/)\/+/g, "$1");
-  const response = await fetch(url);
+  const response = await storage.fetch(url);
   if (response.status !== 200) {
     console.warn(
       "Error loading buffer. Invalid status: ",
