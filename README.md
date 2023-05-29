@@ -40,7 +40,7 @@ See demo: https://danigb.github.io/smplr/
 - Easy to use: everything should be intuitive for non-experienced developers
 - Decent sounding: uses high quality open source samples. For better or worse, it is sample based 🤷
 
-#### Installation
+## Install
 
 Install with npm or your favourite package manager:
 
@@ -50,11 +50,13 @@ npm i smplr
 
 Samples are published at: https://github.com/danigb/samples
 
+`smplr` is still under development and features are considered unstable. See [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md) for changes.
+
 ## Documentation
 
 ### Create an instrument
 
-All instruments follows the same pattern: `new Instrument(context, options)`. For example:
+All instruments follows the same pattern: `new Instrument(context, options?)`. For example:
 
 ```js
 import { SplendidGrandPiano, Soundfont } from "smplr";
@@ -64,7 +66,7 @@ const piano = new SplendidGrandPiano(context, { decayTime: 0.5 });
 const marimba = new Soundfont(context, { instrument: "marimba" });
 ```
 
-### Wait for audio loading
+#### Wait for audio loading
 
 You can start playing notes as soon as one audio is loaded. But if you want to wait for all of them, you can use the `loaded()` function that returns a promise:
 
@@ -80,7 +82,28 @@ Since the promise returns the instrument instance, you can create and wait in a 
 const piano = await new SplendidGrandPiano(context).loaded();
 ```
 
-### Start and stop notes
+#### Cache requests
+
+[Experimental]
+
+If you use default samples, they are stored at github pages. Github rate limits the number of requests per second. That could be a problem, specially if you're using a development environment with hot reload (like most React frameworks).
+
+If you want to cache samples on the browser you can use a `CacheStorage` object:
+
+```ts
+import { SplendidGrandPiano, CacheStorage } from "smplr";
+
+const context = new AudioContext();
+const storage = new CacheStorage();
+// First time the instrument loads, will fetch the samples from http. Subsequent times from cache.
+const piano = new SplendidGrandPiano(context, { storage });
+```
+
+⚠️ `CacheStorage` is based on [Cache API](https://developer.mozilla.org/en-US/docs/Web/API/Cache) and only works in secure environments that runs with `https`. Read your framework documentation for setup instructions. For example, in nextjs you can use https://www.npmjs.com/package/next-dev-https. For vite there's https://github.com/liuweiGL/vite-plugin-mkcert. Find the appropriate solution for your environment.
+
+### Play
+
+#### Start and stop notes
 
 The `start` function accepts a bunch of options:
 
@@ -113,7 +136,7 @@ Or stop the specified one:
 piano.stop(60);
 ```
 
-### Schedule notes
+#### Schedule notes
 
 You can schedule notes using `time` and `duration` properties. Both are measured in seconds, and time is the number of seconds since the AudioContext was created.
 
@@ -126,7 +149,7 @@ const now = context.currentTime;
 });
 ```
 
-### onEnded event
+#### onEnded event
 
 You can add a `onEnded` callback that will be invoked when the note ends:
 
@@ -144,7 +167,7 @@ The callback will receive as parameter the same object you pass to the `start` f
 
 ### Change volume
 
-`setVolume` uses a scale where 0 means no volume, and 127 is max volume without amplification:
+Instrument `output` attribute represents the main output of the instrument. `output.setVolume` method accepts a number where 0 means no volume, and 127 is max volume without amplification:
 
 ```js
 piano.output.setVolume(80);

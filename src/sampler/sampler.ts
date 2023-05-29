@@ -1,8 +1,9 @@
+import { HttpStorage, Storage } from "../storage";
 import { Channel } from "./channel";
 import { AudioBuffers, loadAudioBuffer } from "./load-audio";
 import { midiVelToGain } from "./midi";
-import { createTrigger, Trigger } from "./signals";
-import { startSample, StopSample } from "./start-sample";
+import { Trigger, createTrigger } from "./signals";
+import { StopSample, startSample } from "./start-sample";
 
 /**
  * A function that downloads audio
@@ -13,6 +14,7 @@ export type SamplerAudioLoader = (
 ) => Promise<void>;
 
 export type SamplerConfig = {
+  storage?: Storage;
   detune: number;
   volume: number;
   velocity: number;
@@ -70,10 +72,11 @@ export class Sampler {
     };
     this.buffers = {};
     this.#stop = createTrigger();
+    const storage = options.storage ?? HttpStorage;
     const loader =
       typeof this.#config.buffers === "function"
         ? this.#config.buffers
-        : createAudioBuffersLoader(this.#config.buffers);
+        : createAudioBuffersLoader(this.#config.buffers, storage);
     this.#load = loader(context, this.buffers);
     this.#output = new Channel(context, this.#config);
     this.output = this.#output;
@@ -122,7 +125,8 @@ export class Sampler {
 }
 
 function createAudioBuffersLoader(
-  source: Record<string | number, string | AudioBuffers>
+  source: Record<string | number, string | AudioBuffers>,
+  storage: Storage
 ): SamplerAudioLoader {
   return async (context, buffers) => {
     await Promise.all([
@@ -131,7 +135,7 @@ function createAudioBuffersLoader(
         if (value instanceof AudioBuffer) {
           buffers[key] = value;
         } else if (typeof value === "string") {
-          const buffer = await loadAudioBuffer(context, value);
+          const buffer = await loadAudioBuffer(context, value, storage);
           if (buffer) buffers[key] = buffer;
         }
       }),

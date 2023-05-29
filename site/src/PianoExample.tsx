@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Reverb, SplendidGrandPiano } from "smplr";
-import { getAudioContext } from "./audio-context";
+import { CacheStorage, Reverb, SplendidGrandPiano } from "smplr";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
+import { getAudioContext } from "./audio-context";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
 let reverb: Reverb | undefined;
+
+const storage = new CacheStorage();
 
 export function PianoExample({ className }: { className?: string }) {
   const [piano, setPiano] = useState<SplendidGrandPiano | undefined>(undefined);
@@ -20,7 +22,7 @@ export function PianoExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const newPiano = new SplendidGrandPiano(context, { volume });
+    const newPiano = new SplendidGrandPiano(context, { volume, storage });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
     newPiano.loaded().then(() => {

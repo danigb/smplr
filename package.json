@@ -1,6 +1,6 @@
 {
   "name": "smplr",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "homepage": "https://github.com/danigb/smplr#readme",
   "description": "A Sampled collection of instruments",
   "main": "dist/index.js",

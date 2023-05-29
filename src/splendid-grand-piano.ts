@@ -5,6 +5,7 @@ import {
 } from "./sampler/load-audio";
 import { toMidi } from "./sampler/midi";
 import { Sampler, SamplerAudioLoader } from "./sampler/sampler";
+import { HttpStorage, Storage } from "./storage";
 
 /**
  * Splendid Grand Piano options
@@ -13,6 +14,7 @@ export type SplendidGrandPianoConfig = {
   baseUrl: string;
   destination: AudioNode;
 
+  storage?: Storage;
   detune: number;
   volume: number;
   velocity: number;
@@ -36,7 +38,10 @@ export class SplendidGrandPiano extends Sampler {
       decayTime: options.decayTime ?? 0.5,
       lpfCutoffHz: options.lpfCutoffHz,
 
-      buffers: splendidGrandPianoLoader(options.baseUrl ?? BASE_URL),
+      buffers: splendidGrandPianoLoader(
+        options.baseUrl ?? BASE_URL,
+        options.storage ?? HttpStorage
+      ),
 
       noteToSample: (note, buffers, config) => {
         const midi = toMidi(note.note);
@@ -69,14 +74,17 @@ function findNearestMidiInLayer(
   return i === 127 ? [prefix + midi, 0] : [prefix + (midi + i), -i * 100];
 }
 
-function splendidGrandPianoLoader(baseUrl: string): SamplerAudioLoader {
+function splendidGrandPianoLoader(
+  baseUrl: string,
+  storage: Storage
+): SamplerAudioLoader {
   const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
   return async (context: AudioContext, buffers: AudioBuffers) => {
     for (const layer of LAYERS) {
       await Promise.all(
         layer.samples.map(async ([midi, name]) => {
           const url = `${baseUrl}/${name}.${format}`;
-          const buffer = await loadAudioBuffer(context, url);
+          const buffer = await loadAudioBuffer(context, url, storage);
           if (buffer) buffers[layer.name + midi] = buffer;
         })
       );

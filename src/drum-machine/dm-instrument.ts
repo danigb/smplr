@@ -1,3 +1,5 @@
+import { Storage } from "../storage";
+
 export type DrumMachineInstrument = {
   baseUrl: string;
   name: string;
@@ -16,9 +18,10 @@ export const EMPTY_INSTRUMENT: DrumMachineInstrument = {
 };
 
 export async function fetchDrumMachineInstrument(
-  url: string
+  url: string,
+  storage: Storage
 ): Promise<DrumMachineInstrument> {
-  const res = await fetch(url);
+  const res = await storage.fetch(url);
   const json = await res.json();
   // need to fix json
   json.baseUrl = url.replace("/dm.json", "");
