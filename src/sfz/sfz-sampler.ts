@@ -4,6 +4,7 @@ import { midiVelToGain, toMidi } from "../sampler/midi";
 import { SamplerNote } from "../sampler/sampler";
 import { createTrigger, Trigger } from "../sampler/signals";
 import { startSample, StopSample } from "../sampler/start-sample";
+import { HttpStorage, Storage } from "../storage";
 import { SfzInstrument } from "./sfz-kits";
 import { loadSfzBuffers, loadSfzInstrument } from "./sfz-load";
 import { findRegions } from "./sfz-regions";
@@ -14,6 +15,7 @@ import { Websfz } from "./websfz";
  */
 export type SfzSamplerConfig = {
   instrument: SfzInstrument | Websfz | string;
+  storage?: Storage;
   destination: AudioNode;
   volume: number;
   velocity: number;
@@ -52,11 +54,14 @@ export class SfzSampler {
     this.buffers = {};
     this.#stop = createTrigger();
 
+    const storage = options.storage ?? HttpStorage;
     this.#websfz = EMPTY_WEBSFZ;
-    this.#load = loadSfzInstrument(options.instrument).then((result) => {
-      this.#websfz = Object.freeze(result);
-      return loadSfzBuffers(context, this.buffers, this.#websfz);
-    });
+    this.#load = loadSfzInstrument(options.instrument, storage).then(
+      (result) => {
+        this.#websfz = Object.freeze(result);
+        return loadSfzBuffers(context, this.buffers, this.#websfz, storage);
+      }
+    );
     this.#output = new Channel(context, this.#config);
     this.output = this.#output;
   }
