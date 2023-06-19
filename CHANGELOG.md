@@ -1,5 +1,11 @@
 # smplr
 
+## 0.6.1
+
+### Patch Changes
+
+- Fix error with HttpStorage fetch binding
+
 ## 0.6.0
 
 ### Minor Changes

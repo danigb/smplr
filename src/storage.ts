@@ -10,8 +10,11 @@ export type Storage = {
 };
 
 export const HttpStorage: Storage = {
-  fetch,
+  fetch(url) {
+    return fetch(url);
+  },
 };
+
 export class CacheStorage implements Storage {
   #cache: Promise<Cache>;
 

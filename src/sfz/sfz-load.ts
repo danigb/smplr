@@ -3,33 +3,36 @@ import {
   findFirstSupportedFormat,
   loadAudioBuffer,
 } from "../sampler/load-audio";
+import { Storage } from "../storage";
 import { SfzInstrument } from "./sfz-kits";
 import { Websfz, WebsfzGroup } from "./websfz";
 
 export async function loadSfzBuffers(
   context: AudioContext,
   buffers: AudioBuffers,
-  websfz: Websfz
+  websfz: Websfz,
+  storage: Storage
 ) {
   websfz.groups.forEach((group) => {
     const urls = getWebsfzGroupUrls(websfz, group);
-    return loadAudioBuffers(context, buffers, urls);
+    return loadAudioBuffers(context, buffers, urls, storage);
   });
 }
 
 export async function loadSfzInstrument(
-  instrument: string | Websfz | SfzInstrument
+  instrument: string | Websfz | SfzInstrument,
+  storage: Storage
 ): Promise<Websfz> {
   const isWebsfz = (inst: any): inst is Websfz => "global" in inst;
   const isSfzInstrument = (inst: any): inst is SfzInstrument =>
     "websfzUrl" in inst;
 
   if (typeof instrument === "string") {
-    return fetchWebSfz(instrument);
+    return fetchWebSfz(instrument, storage);
   } else if (isWebsfz(instrument)) {
     return instrument;
   } else if (isSfzInstrument(instrument)) {
-    const websfz = await fetchWebSfz(instrument.websfzUrl);
+    const websfz = await fetchWebSfz(instrument.websfzUrl, storage);
     websfz.meta ??= {};
     if (instrument.name) websfz.meta.name = instrument.name;
     if (instrument.baseUrl) websfz.meta.baseUrl = instrument.baseUrl;
@@ -44,13 +47,14 @@ export async function loadSfzInstrument(
 async function loadAudioBuffers(
   context: AudioContext,
   buffers: AudioBuffers,
-  urls: Record<string, string>
+  urls: Record<string, string>,
+  storage: Storage
 ) {
   await Promise.all(
     Object.keys(urls).map(async (sampleId) => {
       if (buffers[sampleId]) return;
 
-      const buffer = await loadAudioBuffer(context, urls[sampleId]);
+      const buffer = await loadAudioBuffer(context, urls[sampleId], storage);
       if (buffer) buffers[sampleId] = buffer;
       return buffers;
     })
@@ -58,7 +62,7 @@ async function loadAudioBuffers(
 }
 
 // @private
-async function fetchWebSfz(url: string): Promise<Websfz> {
+async function fetchWebSfz(url: string, storage: Storage): Promise<Websfz> {
   try {
     const response = await fetch(url);
     const json = await response.json();
