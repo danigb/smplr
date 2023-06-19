@@ -1,10 +1,12 @@
 import { findFirstSupportedFormat } from "../sampler/load-audio";
 import { findNearestMidi, toMidi } from "../sampler/midi";
 import { Sampler, SamplerAudioLoader } from "../sampler/sampler";
+import { HttpStorage, Storage } from "../storage";
 
 export type SoundfontConfig = {
   kit: "FluidR3_GM" | "MusyngKite" | string;
   instrument: string;
+  storage?: Storage;
 
   destination: AudioNode;
 
@@ -32,7 +34,7 @@ export class Soundfont extends Sampler {
       velocity: options.velocity,
       decayTime: options.decayTime ?? 0.5,
       lpfCutoffHz: options.lpfCutoffHz,
-      buffers: soundfontLoader(url),
+      buffers: soundfontLoader(url, options.storage ?? HttpStorage),
       noteToSample: (note, buffers, config) => {
         let midi = toMidi(note.note);
         return midi === undefined ? ["", 0] : findNearestMidi(midi, buffers);
@@ -46,9 +48,9 @@ export class Soundfont extends Sampler {
   }
 }
 
-function soundfontLoader(url: string): SamplerAudioLoader {
+function soundfontLoader(url: string, storage: Storage): SamplerAudioLoader {
   return async (context, buffers) => {
-    const sourceFile = await (await fetch(url)).text();
+    const sourceFile = await (await storage.fetch(url)).text();
     const json = midiJsToJson(sourceFile);
 
     const noteNames = Object.keys(json);
