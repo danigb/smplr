@@ -1,11 +1,11 @@
 import { OutputChannel } from "../sampler/channel";
 import {
+  AudioBuffers,
   findFirstSupportedFormat,
   loadAudioBuffer,
 } from "../sampler/load-audio";
 import { Player } from "../sampler/player";
 import { SampleStart, SampleStop } from "../sampler/player-sample";
-import { SamplerAudioLoader } from "../sampler/sampler";
 import { HttpStorage, Storage } from "../storage";
 import {
   DrumMachineInstrument,
@@ -42,7 +42,7 @@ export type DrumMachineConfig = {
 export class DrumMachine {
   #instrument = EMPTY_INSTRUMENT;
   private readonly player: Player;
-  #load: Promise<void>;
+  #load: Promise<unknown>;
   public readonly output: OutputChannel;
 
   public constructor(
@@ -56,9 +56,11 @@ export class DrumMachine {
     const instrument = fetchDrumMachineInstrument(url, storage);
     this.player = new Player(context, options);
     this.output = this.player.output;
-    this.#load = drumMachineLoader(instrument, storage)(
+    this.#load = drumMachineLoader(
       context,
-      this.player.buffers
+      this.player.buffers,
+      instrument,
+      storage
     );
 
     instrument.then((instrument) => {
@@ -80,10 +82,12 @@ export class DrumMachine {
   }
 
   start(sample: SampleStart) {
-    sample = this.player.buffers[sample.note]
-      ? sample
-      : { ...sample, note: this.#instrument.nameToSample[sample.note] ?? "" };
-    return this.player.start(sample);
+    const sampleName = this.#instrument.nameToSample[sample.note];
+    return this.player.start({
+      ...sample,
+      note: sampleName ? sampleName : sample.note,
+      stopId: sample.stopId ?? sample.note,
+    });
   }
 
   stop(sample: SampleStop) {
@@ -92,13 +96,14 @@ export class DrumMachine {
 }
 
 function drumMachineLoader(
+  context: BaseAudioContext,
+  buffers: AudioBuffers,
   instrument: Promise<DrumMachineInstrument>,
   storage: Storage
-): SamplerAudioLoader {
+) {
   const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
-  return async (context, buffers) => {
-    const data = await instrument;
-    await Promise.all(
+  return instrument.then((data) =>
+    Promise.all(
       data.samples.map(async (sample) => {
         const url = `${data.baseUrl}/${sample}.${format}`;
         const sampleName =
@@ -106,6 +111,6 @@ function drumMachineLoader(
         const buffer = await loadAudioBuffer(context, url, storage);
         if (buffer) buffers[sampleName] = buffer;
       })
-    );
-  };
+    )
+  );
 }

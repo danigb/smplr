@@ -6,12 +6,13 @@ function setup() {
     "https://danigb.github.io/samples/drum-machines/TR-808/dm.json": {
       baseUrl: "",
       name: "",
-      samples: ["kick"],
+      samples: ["kick/low"],
       sampleNames: [],
-      nameToSample: {},
+      nameToSample: { kick: "kick/low" },
       sampleNameVariations: {},
     },
-    "https://danigb.github.io/samples/drum-machines/TR-808/kick.ogg": "kick",
+    "https://danigb.github.io/samples/drum-machines/TR-808/kick/low.ogg":
+      "kick",
   });
   const context = createAudioContextMock();
 
@@ -19,24 +20,26 @@ function setup() {
 }
 
 describe("Drum machine", () => {
-  it("calls underlying player on start", async () => {
+  it("replaces name with sample name", async () => {
     const { context } = setup();
-    const dm = await new DrumMachine(context, { instrument: "TR-808" });
+    const dm = await new DrumMachine(context, {
+      instrument: "TR-808",
+    }).loaded();
     const start = jest.fn();
 
     (dm as any).player.start = start;
     dm.start({ note: "kick" });
-    expect(start).toHaveBeenCalledWith({ note: "kick" });
+    expect(start).toHaveBeenCalledWith({ note: "kick/low", stopId: "kick" });
   });
 
-  it("calls underlying player on start", async () => {
+  it("calls underlying player on stop", () => {
     const { context } = setup();
-    const dm = await new DrumMachine(context, { instrument: "TR-808" });
-    const start = jest.fn();
+    const dm = new DrumMachine(context, { instrument: "TR-808" });
+    const stop = jest.fn();
 
-    (dm as any).player.stop = start;
+    (dm as any).player.stop = stop;
     dm.stop({ stopId: "kick" });
-    expect(start).toHaveBeenCalledWith({ stopId: "kick" });
+    expect(stop).toHaveBeenCalledWith({ stopId: "kick" });
   });
 
   it("has output", () => {

@@ -16,7 +16,7 @@ export type SampleStart = {
   lpfCutoffHz?: number;
   onEnded?: (sample: SampleStart) => void;
   stop?: Subscribe<SampleStop | undefined>;
-  stopId?: string;
+  stopId?: string | number;
   time?: number;
 };
 
