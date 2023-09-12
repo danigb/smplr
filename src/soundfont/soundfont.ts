@@ -1,6 +1,6 @@
-import { findFirstSupportedFormat } from "../sampler/load-audio";
-import { findNearestMidi, toMidi } from "../sampler/midi";
-import { Sampler, SamplerAudioLoader } from "../sampler/sampler";
+import { findFirstSupportedFormat } from "../player/load-audio";
+import { findNearestMidi, toMidi } from "../player/midi";
+import { Sampler, SamplerAudioLoader } from "../player/sampler";
 import { HttpStorage, Storage } from "../storage";
 
 export type SoundfontConfig = {

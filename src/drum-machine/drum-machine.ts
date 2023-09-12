@@ -1,11 +1,11 @@
-import { OutputChannel } from "../sampler/channel";
+import { OutputChannel } from "../player/channel";
 import {
   AudioBuffers,
   findFirstSupportedFormat,
   loadAudioBuffer,
-} from "../sampler/load-audio";
-import { Player } from "../sampler/player";
-import { SampleStart, SampleStop } from "../sampler/player-sample";
+} from "../player/load-audio";
+import { Player } from "../player/player";
+import { SampleStart, SampleStop } from "../player/player-sample";
 import { HttpStorage, Storage } from "../storage";
 import {
   DrumMachineInstrument,

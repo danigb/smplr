@@ -2,9 +2,9 @@ import {
   AudioBuffers,
   findFirstSupportedFormat,
   loadAudioBuffer,
-} from "./sampler/load-audio";
-import { toMidi } from "./sampler/midi";
-import { Sampler, SamplerAudioLoader } from "./sampler/sampler";
+} from "./player/load-audio";
+import { toMidi } from "./player/midi";
+import { Sampler, SamplerAudioLoader } from "./player/sampler";
 import { HttpStorage, Storage } from "./storage";
 
 /**

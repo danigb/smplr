@@ -1,9 +1,9 @@
-import { Channel } from "../sampler/channel";
-import { AudioBuffers } from "../sampler/load-audio";
-import { midiVelToGain, toMidi } from "../sampler/midi";
-import { SamplerNote } from "../sampler/sampler";
-import { createTrigger, Trigger } from "../sampler/signals";
-import { startSample, StopSample } from "../sampler/start-sample";
+import { Channel } from "../player/channel";
+import { AudioBuffers } from "../player/load-audio";
+import { midiVelToGain, toMidi } from "../player/midi";
+import { SamplerNote } from "../player/sampler";
+import { Trigger, createTrigger } from "../player/signals";
+import { StopSample, startSample } from "../player/start-sample";
 import { HttpStorage, Storage } from "../storage";
 import { SfzInstrument } from "./sfz-kits";
 import { loadSfzBuffers, loadSfzInstrument } from "./sfz-load";

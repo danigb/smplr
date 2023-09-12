@@ -1,5 +1,5 @@
-import { AudioInsert } from "./sampler/connect";
-import { Subscribe } from "./sampler/signals";
+import { AudioInsert } from "./player/connect";
+import { Subscribe } from "./player/signals";
 
 // @private
 export function createTremolo(
