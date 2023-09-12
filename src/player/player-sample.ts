@@ -7,13 +7,17 @@ export type SampleStop = {
   time?: number;
 };
 
-export type SampleStart = {
-  note: string | number;
+export type SampleOptions = {
   decayTime?: number;
   detune?: number;
-  duration?: number;
+  // null can be used to override default
+  duration?: number | null;
   gain?: number;
   lpfCutoffHz?: number;
+};
+
+export type SampleStart = SampleOptions & {
+  note: string | number;
   onEnded?: (sample: SampleStart) => void;
   stop?: Subscribe<SampleStop | undefined>;
   stopId?: string | number;
@@ -30,7 +34,10 @@ export class SamplePlayer {
   public readonly buffers: AudioBuffers;
   #stop: Trigger<SampleStop | undefined>;
 
-  public constructor(public readonly destination: AudioNode) {
+  public constructor(
+    public readonly destination: AudioNode,
+    private readonly options: Partial<SampleOptions>
+  ) {
     this.context = destination.context;
     this.buffers = {};
     this.#stop = createTrigger();
@@ -46,10 +53,11 @@ export class SamplePlayer {
 
     const source = context.createBufferSource();
     source.buffer = buffer;
-    source.detune.value = sample?.detune ?? 0;
+    source.detune.value = sample.detune ?? this.options.detune ?? 0;
 
     // Low pass filter
-    const lpf = sample.lpfCutoffHz
+    const lpfCutoffHz = sample.lpfCutoffHz ?? this.options.lpfCutoffHz;
+    const lpf = lpfCutoffHz
       ? new BiquadFilterNode(context, {
           type: "lowpass",
           frequency: sample.lpfCutoffHz,
@@ -58,10 +66,12 @@ export class SamplePlayer {
 
     // Sample volume
     const volume = context.createGain();
-    volume.gain.value = sample?.gain ?? 1.0;
+    const gain = sample.gain ?? this.options.gain ?? 1.0;
+    volume.gain.value = gain;
 
     // Release decay
-    const [decay, startDecay] = createDecayEnvelope(context, sample.decayTime);
+    const decayTime = sample.decayTime ?? this.options.decayTime;
+    const [decay, startDecay] = createDecayEnvelope(context, decayTime);
 
     const stopId = sample.stopId ?? sample.note;
     const cleanup = unsubscribeAll([
@@ -94,8 +104,9 @@ export class SamplePlayer {
       }
     }
 
-    if (sample.duration !== undefined) {
-      stop(startAt + sample.duration);
+    let duration = sample.duration ?? buffer.duration;
+    if (typeof sample.duration == "number") {
+      stop(startAt + duration);
     }
 
     return stop;

@@ -1,10 +1,13 @@
 import { Channel, ChannelOptions, OutputChannel } from "./channel";
 import { AudioBuffers } from "./load-audio";
 import { QueuedPlayer } from "./player-queue";
-import { SampleStart, SampleStop } from "./player-sample";
+import { SampleOptions, SampleStart, SampleStop } from "./player-sample";
+
+type PlayerOptions = ChannelOptions & SampleOptions;
 
 /**
- * QueuedPlayer with an output channel
+ * Player used by instruments
+ * @private
  */
 export class Player {
   public readonly buffers: AudioBuffers;
@@ -13,10 +16,10 @@ export class Player {
 
   constructor(
     public readonly context: BaseAudioContext,
-    options: Partial<ChannelOptions>
+    options: Partial<PlayerOptions>
   ) {
     const channel = new Channel(context, options);
-    this.#player = new QueuedPlayer(channel.input);
+    this.#player = new QueuedPlayer(channel.input, options);
     this.buffers = this.#player.buffers;
     this.output = channel;
   }
