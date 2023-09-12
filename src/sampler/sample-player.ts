@@ -8,7 +8,7 @@ export type SampleStop = {
 };
 
 export type SampleStart = {
-  sampleId: string;
+  note: string | number;
   decayTime?: number;
   detune?: number;
   duration?: number;
@@ -38,7 +38,7 @@ export class SamplePlayer {
 
   public start(sample: SampleStart) {
     const { destination, context } = this;
-    const buffer = this.buffers[sample.sampleId];
+    const buffer = this.buffers[sample.note];
     if (!buffer) {
       console.warn(`Sample not found: '${sample}'`);
       return () => undefined;
@@ -63,7 +63,7 @@ export class SamplePlayer {
     // Release decay
     const [decay, startDecay] = createDecayEnvelope(context, sample.decayTime);
 
-    const stopId = sample.stopId ?? sample.sampleId;
+    const stopId = sample.stopId ?? sample.note;
     const cleanup = unsubscribeAll([
       connectSerial([source, lpf, volume, decay, destination]),
       sample.stop?.((sampleStop) => {
@@ -101,7 +101,7 @@ export class SamplePlayer {
     return stop;
   }
 
-  public stop(sample?: SampleStop | string) {
+  public stop(sample?: SampleStop | string | number) {
     this.#stop.trigger(
       typeof sample === "object" ? sample : { stopId: sample }
     );

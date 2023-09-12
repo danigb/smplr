@@ -1,3 +1,4 @@
+import { AudioBuffers } from "./load-audio";
 import { SamplePlayer, SampleStart, SampleStop } from "./sample-player";
 import { SortedQueue } from "./sorted-queue";
 
@@ -8,7 +9,9 @@ type SampleStartWithTime = SampleStart & { time: number };
  *
  * @private
  */
+
 export class QueuedPlayer {
+  public readonly buffers: AudioBuffers;
   #player: SamplePlayer;
   #queue: SortedQueue<SampleStartWithTime>;
   #intervalId: NodeJS.Timeout | undefined;
@@ -18,6 +21,7 @@ export class QueuedPlayer {
       (a, b) => a.time - b.time
     );
     this.#player = new SamplePlayer(destination);
+    this.buffers = this.#player.buffers;
   }
 
   public start(sample: SampleStart) {
@@ -46,14 +50,21 @@ export class QueuedPlayer {
     }
   }
 
-  public stop(sample?: SampleStop | string) {
+  public stop(sample?: SampleStop | string | number) {
     this.#player.stop(sample);
 
     if (sample) {
-      const stopId = typeof sample === "string" ? sample : sample?.stopId;
-      this.#queue.removeAll((item) =>
-        item.stopId ? item.stopId === stopId : item.sampleId === stopId
-      );
+      const stopId = typeof sample === "object" ? sample.stopId : sample;
+      const time = typeof sample === "object" ? sample.time : undefined;
+      if (stopId) {
+        this.#queue.removeAll((item) =>
+          item.stopId ? item.stopId === stopId : item.note === stopId
+        );
+      } else if (time) {
+        this.#queue.removeAll((item) => item.time >= time);
+      } else {
+        this.#queue.clear();
+      }
     } else {
       this.#queue.clear();
     }

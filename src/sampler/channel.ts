@@ -2,11 +2,13 @@ import { AudioInsert, connectSerial } from "./connect";
 import { midiVelToGain } from "./midi";
 import { createControl } from "./signals";
 
-type ChannelOptions = {
+export type ChannelOptions = {
   destination: AudioNode;
   volume: number;
   volumeToGain: (volume: number) => number;
 };
+
+export type OutputChannel = Omit<Channel, "input">;
 
 type Send = {
   name: string;
@@ -15,6 +17,7 @@ type Send = {
 };
 
 /**
+ * An output channel with audio effects
  * @private
  */
 export class Channel {
@@ -29,18 +32,18 @@ export class Channel {
   #options: Readonly<ChannelOptions>;
 
   constructor(
-    public readonly context: AudioContext,
+    public readonly context: BaseAudioContext,
     options: Partial<ChannelOptions>
   ) {
-    this.#options = Object.freeze({
+    this.#options = {
       destination: context.destination,
       volume: 100,
       volumeToGain: midiVelToGain,
       ...options,
-    });
+    };
 
-    this.input = new GainNode(this.context);
-    this.#volume = new GainNode(this.context);
+    this.input = context.createGain();
+    this.#volume = context.createGain();
 
     this.#disconnect = connectSerial([
       this.input,
