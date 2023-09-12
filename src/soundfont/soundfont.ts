@@ -1,50 +1,67 @@
+import { ChannelOptions, OutputChannel } from "../player/channel";
 import { findFirstSupportedFormat } from "../player/load-audio";
 import { findNearestMidi, toMidi } from "../player/midi";
-import { Sampler, SamplerAudioLoader } from "../player/sampler";
+import { Player } from "../player/player";
+import {
+  SampleOptions,
+  SampleStart,
+  SampleStop,
+} from "../player/player-sample";
+import { SamplerAudioLoader } from "../player/sampler";
 import { HttpStorage, Storage } from "../storage";
 
-export type SoundfontConfig = {
-  kit: "FluidR3_GM" | "MusyngKite" | string;
-  instrument: string;
-  storage?: Storage;
+export type SoundfontConfig = SampleOptions &
+  ChannelOptions & {
+    kit: "FluidR3_GM" | "MusyngKite" | string;
+    instrument: string;
+    storage?: Storage;
+    extraGain?: number;
+  };
 
-  destination: AudioNode;
+export class Soundfont {
+  public readonly options: Readonly<Partial<SoundfontConfig>>;
+  private readonly player: Player;
+  #load: Promise<void>;
+  public readonly output: OutputChannel;
 
-  detune: number;
-  volume: number;
-  velocity: number;
-  decayTime?: number;
-  lpfCutoffHz?: number;
-  extraGain?: number;
-};
-
-export class Soundfont extends Sampler {
   constructor(
-    context: AudioContext,
+    public readonly context: AudioContext,
     options: Partial<SoundfontConfig> & { instrument: string }
   ) {
+    this.options = Object.freeze(Object.assign({}, options));
     const url = options.instrument.startsWith("http")
       ? options.instrument
       : gleitzKitUrl(options.instrument, options.kit ?? "MusyngKite");
-    super(context, {
-      destination: options.destination,
 
-      detune: options.detune,
-      volume: options.volume,
-      velocity: options.velocity,
-      decayTime: options.decayTime ?? 0.5,
-      lpfCutoffHz: options.lpfCutoffHz,
-      buffers: soundfontLoader(url, options.storage ?? HttpStorage),
-      noteToSample: (note, buffers, config) => {
-        let midi = toMidi(note.note);
-        return midi === undefined ? ["", 0] : findNearestMidi(midi, buffers);
-      },
-    });
+    this.player = new Player(context, options);
+    this.output = this.player.output;
+    const loader = soundfontLoader(url, options.storage ?? HttpStorage);
+    this.#load = loader(context, this.player.buffers);
 
     // This is to compensate the low volume of the original samples
     const extraGain = options.extraGain ?? 5;
     const gain = new GainNode(context, { gain: extraGain });
     this.output.addInsert(gain);
+  }
+
+  start(sample: SampleStart) {
+    let midi = toMidi(sample.note);
+    const [note, detune] =
+      midi === undefined ? ["", 0] : findNearestMidi(midi, this.player.buffers);
+    return this.player.start({
+      ...sample,
+      note,
+      detune,
+    });
+  }
+
+  stop(sample: SampleStop) {
+    return this.player.stop(sample);
+  }
+
+  async loaded() {
+    await this.#load;
+    return this;
   }
 }
 

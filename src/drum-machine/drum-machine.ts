@@ -1,11 +1,15 @@
-import { OutputChannel } from "../player/channel";
+import { ChannelOptions, OutputChannel } from "../player/channel";
 import {
   AudioBuffers,
   findFirstSupportedFormat,
   loadAudioBuffer,
 } from "../player/load-audio";
 import { Player } from "../player/player";
-import { SampleStart, SampleStop } from "../player/player-sample";
+import {
+  SampleOptions,
+  SampleStart,
+  SampleStop,
+} from "../player/player-sample";
 import { HttpStorage, Storage } from "../storage";
 import {
   DrumMachineInstrument,
@@ -27,17 +31,11 @@ const INSTRUMENTS: Record<string, string> = {
     "https://danigb.github.io/samples/drum-machines/Roland-CR-8000/dm.json",
 };
 
-export type DrumMachineConfig = {
-  instrument: string;
-  destination: AudioNode;
-  storage?: Storage;
-
-  detune: number;
-  volume: number;
-  velocity: number;
-  decayTime?: number;
-  lpfCutoffHz?: number;
-};
+export type DrumMachineConfig = ChannelOptions &
+  SampleOptions & {
+    instrument: string;
+    storage?: Storage;
+  };
 
 export class DrumMachine {
   #instrument = EMPTY_INSTRUMENT;
@@ -47,8 +45,9 @@ export class DrumMachine {
 
   public constructor(
     context: AudioContext,
-    options: Partial<DrumMachineConfig> = {}
+    options?: Partial<DrumMachineConfig>
   ) {
+    options = Object.assign({}, options);
     const storage: Storage = options.storage ?? HttpStorage;
     const url = INSTRUMENTS[options.instrument ?? "TR-808"];
     if (!url) throw new Error("Invalid instrument: " + options.instrument);
