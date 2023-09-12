@@ -1,5 +1,5 @@
 import { AudioBuffers } from "./load-audio";
-import { SamplePlayer, SampleStart, SampleStop } from "./sample-player";
+import { SamplePlayer, SampleStart, SampleStop } from "./player-sample";
 import { SortedQueue } from "./sorted-queue";
 
 type SampleStartWithTime = SampleStart & { time: number };

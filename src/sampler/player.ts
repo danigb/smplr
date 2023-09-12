@@ -1,12 +1,12 @@
 import { Channel, ChannelOptions, OutputChannel } from "./channel";
 import { AudioBuffers } from "./load-audio";
-import { QueuedPlayer } from "./queued-player";
-import { SampleStart, SampleStop } from "./sample-player";
+import { QueuedPlayer } from "./player-queue";
+import { SampleStart, SampleStop } from "./player-sample";
 
 /**
  * QueuedPlayer with an output channel
  */
-export class ChannelPlayer {
+export class Player {
   public readonly buffers: AudioBuffers;
   public readonly output: OutputChannel;
   #player: QueuedPlayer;

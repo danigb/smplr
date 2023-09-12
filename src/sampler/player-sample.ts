@@ -40,7 +40,7 @@ export class SamplePlayer {
     const { destination, context } = this;
     const buffer = this.buffers[sample.note];
     if (!buffer) {
-      console.warn(`Sample not found: '${sample}'`);
+      console.warn(`Sample not found: '${sample.note}'`);
       return () => undefined;
     }
 
