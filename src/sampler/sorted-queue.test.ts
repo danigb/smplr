@@ -1,6 +1,10 @@
 import { SortedQueue } from "./sorted-queue";
 
 describe("SortedQueue", () => {
+  type Note = {
+    name: string;
+    time: number;
+  };
   it("should add items in sorted order", () => {
     const queue = new SortedQueue<number>((a, b) => a - b);
     queue.push(3);
@@ -22,15 +26,21 @@ describe("SortedQueue", () => {
   });
 
   it("should handle objects with custom comparators", () => {
-    type Note = {
-      name: string;
-      time: number;
-    };
     const queue = new SortedQueue<Note>((a, b) => a.time - b.time);
     queue.push({ name: "C", time: 25 });
     queue.push({ name: "D", time: 30 });
     queue.push({ name: "E", time: 20 });
     expect(queue.size()).toBe(3);
+    expect(queue.peek()?.name).toBe("E");
+  });
+
+  it("should remove objects", () => {
+    const queue = new SortedQueue<Note>((a, b) => a.time - b.time);
+    queue.push({ name: "C", time: 25 });
+    queue.push({ name: "D", time: 30 });
+    queue.push({ name: "E", time: 20 });
+    queue.removeAll((note) => note.name === "D");
+    expect(queue.size()).toBe(2);
     expect(queue.peek()?.name).toBe("E");
   });
 });

@@ -1,14 +1,13 @@
 /**
- * A sorted queue that uses binary search to insert items in sorted order.
+ * A sorted items that uses binary search to insert items in sorted order.
  * @private
  */
 export class SortedQueue<T> {
-  readonly queue: T[] = [];
+  #items: T[] = [];
   constructor(public readonly compare: (a: T, b: T) => number) {}
 
   push(item: T) {
-    const { queue, compare } = this;
-    const len = queue.length;
+    const len = this.#items.length;
 
     let left = 0;
     let right = len - 1;
@@ -16,7 +15,7 @@ export class SortedQueue<T> {
 
     while (left <= right) {
       const mid = Math.floor((left + right) / 2);
-      if (compare(item, queue[mid]) < 0) {
+      if (this.compare(item, this.#items[mid]) < 0) {
         index = mid;
         right = mid - 1;
       } else {
@@ -24,18 +23,26 @@ export class SortedQueue<T> {
       }
     }
 
-    queue.splice(index, 0, item);
+    this.#items.splice(index, 0, item);
   }
 
   pop() {
-    return this.queue.shift();
+    return this.#items.shift();
   }
 
   peek(): T | undefined {
-    return this.queue[0];
+    return this.#items[0];
+  }
+
+  removeAll(predicate: (item: T) => boolean) {
+    this.#items = this.#items.filter(predicate);
+  }
+
+  clear() {
+    this.#items = [];
   }
 
   size() {
-    return this.queue.length;
+    return this.#items.length;
   }
 }
