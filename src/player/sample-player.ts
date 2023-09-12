@@ -1,5 +1,6 @@
 import { connectSerial } from "./connect";
 import { AudioBuffers } from "./load-audio";
+import { midiVelToGain } from "./midi";
 import { Subscribe, Trigger, createTrigger, unsubscribeAll } from "./signals";
 
 export type SampleStop = {
@@ -12,17 +13,21 @@ export type SampleOptions = {
   detune?: number;
   // null can be used to override default
   duration?: number | null;
-  gain?: number;
+  velocity?: number;
   lpfCutoffHz?: number;
 };
 
-export type SampleStart = SampleOptions & {
+export type SampleStart = {
   note: string | number;
   onEnded?: (sample: SampleStart) => void;
   stop?: Subscribe<SampleStop | undefined>;
   stopId?: string | number;
   time?: number;
-};
+} & SampleOptions;
+
+export type SamplePlayerOptions = {
+  velocityToGain?: (velocity: number) => number;
+} & SampleOptions;
 
 /**
  * A sample player. This is used internally by the Sampler.
@@ -33,14 +38,16 @@ export class SamplePlayer {
   public readonly context: BaseAudioContext;
   public readonly buffers: AudioBuffers;
   #stop: Trigger<SampleStop | undefined>;
+  velocityToGain: (velocity: number) => number;
 
   public constructor(
     public readonly destination: AudioNode,
-    private readonly options: Partial<SampleOptions>
+    private readonly options: Partial<SamplePlayerOptions>
   ) {
     this.context = destination.context;
     this.buffers = {};
     this.#stop = createTrigger();
+    this.velocityToGain = options.velocityToGain ?? midiVelToGain;
   }
 
   public start(sample: SampleStart) {
@@ -66,8 +73,8 @@ export class SamplePlayer {
 
     // Sample volume
     const volume = context.createGain();
-    const gain = sample.gain ?? this.options.gain ?? 1.0;
-    volume.gain.value = gain;
+    const velocity = sample.velocity ?? this.options.velocity ?? 100;
+    volume.gain.value = this.velocityToGain(velocity);
 
     // Release decay
     const decayTime = sample.decayTime ?? this.options.decayTime;

@@ -4,7 +4,7 @@ import {
   SamplePlayer,
   SampleStart,
   SampleStop,
-} from "./player-sample";
+} from "./sample-player";
 import { SortedQueue } from "./sorted-queue";
 
 type SampleStartWithTime = SampleStart & { time: number };

@@ -9,7 +9,7 @@ import {
   SampleOptions,
   SampleStart,
   SampleStop,
-} from "../player/player-sample";
+} from "../player/sample-player";
 import { HttpStorage, Storage } from "../storage";
 import {
   DrumMachineInstrument,

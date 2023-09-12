@@ -1,7 +1,7 @@
 import { Channel, ChannelOptions, OutputChannel } from "./channel";
 import { AudioBuffers } from "./load-audio";
-import { QueuedPlayer } from "./player-queue";
-import { SampleOptions, SampleStart, SampleStop } from "./player-sample";
+import { QueuedPlayer } from "./queued-player";
+import { SampleOptions, SampleStart, SampleStop } from "./sample-player";
 
 type PlayerOptions = ChannelOptions & SampleOptions;
 
