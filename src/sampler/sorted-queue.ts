@@ -35,7 +35,7 @@ export class SortedQueue<T> {
   }
 
   removeAll(predicate: (item: T) => boolean) {
-    this.#items = this.#items.filter(predicate);
+    this.#items = this.#items.filter((item) => !predicate(item));
   }
 
   clear() {
