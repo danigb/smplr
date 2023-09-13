@@ -1,5 +1,8 @@
 import { ChannelOptions, OutputChannel } from "../player/channel";
-import { findFirstSupportedFormat } from "../player/load-audio";
+import {
+  AudioBuffersLoader,
+  findFirstSupportedFormat,
+} from "../player/load-audio";
 import { findNearestMidi, toMidi } from "../player/midi";
 import { Player } from "../player/player";
 import {
@@ -7,7 +10,6 @@ import {
   SampleStart,
   SampleStop,
 } from "../player/sample-player";
-import { SamplerAudioLoader } from "../player/sampler";
 import { HttpStorage, Storage } from "../storage";
 
 export type SoundfontConfig = SampleOptions &
@@ -65,7 +67,7 @@ export class Soundfont {
   }
 }
 
-function soundfontLoader(url: string, storage: Storage): SamplerAudioLoader {
+function soundfontLoader(url: string, storage: Storage): AudioBuffersLoader {
   return async (context, buffers) => {
     const sourceFile = await (await storage.fetch(url)).text();
     const json = midiJsToJson(sourceFile);

@@ -1,13 +1,13 @@
 import { HttpStorage } from "../dist";
 import {
   AudioBuffers,
+  AudioBuffersLoader,
   findFirstSupportedFormat,
   loadAudioBuffer,
 } from "./player/load-audio";
 import { toMidi } from "./player/midi";
 import { Player } from "./player/player";
 import { SampleStart, SampleStop } from "./player/sample-player";
-import { SamplerAudioLoader } from "./player/sampler";
 import { Storage } from "./storage";
 
 /**
@@ -120,9 +120,9 @@ function findNearestMidiInLayer(
 function splendidGrandPianoLoader(
   baseUrl: string,
   storage: Storage
-): SamplerAudioLoader {
+): AudioBuffersLoader {
   const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
-  return async (context: AudioContext, buffers: AudioBuffers) => {
+  return async (context, buffers) => {
     for (const layer of LAYERS) {
       await Promise.all(
         layer.samples.map(async ([midi, name]) => {
