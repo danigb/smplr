@@ -20,7 +20,7 @@ export type SampleOptions = {
 export type SampleStart = {
   note: string | number;
   onEnded?: (sample: SampleStart) => void;
-  stop?: Subscribe<SampleStop> | Subscribe<number | undefined>;
+  stop?: Subscribe<number>;
   stopId?: string | number;
   time?: number;
 } & SampleOptions;
@@ -76,22 +76,26 @@ export class SamplePlayer {
     const velocity = sample.velocity ?? this.options.velocity ?? 100;
     volume.gain.value = this.velocityToGain(velocity);
 
-    // Release decay
+    // Stop with decay
     const decayTime = sample.decayTime ?? this.options.decayTime;
     const [decay, startDecay] = createDecayEnvelope(context, decayTime);
+    function stop(time?: number) {
+      time ??= context.currentTime;
+      if (time <= startAt) {
+        source.stop(time);
+      } else {
+        const stopAt = startDecay(time);
+        source.stop(stopAt);
+      }
+    }
 
     const stopId = sample.stopId ?? sample.note;
     const cleanup = unsubscribeAll([
       connectSerial([source, lpf, volume, decay, destination]),
-      sample.stop?.((sampleStop) => {
-        if (typeof sampleStop === "number") {
-          stop(sampleStop);
-        } else if (
-          sampleStop === undefined ||
-          sampleStop.stopId === undefined ||
-          sampleStop.stopId === stopId
-        ) {
-          stop(sampleStop?.time);
+      sample.stop?.(stop),
+      this.#stop.subscribe((event) => {
+        if (!event || event.stopId === undefined || event.stopId === stopId) {
+          stop(event?.time);
         }
       }),
     ]);
@@ -103,16 +107,6 @@ export class SamplePlayer {
     const startAt = Math.max(sample.time ?? 0, context.currentTime);
     source.start(sample.time);
 
-    function stop(time?: number) {
-      time ??= context.currentTime;
-      if (time <= startAt) {
-        source.stop(time);
-      } else {
-        const stopAt = startDecay(time);
-        source.stop(stopAt);
-      }
-    }
-
     let duration = sample.duration ?? buffer.duration;
     if (typeof sample.duration == "number") {
       stop(startAt + duration);
@@ -121,10 +115,15 @@ export class SamplePlayer {
     return stop;
   }
 
-  public stop(sample?: SampleStop | string | number) {
-    this.#stop.trigger(
-      typeof sample === "object" ? sample : { stopId: sample }
-    );
+  public stop(sample?: SampleStop) {
+    this.#stop.trigger(sample);
+  }
+
+  public disconnect() {
+    this.stop();
+    Object.keys(this.buffers).forEach((key) => {
+      delete this.buffers[key];
+    });
   }
 }
 

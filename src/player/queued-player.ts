@@ -37,7 +37,7 @@ export class QueuedPlayer {
     return this.#intervalId !== undefined;
   }
 
-  public start(sample: SampleStart) {
+  start(sample: SampleStart) {
     const context = this.player.context;
     const now = context.currentTime;
     const startAt = sample.time ?? now;
@@ -73,23 +73,28 @@ export class QueuedPlayer {
     };
   }
 
-  public stop(sample?: SampleStop | string | number) {
+  stop(sample?: SampleStop) {
     this.player.stop(sample);
 
-    if (sample) {
-      const stopId = typeof sample === "object" ? sample.stopId : sample;
-      const time = typeof sample === "object" ? sample.time : undefined;
-      if (stopId) {
-        this.#queue.removeAll((item) =>
-          item.stopId ? item.stopId === stopId : item.note === stopId
-        );
-      } else if (time) {
-        this.#queue.removeAll((item) => item.time >= time);
-      } else {
-        this.#queue.clear();
-      }
-    } else {
+    if (!sample) {
       this.#queue.clear();
+      return;
     }
+
+    const time = sample?.time ?? 0;
+    const stopId = sample?.stopId;
+    if (stopId) {
+      this.#queue.removeAll((item) =>
+        item.time >= time && item.stopId
+          ? item.stopId === stopId
+          : item.note === stopId
+      );
+    } else {
+      this.#queue.removeAll((item) => item.time >= time);
+    }
+  }
+
+  disconnect() {
+    this.player.disconnect();
   }
 }
