@@ -1,17 +1,12 @@
 import { HttpStorage, Storage } from "../storage";
-import { Channel } from "./channel";
-import { AudioBuffers, loadAudioBuffer } from "./load-audio";
+import {
+  AudioBuffers,
+  AudioBuffersLoader,
+  loadAudioBuffer,
+} from "./load-audio";
 import { midiVelToGain } from "./midi";
-import { Trigger, createTrigger } from "./signals";
-import { StopSample, startSample } from "./start-sample";
-
-/**
- * A function that downloads audio
- */
-export type SamplerAudioLoader = (
-  context: AudioContext,
-  buffers: AudioBuffers
-) => Promise<void>;
+import { Player } from "./player";
+import { SampleStart, SampleStop } from "./sample-player";
 
 export type SamplerConfig = {
   storage?: Storage;
@@ -22,25 +17,8 @@ export type SamplerConfig = {
   lpfCutoffHz?: number;
   destination: AudioNode;
 
-  buffers: Record<string | number, string | AudioBuffers> | SamplerAudioLoader;
+  buffers: Record<string | number, string | AudioBuffers> | AudioBuffersLoader;
   volumeToGain: (volume: number) => number;
-  noteToSample: (
-    note: SamplerNote,
-    buffers: AudioBuffers,
-    config: SamplerConfig
-  ) => [string | number, number];
-};
-
-export type SamplerNote = {
-  decayTime?: number;
-  detune?: number;
-  duration?: number;
-  lpfCutoffHz?: number;
-  note: string | number;
-  onEnded?: (note: SamplerNote | string | number) => void;
-  stopId?: string | number;
-  time?: number;
-  velocity?: number;
 };
 
 /**
@@ -49,37 +27,29 @@ export type SamplerNote = {
  * @private
  */
 export class Sampler {
-  public readonly output: Omit<Channel, "input">;
-  public readonly buffers: AudioBuffers;
-  #config: SamplerConfig;
-  #stop: Trigger<StopSample | undefined>;
+  #options: SamplerConfig;
   #load: Promise<void>;
-  #output: Channel;
+  private readonly player: Player;
 
   public constructor(
     public readonly context: AudioContext,
     options: Partial<SamplerConfig> = {}
   ) {
-    this.#config = {
+    this.#options = {
       destination: options.destination ?? context.destination,
       detune: 0,
       volume: options.volume ?? 100,
       velocity: options.velocity ?? 100,
       buffers: options.buffers ?? {},
       volumeToGain: options.volumeToGain ?? midiVelToGain,
-      noteToSample:
-        options.noteToSample ?? ((note) => [note.note.toString(), 0]),
     };
-    this.buffers = {};
-    this.#stop = createTrigger();
+    this.player = new Player(context, this.#options);
     const storage = options.storage ?? HttpStorage;
     const loader =
-      typeof this.#config.buffers === "function"
-        ? this.#config.buffers
-        : createAudioBuffersLoader(this.#config.buffers, storage);
-    this.#load = loader(context, this.buffers);
-    this.#output = new Channel(context, this.#config);
-    this.output = this.#output;
+      typeof this.#options.buffers === "function"
+        ? this.#options.buffers
+        : createAudioBuffersLoader(this.#options.buffers, storage);
+    this.#load = loader(context, this.player.buffers);
   }
 
   async loaded(): Promise<this> {
@@ -87,47 +57,35 @@ export class Sampler {
     return this;
   }
 
-  start(note: SamplerNote | string | number) {
-    const _note: SamplerNote = typeof note === "object" ? note : { note: note };
-    const [sample, detune] = this.#config.noteToSample(
-      _note,
-      this.buffers,
-      this.#config
-    );
-    const buffer = this.buffers[sample];
-    if (!buffer) {
-      console.warn(`Sample not found: '${sample}'`);
-      return () => undefined;
-    }
-    const onEnded = _note.onEnded;
-    return startSample({
-      buffer,
-      destination: this.#output.input,
-
-      time: _note.time,
-      duration: _note.duration,
-
-      decayTime: _note.decayTime,
-      lpfCutoffHz: _note.lpfCutoffHz,
-      detune: detune + (_note.detune ?? this.#config.detune),
-      gain: this.#config.volumeToGain(_note.velocity ?? this.#config.velocity),
-
-      stop: this.#stop.subscribe,
-      stopId: _note.stopId ?? _note.note,
-      onEnded: onEnded ? () => onEnded(note) : undefined,
-    });
+  get output() {
+    return this.player.output;
   }
 
-  stop(note?: StopSample | string | number) {
-    const note_ = typeof note === "object" ? note : { stopId: note };
-    this.#stop.trigger(note_);
+  start(sample: SampleStart | string | number) {
+    return this.player.start(
+      typeof sample === "object" ? sample : { note: sample }
+    );
+  }
+
+  stop(sample?: SampleStop | string | number) {
+    return this.player.stop(
+      typeof sample === "object"
+        ? sample
+        : sample === undefined
+        ? undefined
+        : { stopId: sample }
+    );
+  }
+
+  disconnect() {
+    return this.player.disconnect();
   }
 }
 
 function createAudioBuffersLoader(
   source: Record<string | number, string | AudioBuffers>,
   storage: Storage
-): SamplerAudioLoader {
+): AudioBuffersLoader {
   return async (context, buffers) => {
     await Promise.all([
       Object.keys(source).map(async (key) => {
