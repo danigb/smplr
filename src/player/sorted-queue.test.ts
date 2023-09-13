@@ -40,9 +40,10 @@ describe("SortedQueue", () => {
     queue.push({ name: "D", time: 30 });
     queue.push({ name: "E", time: 20 });
     expect(queue.size()).toBe(3);
-    queue.removeAll((note) => note.name === "D");
+    expect(queue.removeAll((note) => note.name === "D")).toBe(true);
     expect(queue.size()).toBe(2);
     expect(queue.pop()?.name).toBe("E");
+    expect(queue.removeAll((note) => note.name === "E")).toBe(false);
     expect(queue.pop()?.name).toBe("C");
   });
 });

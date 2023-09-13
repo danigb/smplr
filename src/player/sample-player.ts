@@ -20,7 +20,7 @@ export type SampleOptions = {
 export type SampleStart = {
   note: string | number;
   onEnded?: (sample: SampleStart) => void;
-  stop?: Subscribe<SampleStop | undefined>;
+  stop?: Subscribe<SampleStop> | Subscribe<number | undefined>;
   stopId?: string | number;
   time?: number;
 } & SampleOptions;
@@ -84,7 +84,9 @@ export class SamplePlayer {
     const cleanup = unsubscribeAll([
       connectSerial([source, lpf, volume, decay, destination]),
       sample.stop?.((sampleStop) => {
-        if (
+        if (typeof sampleStop === "number") {
+          stop(sampleStop);
+        } else if (
           sampleStop === undefined ||
           sampleStop.stopId === undefined ||
           sampleStop.stopId === stopId

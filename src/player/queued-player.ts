@@ -61,6 +61,16 @@ export class QueuedPlayer {
         }
       }, 200);
     }
+
+    return (time?: number) => {
+      if (!time || time < startAt) {
+        if (!this.#queue.removeAll((item) => item === sample)) {
+          this.player.stop({ ...sample, time });
+        }
+      } else {
+        this.player.stop({ ...sample, time });
+      }
+    };
   }
 
   public stop(sample?: SampleStop | string | number) {

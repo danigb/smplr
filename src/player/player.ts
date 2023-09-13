@@ -26,7 +26,7 @@ export class Player {
   }
 
   public start(sample: SampleStart) {
-    this.#player.start(sample);
+    return this.#player.start(sample);
   }
 
   public stop(sample?: SampleStop | string | number) {
