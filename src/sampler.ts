@@ -1,12 +1,12 @@
-import { HttpStorage, Storage } from "../storage";
 import {
   AudioBuffers,
   AudioBuffersLoader,
   loadAudioBuffer,
-} from "./load-audio";
-import { midiVelToGain } from "./midi";
-import { Player } from "./player";
-import { SampleStart, SampleStop } from "./sample-player";
+} from "./player/load-audio";
+import { midiVelToGain } from "./player/midi";
+import { Player } from "./player/player";
+import { SampleStart, SampleStop } from "./player/sample-player";
+import { HttpStorage, Storage } from "./storage";
 
 export type SamplerConfig = {
   storage?: Storage;
