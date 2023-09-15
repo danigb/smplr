@@ -31,7 +31,8 @@ export class SamplePlayer {
       throw new Error("Can't start a sample on disconnected player");
     }
     const { destination, context } = this;
-    const buffer = this.buffers[sample.note];
+    const buffer =
+      (sample.name && this.buffers[sample.name]) || this.buffers[sample.note];
     if (!buffer) {
       console.warn(`Sample not found: '${sample.note}'`);
       return () => undefined;
