@@ -33,7 +33,13 @@ export function SoundfontExample({ className }: { className?: string }) {
       .loaded()
       .then((instrument) => {
         setStatus("ready");
-        setInstrument(instrument);
+        setInstrument((prevInstrument) => {
+          if (prevInstrument) {
+            console.log({ prevInstrument });
+            prevInstrument.disconnect();
+          }
+          return instrument;
+        });
         if (instrument.hasLoops) {
           setLoopStatus("loop");
         }

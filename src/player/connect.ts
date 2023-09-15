@@ -8,7 +8,6 @@ export function connectSerial(nodes: (AudioNode | AudioInsert | undefined)[]) {
   _nodes.reduce((a, b) => {
     const left = "output" in a ? a.output : a;
     const right = "input" in b ? b.input : b;
-    left.connect(right);
     return b;
   });
 
@@ -16,7 +15,6 @@ export function connectSerial(nodes: (AudioNode | AudioInsert | undefined)[]) {
     _nodes.reduce((a, b) => {
       const left = "output" in a ? a.output : a;
       const right = "input" in b ? b.input : b;
-      left.disconnect(right);
       return b;
     });
   };

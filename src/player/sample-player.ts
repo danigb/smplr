@@ -12,6 +12,7 @@ import { SamplePlayerOptions, SampleStart, SampleStop } from "./types";
 export class SamplePlayer {
   public readonly context: BaseAudioContext;
   public readonly buffers: AudioBuffers;
+  #disconnected = false;
   #stop: Trigger<SampleStop | undefined>;
   velocityToGain: (velocity: number) => number;
 
@@ -26,6 +27,9 @@ export class SamplePlayer {
   }
 
   public start(sample: SampleStart) {
+    if (this.#disconnected) {
+      throw new Error("Can't start a sample on disconnected player");
+    }
     const { destination, context } = this;
     const buffer = this.buffers[sample.note];
     if (!buffer) {
@@ -102,10 +106,16 @@ export class SamplePlayer {
   }
 
   public disconnect() {
+    if (this.#disconnected) return;
+    this.#disconnected = true;
     this.stop();
     Object.keys(this.buffers).forEach((key) => {
       delete this.buffers[key];
     });
+  }
+
+  public get connected() {
+    return !this.#disconnected;
   }
 }
 

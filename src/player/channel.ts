@@ -30,6 +30,7 @@ export class Channel {
   #disconnect: () => void;
   #unsubscribe: () => void;
   #options: Readonly<ChannelOptions>;
+  #disconnected = false;
 
   constructor(
     public readonly context: BaseAudioContext,
@@ -60,6 +61,9 @@ export class Channel {
   }
 
   addInsert(effect: AudioNode | AudioInsert) {
+    if (this.#disconnected) {
+      throw Error("Can't add insert to disconnected channel");
+    }
     this.#inserts ??= [];
     this.#inserts.push(effect);
     this.#disconnect();
@@ -76,6 +80,9 @@ export class Channel {
     effect: AudioNode | { input: AudioNode },
     mixValue: number
   ) {
+    if (this.#disconnected) {
+      throw Error("Can't add effect to disconnected channel");
+    }
     const mix = new GainNode(this.context);
     mix.gain.value = mixValue;
     const input = "input" in effect ? effect.input : effect;
@@ -86,6 +93,10 @@ export class Channel {
   }
 
   sendEffect(name: string, mix: number) {
+    if (this.#disconnected) {
+      throw Error("Can't send effect to disconnected channel");
+    }
+
     const send = this.#sends?.find((send) => send.name === name);
     if (send) {
       send.mix.gain.value = mix;
@@ -95,6 +106,8 @@ export class Channel {
   }
 
   disconnect() {
+    if (this.#disconnected) return;
+    this.#disconnected = true;
     this.#disconnect();
     this.#unsubscribe();
     this.#sends?.forEach((send) => send.disconnect());

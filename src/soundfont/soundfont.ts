@@ -83,6 +83,11 @@ export class Soundfont {
     return this.#loops.status === "loaded";
   }
 
+  public disconnect() {
+    console.log("disconnecting");
+    this.player.disconnect();
+  }
+
   start(sample: SampleStart) {
     const midi = toMidi(sample.note);
     const [note, detune] =
