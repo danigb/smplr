@@ -1,33 +1,8 @@
 import { connectSerial } from "./connect";
 import { AudioBuffers } from "./load-audio";
 import { midiVelToGain } from "./midi";
-import { Subscribe, Trigger, createTrigger, unsubscribeAll } from "./signals";
-
-export type SampleStop = {
-  stopId?: string | number;
-  time?: number;
-};
-
-export type SampleOptions = {
-  decayTime?: number;
-  detune?: number;
-  // null can be used to override default
-  duration?: number | null;
-  velocity?: number;
-  lpfCutoffHz?: number;
-};
-
-export type SampleStart = {
-  note: string | number;
-  onEnded?: (sample: SampleStart) => void;
-  stop?: Subscribe<number>;
-  stopId?: string | number;
-  time?: number;
-} & SampleOptions;
-
-export type SamplePlayerOptions = {
-  velocityToGain?: (velocity: number) => number;
-} & SampleOptions;
+import { Trigger, createTrigger, unsubscribeAll } from "./signals";
+import { SamplePlayerOptions, SampleStart, SampleStop } from "./types";
 
 /**
  * A sample player. This is used internally by the Sampler.

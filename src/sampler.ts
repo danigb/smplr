@@ -5,7 +5,7 @@ import {
 } from "./player/load-audio";
 import { midiVelToGain } from "./player/midi";
 import { Player } from "./player/player";
-import { SampleStart, SampleStop } from "./player/sample-player";
+import { SampleStart, SampleStop } from "./player/types";
 import { HttpStorage, Storage } from "./storage";
 
 export type SamplerConfig = {

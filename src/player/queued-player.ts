@@ -1,10 +1,6 @@
-import {
-  SampleOptions,
-  SamplePlayer,
-  SampleStart,
-  SampleStop,
-} from "./sample-player";
+import { SamplePlayer } from "./sample-player";
 import { SortedQueue } from "./sorted-queue";
+import { SampleOptions, SampleStart, SampleStop } from "./types";
 
 type SampleStartWithTime = SampleStart & { time: number };
 

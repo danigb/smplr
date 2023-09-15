@@ -5,11 +5,7 @@ import {
   loadAudioBuffer,
 } from "../player/load-audio";
 import { Player } from "../player/player";
-import {
-  SampleOptions,
-  SampleStart,
-  SampleStop,
-} from "../player/sample-player";
+import { SampleOptions, SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
 import {
   DrumMachineInstrument,

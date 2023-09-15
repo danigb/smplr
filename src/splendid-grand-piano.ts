@@ -7,7 +7,7 @@ import {
 } from "./player/load-audio";
 import { toMidi } from "./player/midi";
 import { Player } from "./player/player";
-import { SampleStart, SampleStop } from "./player/sample-player";
+import { SampleStart, SampleStop } from "./player/types";
 import { Storage } from "./storage";
 
 /**

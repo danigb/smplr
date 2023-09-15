@@ -1,6 +1,6 @@
 import { Channel, ChannelOptions, OutputChannel } from "./channel";
 import { QueuedPlayer } from "./queued-player";
-import { SampleOptions, SampleStart, SampleStop } from "./sample-player";
+import { SampleOptions, SampleStart, SampleStop } from "./types";
 
 type PlayerOptions = ChannelOptions & SampleOptions;
 
