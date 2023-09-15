@@ -8,8 +8,7 @@ import { getAudioContext } from "./audio-context";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
 let reverb: Reverb | undefined;
-
-const storage = new CacheStorage();
+let storage: CacheStorage | undefined;
 
 export function PianoExample({ className }: { className?: string }) {
   const [piano, setPiano] = useState<SplendidGrandPiano | undefined>(undefined);
@@ -22,6 +21,7 @@ export function PianoExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
+    storage ??= new CacheStorage();
     const newPiano = new SplendidGrandPiano(context, { volume, storage });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
