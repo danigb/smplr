@@ -51,6 +51,13 @@ export class SamplePlayer {
     const velocity = sample.velocity ?? this.options.velocity ?? 100;
     volume.gain.value = this.velocityToGain(velocity);
 
+    // Loop
+    if (sample.loop) {
+      source.loop = true;
+      source.loopStart = sample.loopStart ?? 0;
+      source.loopEnd = sample.loopEnd ?? buffer.duration;
+    }
+
     // Stop with decay
     const decayTime = sample.decayTime ?? this.options.decayTime;
     const [decay, startDecay] = createDecayEnvelope(context, decayTime);

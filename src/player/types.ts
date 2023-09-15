@@ -12,6 +12,9 @@ export type SampleOptions = {
   duration?: number | null;
   velocity?: number;
   lpfCutoffHz?: number;
+  loop?: boolean;
+  loopStart?: number;
+  loopEnd?: number;
 };
 
 export type SampleStart = {
