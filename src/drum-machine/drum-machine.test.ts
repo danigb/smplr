@@ -17,9 +17,10 @@ function setup() {
     "https://danigb.github.io/samples/drum-machines/TR-808/kick/low.ogg":
       "kick",
   });
-  const context = createAudioContextMock();
+  const mock = createAudioContextMock();
+  const context = mock.context;
 
-  return { context };
+  return { context, mock };
 }
 
 describe("Drum machine", () => {
