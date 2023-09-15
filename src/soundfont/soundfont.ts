@@ -5,59 +5,83 @@ import {
 } from "../player/load-audio";
 import { findNearestMidi, toMidi } from "../player/midi";
 import { Player } from "../player/player";
-import {
-  SampleOptions,
-  SampleStart,
-  SampleStop,
-} from "../player/sample-player";
+import { SampleOptions, SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
+import {
+  LoopData,
+  fetchSoundfontLoopData,
+  getGoldstSoundfontLoopsUrl,
+} from "./soundfont-loops";
 
-export type SoundfontConfig = SampleOptions &
-  ChannelOptions & {
-    kit: "FluidR3_GM" | "MusyngKite" | string;
-    instrument: string;
-    storage?: Storage;
-    extraGain?: number;
-  };
+type SoundfontConfig = {
+  kit: "FluidR3_GM" | "MusyngKite" | string;
+  instrument?: string;
+  instrumentUrl: string;
+  storage: Storage;
+  extraGain: number;
+  loadLoopData: boolean;
+  loopDataUrl?: string;
+};
+
+export type SoundfontOptions = Partial<
+  SoundfontConfig & SampleOptions & ChannelOptions
+>;
 
 export class Soundfont {
-  public readonly options: Readonly<Partial<SoundfontConfig>>;
+  public readonly config: Readonly<SoundfontConfig>;
   private readonly player: Player;
-  #load: Promise<void>;
+  #load: Promise<unknown>;
+  #loops: LoopData;
   public readonly output: OutputChannel;
 
   constructor(
     public readonly context: AudioContext,
-    options: Partial<SoundfontConfig> & { instrument: string }
+    options: SoundfontOptions
   ) {
-    this.options = Object.freeze(Object.assign({}, options));
-    const url = options.instrument.startsWith("http")
-      ? options.instrument
-      : gleitzKitUrl(options.instrument, options.kit ?? "MusyngKite");
-
+    this.config = getSoundfontConfig(options);
     this.player = new Player(context, options);
     this.output = this.player.output;
-    const loader = soundfontLoader(url, options.storage ?? HttpStorage);
-    this.#load = loader(context, this.player.buffers);
 
-    // This is to compensate the low volume of the original samples
-    const extraGain = options.extraGain ?? 5;
-    const gain = new GainNode(context, { gain: extraGain });
+    const loader = soundfontLoader(
+      this.config.instrumentUrl,
+      this.config.storage
+    );
+    this.#load = loader(context, this.player.buffers);
+    this.#loops = { status: "not-loaded" };
+    if (this.config.loopDataUrl) {
+      this.#loops = { status: "loading" };
+      this.#load = Promise.all([
+        this.loaded,
+        fetchSoundfontLoopData(this.config.loopDataUrl).then((loopData) => {
+          this.#loops = loopData;
+        }),
+      ]);
+    }
+
+    const gain = new GainNode(context, { gain: this.config.extraGain });
     this.output.addInsert(gain);
   }
 
   start(sample: SampleStart) {
-    let midi = toMidi(sample.note);
+    const midi = toMidi(sample.note);
     const [note, detune] =
       midi === undefined ? ["", 0] : findNearestMidi(midi, this.player.buffers);
+    const loop =
+      typeof midi === "number" && this.#loops.status === "loaded"
+        ? this.#loops.data[midi]
+        : undefined;
+
     return this.player.start({
       ...sample,
       note,
       detune,
+      loop: loop !== undefined,
+      loopStart: loop?.[0],
+      loopEnd: loop?.[1],
     });
   }
 
-  stop(sample: SampleStop) {
+  stop(sample?: SampleStop | string | number) {
     return this.player.stop(sample);
   }
 
@@ -65,6 +89,45 @@ export class Soundfont {
     await this.#load;
     return this;
   }
+
+  get hasLoops() {
+    return this.#loops.status === "loaded";
+  }
+}
+
+function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
+  if (!options.instrument && !options.instrumentUrl) {
+    throw Error("Soundfont: instrument or instrumentUrl is required");
+  }
+  const config = {
+    kit: "MusyngKite",
+    instrument: options.instrument,
+    storage: options.storage ?? HttpStorage,
+    // This is to compensate the low volume of the original samples
+    extraGain: options.extraGain ?? 5,
+    loadLoopData: options.loadLoopData ?? false,
+    loopDataUrl: options.loopDataUrl,
+    instrumentUrl: options.instrumentUrl ?? "",
+  };
+  if (config.instrument && config.instrument.startsWith("http")) {
+    console.warn(
+      "Use 'instrumentUrl' instead of 'instrument' to load from a URL"
+    );
+    config.instrumentUrl = config.instrument;
+    config.instrument = undefined;
+  }
+  if (config.instrument && !config.instrumentUrl) {
+    config.instrumentUrl = gleitzKitUrl(config.instrument, config.kit);
+  }
+
+  if (config.loadLoopData && config.instrument && !config.loopDataUrl) {
+    config.loopDataUrl = getGoldstSoundfontLoopsUrl(
+      config.instrument,
+      config.kit
+    );
+  }
+
+  return config;
 }
 
 function soundfontLoader(url: string, storage: Storage): AudioBuffersLoader {

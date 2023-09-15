@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { Reverb, Soundfont, getSoundfontKits, getSoundfontNames } from "smplr";
-import { getAudioContext } from "./audio-context";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
+import { getAudioContext } from "./audio-context";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
 let reverb: Reverb | undefined;
 
 export function SoundfontExample({ className }: { className?: string }) {
   const [status, setStatus] = useStatus();
+  const [loopStatus, setLoopStatus] = useState<"disabled" | "loop" | "no-loop">(
+    "disabled"
+  );
   const [libraryName, setLibraryName] = useState(getSoundfontKits()[0]);
   const [instrumentName, setInstrumentName] = useState("marimba");
   const [instrument, setInstrument] = useState<Soundfont | undefined>(
@@ -23,13 +26,17 @@ export function SoundfontExample({ className }: { className?: string }) {
     const soundfont = new Soundfont(context, {
       kit,
       instrument,
+      loadLoopData: true,
     });
     soundfont.output.addEffect("reverb", reverb, 0.0);
     soundfont
       .loaded()
-      .then(() => {
+      .then((instrument) => {
         setStatus("ready");
-        setInstrument(soundfont);
+        setInstrument(instrument);
+        if (instrument.hasLoops) {
+          setLoopStatus("loop");
+        }
       })
       .catch((err) => {
         setStatus("error");
@@ -52,7 +59,7 @@ export function SoundfontExample({ className }: { className?: string }) {
       <div
         className={status !== "ready" ? "opacity-30 no-select" : "no-select"}
       >
-        <div className="flex gap-4 mb-2">
+        <div className="flex items-center gap-4 mb-2">
           <select
             className="appearance-none bg-zinc-700 text-zinc-200 rounded border border-gray-400 py-2 px-3 leading-tight focus:outline-none focus:border-blue-500"
             value={libraryName}
@@ -91,6 +98,26 @@ export function SoundfontExample({ className }: { className?: string }) {
           >
             Stop all
           </button>
+          <label
+            aria-disabled={loopStatus === "disabled"}
+            className={`flex gap-2 ${
+              loopStatus === "disabled" ? "opacity-50" : ""
+            }`}
+            htmlFor="loop"
+          >
+            <input
+              disabled={loopStatus === "disabled"}
+              checked={loopStatus === "loop"}
+              onChange={() => {
+                setLoopStatus((status) =>
+                  status === "no-loop" ? "loop" : "no-loop"
+                );
+              }}
+              type="checkbox"
+              id="loop"
+            />
+            Loop
+          </label>
         </div>
         <div className="flex gap-4 mb-2">
           <div>Volume:</div>
@@ -124,8 +151,11 @@ export function SoundfontExample({ className }: { className?: string }) {
           borderColor="border-teal-600"
           onPress={(note) => {
             if (!instrument) return;
-            note.time = (note.time ?? 0) + instrument.context.currentTime;
-            instrument.start(note);
+            instrument.start({
+              ...note,
+              time: (note.time ?? 0) + instrument.context.currentTime,
+              loop: loopStatus === "loop",
+            });
           }}
           onRelease={(midi) => {
             instrument?.stop({ stopId: midi });
