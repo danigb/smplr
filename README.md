@@ -242,10 +242,23 @@ Alternatively, you can pass your custom url as the instrument. In that case, the
 
 ```js
 const marimba = new Soundfont(context, {
-  instrument:
+  instrumentUrl:
     "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/marimba-mp3.js",
 });
 ```
+
+#### Looping (experimental)
+
+You can enable note looping to make note names indefinitely long by loading loop data:
+
+```js
+const marimba = new Soundfont(context, {
+  instrument: "cello",
+  loadLoopData: true,
+});
+```
+
+Bear in mind that currently that feature produces click on lot of instruments.
 
 ### Piano
 
