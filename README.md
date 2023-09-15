@@ -34,6 +34,10 @@ piano.start({ note: "C4" });
 
 See demo: https://danigb.github.io/smplr/
 
+`smplr` is still under development and features are considered unstable until v 1.0
+
+Read [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md) for changes.
+
 #### Library goals
 
 - No setup: specifically, all samples are online, so no need for a server.
@@ -48,9 +52,7 @@ Install with npm or your favourite package manager:
 npm i smplr
 ```
 
-Samples are published at: https://github.com/danigb/samples
-
-`smplr` is still under development and features are considered unstable. See [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md) for changes.
+Samples are stored at https://github.com/danigb/samples and there is no need to install them. Kudos to all samplers 🙌
 
 ## Documentation
 
@@ -81,25 +83,6 @@ Since the promise returns the instrument instance, you can create and wait in a 
 ```js
 const piano = await new SplendidGrandPiano(context).loaded();
 ```
-
-#### Cache requests
-
-[Experimental]
-
-If you use default samples, they are stored at github pages. Github rate limits the number of requests per second. That could be a problem, specially if you're using a development environment with hot reload (like most React frameworks).
-
-If you want to cache samples on the browser you can use a `CacheStorage` object:
-
-```ts
-import { SplendidGrandPiano, CacheStorage } from "smplr";
-
-const context = new AudioContext();
-const storage = new CacheStorage();
-// First time the instrument loads, will fetch the samples from http. Subsequent times from cache.
-const piano = new SplendidGrandPiano(context, { storage });
-```
-
-⚠️ `CacheStorage` is based on [Cache API](https://developer.mozilla.org/en-US/docs/Web/API/Cache) and only works in secure environments that runs with `https`. Read your framework documentation for setup instructions. For example, in nextjs you can use https://www.npmjs.com/package/next-dev-https. For vite there's https://github.com/liuweiGL/vite-plugin-mkcert. Find the appropriate solution for your environment.
 
 ### Play
 
@@ -149,21 +132,21 @@ const now = context.currentTime;
 });
 ```
 
-#### onEnded event
+### Looping
 
-You can add a `onEnded` callback that will be invoked when the note ends:
+You can loop a note by using `loop`, `loopStart` and `loopEnd`:
 
 ```js
-piano.start({
-  note: "C4",
-  duration: 1,
-  onEnded: () => {
-    // will be called after 1 second
-  },
+const sampler = new Sampler(audioContext, { string: "mi-long-sample.mp3" });
+sampler.start({
+  note: "string",
+  loop: "true",
+  loopStart: 1.0,
+  loopEnd: 9.0,
 });
 ```
 
-The callback will receive as parameter the same object you pass to the `start` function;
+If `loopStart` or `loopEnd` is not specified it will be use by default 0 and total duration respectively.
 
 ### Change volume
 
@@ -193,6 +176,41 @@ To change the mix level, use `output.sendEffect(name, mix)`:
 ```js
 piano.output.sendEffect("reverb", 0.5);
 ```
+
+#### Events
+
+You can add a `onEnded` callback that will be invoked when the note ends:
+
+```js
+piano.start({
+  note: "C4",
+  duration: 1,
+  onEnded: () => {
+    // will be called after 1 second
+  },
+});
+```
+
+The callback will receive as parameter the same object you pass to the `start` function;
+
+#### Cache requests
+
+[Experimental]
+
+If you use default samples, they are stored at github pages. Github rate limits the number of requests per second. That could be a problem, specially if you're using a development environment with hot reload (like most React frameworks).
+
+If you want to cache samples on the browser you can use a `CacheStorage` object:
+
+```ts
+import { SplendidGrandPiano, CacheStorage } from "smplr";
+
+const context = new AudioContext();
+const storage = new CacheStorage();
+// First time the instrument loads, will fetch the samples from http. Subsequent times from cache.
+const piano = new SplendidGrandPiano(context, { storage });
+```
+
+⚠️ `CacheStorage` is based on [Cache API](https://developer.mozilla.org/en-US/docs/Web/API/Cache) and only works in secure environments that runs with `https`. Read your framework documentation for setup instructions. For example, in nextjs you can use https://www.npmjs.com/package/next-dev-https. For vite there's https://github.com/liuweiGL/vite-plugin-mkcert. Find the appropriate solution for your environment.
 
 ## Instruments
 
