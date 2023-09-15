@@ -96,7 +96,7 @@ export class SplendidGrandPiano {
     return findNearestMidiInLayer(layer.name, midi, this.player.buffers);
   }
 
-  stop(sample: SampleStop | number | string) {
+  stop(sample?: SampleStop | number | string) {
     return this.player.stop(sample);
   }
 }
