@@ -1,4 +1,7 @@
-import { createAudioContextMock, createFetchMock } from "../test/audio-context";
+import {
+  createAudioContextMock,
+  createFetchMock,
+} from "../test/audio-context-test-helpers";
 import { DrumMachine } from "./drum-machine";
 
 function setup() {

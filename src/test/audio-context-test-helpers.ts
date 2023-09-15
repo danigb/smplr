@@ -1,16 +1,21 @@
 // Create a mock for the GainNodeMock
 class GainNodeMock {
   gain: { value: number };
+  connected: any[] = [];
+  disconnected: any[] = [];
+
   constructor(public readonly context: AudioContextMock) {
-    // You can add any necessary methods or properties here if needed
     this.gain = {
-      value: 1.0, // Mock the gain value
+      value: 1.0,
     };
   }
 
-  // Mock any methods you need to use in your tests
   connect(destination: any) {
-    // Implement mock behavior here
+    this.connected.push(destination);
+  }
+
+  disconnect(destination: any) {
+    this.disconnected.push(destination);
   }
 }
 
