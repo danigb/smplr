@@ -22,7 +22,7 @@ export function ConnectMidi({
   const inst = useRef<MidiInstrument | null>(null);
   const [midiDeviceNames, setMidiDeviceNames] = useState<string[]>([]);
   const [midiDeviceName, setMidiDeviceName] = useState("");
-  const [disconnectMidiDevice, setDisconnectMidiDevice] = useState<
+  const [disconnectMidiDevices, setDisconnectMidiDevices] = useState<
     Listener[] | undefined
   >();
   const [lastNote, setLastNote] = useState("");
@@ -32,46 +32,58 @@ export function ConnectMidi({
     WebMidi.enable().then(() => {
       const deviceNames = WebMidi.inputs.map((device) => device.name);
       setMidiDeviceNames(deviceNames);
-      setMidiDeviceName(deviceNames[0]);
     });
   }, []);
 
   inst.current = instrument ?? null;
 
+  const isConnected = disconnectMidiDevices !== undefined;
+
+  function disconnectMidi() {
+    disconnectMidiDevices?.forEach((listener) => listener.remove());
+    setDisconnectMidiDevices(undefined);
+    return;
+  }
+
+  function connectMidi(deviceName: string) {
+    const device = WebMidi.inputs.find((device) => device.name === deviceName);
+    if (!device) {
+      setMidiDeviceName("");
+      return;
+    }
+
+    setMidiDeviceName(deviceName);
+    const listener = device.addListener("noteon", (event) => {
+      const noteOn = {
+        note: event.note.number,
+        velocity: (event as any).rawVelocity,
+      };
+      inst.current?.start(noteOn);
+      setLastNote(`${noteOn.note} (${noteOn.velocity})`);
+    });
+    const listenerOff = device.addListener("noteoff", (event) => {
+      inst.current?.stop({ stopId: event.note.number });
+      setLastNote("");
+    });
+
+    setDisconnectMidiDevices([
+      ...(Array.isArray(listener) ? listener : [listener]),
+      ...(Array.isArray(listenerOff) ? listenerOff : [listenerOff]),
+    ]);
+  }
+
   return (
     <>
       <button
         className={
-          "px-1 rounded " +
-          (disconnectMidiDevice ? "bg-emerald-600" : "bg-zinc-700")
+          "px-1 rounded " + (isConnected ? "bg-emerald-600" : "bg-zinc-700")
         }
         onClick={() => {
-          if (disconnectMidiDevice) {
-            setDisconnectMidiDevice(undefined);
-            disconnectMidiDevice.forEach((listener) => listener.remove());
-            return;
+          if (isConnected) {
+            disconnectMidi();
+          } else {
+            connectMidi(midiDeviceName);
           }
-          const device = WebMidi.inputs.find(
-            (device) => device.name === midiDeviceName
-          );
-          if (!device) return;
-          const listener = device.addListener("noteon", (event) => {
-            const noteOn = {
-              note: event.note.number,
-              velocity: (event as any).rawVelocity,
-            };
-            inst.current?.start(noteOn);
-            setLastNote(`${noteOn.note} (${noteOn.velocity})`);
-          });
-          const listenerOff = device.addListener("noteoff", (event) => {
-            inst.current?.stop({ stopId: event.note.number });
-            setLastNote("");
-          });
-
-          setDisconnectMidiDevice([
-            ...(Array.isArray(listener) ? listener : [listener]),
-            ...(Array.isArray(listenerOff) ? listenerOff : [listenerOff]),
-          ]);
         }}
       >
         MIDI
@@ -81,9 +93,16 @@ export function ConnectMidi({
         value={midiDeviceName}
         onChange={(e) => {
           const name = e.target.value;
-          setMidiDeviceName(name);
+          if (isConnected) {
+            disconnectMidi();
+          }
+          if (name) {
+            console.log("Connecting to MIDI device", name);
+            connectMidi(name);
+          }
         }}
       >
+        <option value="">Select MIDI device</option>
         {midiDeviceNames.map((name) => (
           <option key={name} value={name}>
             {name}

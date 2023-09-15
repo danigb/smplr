@@ -1,11 +1,14 @@
+import { HttpStorage } from "../dist";
 import {
   AudioBuffers,
+  AudioBuffersLoader,
   findFirstSupportedFormat,
   loadAudioBuffer,
-} from "./sampler/load-audio";
-import { toMidi } from "./sampler/midi";
-import { Sampler, SamplerAudioLoader } from "./sampler/sampler";
-import { HttpStorage, Storage } from "./storage";
+} from "./player/load-audio";
+import { toMidi } from "./player/midi";
+import { Player } from "./player/player";
+import { SampleStart, SampleStop } from "./player/types";
+import { Storage } from "./storage";
 
 /**
  * Splendid Grand Piano options
@@ -13,8 +16,7 @@ import { HttpStorage, Storage } from "./storage";
 export type SplendidGrandPianoConfig = {
   baseUrl: string;
   destination: AudioNode;
-
-  storage?: Storage;
+  storage: Storage;
   detune: number;
   volume: number;
   velocity: number;
@@ -24,39 +26,78 @@ export type SplendidGrandPianoConfig = {
 
 const BASE_URL = "https://danigb.github.io/samples/splendid-grand-piano";
 
-export class SplendidGrandPiano extends Sampler {
+export class SplendidGrandPiano {
+  options: Readonly<SplendidGrandPianoConfig>;
+  private readonly player: Player;
+  #load: Promise<void>;
+
   constructor(
-    context: AudioContext,
-    options: Partial<SplendidGrandPianoConfig> = {}
+    public readonly context: AudioContext,
+    options?: Partial<SplendidGrandPianoConfig>
   ) {
-    super(context, {
-      destination: options.destination,
-
-      detune: options.detune,
-      volume: options.volume,
-      velocity: options.velocity,
-      decayTime: options.decayTime ?? 0.5,
-      lpfCutoffHz: options.lpfCutoffHz,
-
-      buffers: splendidGrandPianoLoader(
-        options.baseUrl ?? BASE_URL,
-        options.storage ?? HttpStorage
-      ),
-
-      noteToSample: (note, buffers, config) => {
-        const midi = toMidi(note.note);
-        if (!midi) return [note.note, 0];
-
-        const vel = note.velocity ?? config.velocity;
-        const layerIdx = LAYERS.findIndex(
-          (layer) => vel >= layer.vel_range[0] && vel <= layer.vel_range[1]
-        );
-        const layer = LAYERS[layerIdx];
-        if (!layer) return ["", 0];
-
-        return findNearestMidiInLayer(layer.name, midi, buffers);
+    this.options = Object.assign(
+      {
+        baseUrl: BASE_URL,
+        destination: context.destination,
+        storage: HttpStorage,
+        detune: 0,
+        volume: 100,
+        velocity: 100,
+        decayTime: 0.5,
       },
-    });
+      options
+    );
+    this.player = new Player(context, this.options);
+    const loader = splendidGrandPianoLoader(
+      this.options.baseUrl,
+      this.options.storage
+    );
+    this.#load = loader(context, this.player.buffers);
+  }
+
+  get output() {
+    return this.player.output;
+  }
+
+  get buffers() {
+    return this.player.buffers;
+  }
+
+  async loaded() {
+    await this.#load;
+    return this;
+  }
+
+  start(sampleOrNote: SampleStart | number | string) {
+    const sample =
+      typeof sampleOrNote === "object"
+        ? { ...sampleOrNote }
+        : { note: sampleOrNote };
+
+    const found = this.#sampleToMidi(sample);
+    if (!found) return () => undefined;
+    sample.note = found[0];
+    sample.stopId = sample.stopId ?? found[1];
+    sample.detune = found[2] + (sample.detune ?? this.options.detune);
+    return this.player.start(sample);
+  }
+
+  #sampleToMidi(sample: SampleStart): [string, number, number] | undefined {
+    const midi = toMidi(sample.note);
+    if (!midi) return;
+
+    const vel = sample.velocity ?? this.options.velocity;
+    const layerIdx = LAYERS.findIndex(
+      (layer) => vel >= layer.vel_range[0] && vel <= layer.vel_range[1]
+    );
+    const layer = LAYERS[layerIdx];
+    if (!layer) return;
+
+    return findNearestMidiInLayer(layer.name, midi, this.player.buffers);
+  }
+
+  stop(sample?: SampleStop | number | string) {
+    return this.player.stop(sample);
   }
 }
 
@@ -64,22 +105,24 @@ function findNearestMidiInLayer(
   prefix: string,
   midi: number,
   buffers: AudioBuffers
-): [string, number] {
+): [string, number, number] {
   let i = 0;
   while (buffers[prefix + (midi + i)] === undefined && i < 128) {
     if (i > 0) i = -i;
     else i = -i + 1;
   }
 
-  return i === 127 ? [prefix + midi, 0] : [prefix + (midi + i), -i * 100];
+  return i === 127
+    ? [prefix + midi, midi, 0]
+    : [prefix + (midi + i), midi, -i * 100];
 }
 
 function splendidGrandPianoLoader(
   baseUrl: string,
   storage: Storage
-): SamplerAudioLoader {
+): AudioBuffersLoader {
   const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
-  return async (context: AudioContext, buffers: AudioBuffers) => {
+  return async (context, buffers) => {
     for (const layer of LAYERS) {
       await Promise.all(
         layer.samples.map(async ([midi, name]) => {

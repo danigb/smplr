@@ -26,6 +26,7 @@ export function toMidi(note: string | number | undefined): number | undefined {
 export function midiVelToGain(vel: number) {
   return (vel * vel) / 16129; // 16129 = 127 * 127
 }
+
 export function findNearestMidi(
   midi: number,
   isAvailable: Record<string | number, unknown>
