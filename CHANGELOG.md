@@ -1,53 +1,45 @@
 # smplr
 
+## 0.7.0
+
+- Feature: Soundfont can play looped instruments using new loadLoopData option
+- Feature: New sample player accepts a very large number of notes
+- Feature: `loop`, `loopStart` and `loopEnd` has been added as sample start options
+- Fix: Can't disconnect a player or channel twice
+
 ## 0.6.1
 
-### Patch Changes
-
-- Fix error with HttpStorage fetch binding
+- Fix: error with HttpStorage fetch binding
 
 ## 0.6.0
 
-### Minor Changes
-
-- Add `CacheStorage` object for caching http requests
+- Feature: Add `CacheStorage` object for caching http requests
 
 ## 0.5.1
 
-- fe05f48: Ensure `options` is optional when possible
+- Fix: Ensure `options` is optional when possible
 
 ## 0.5.0
 
-- Add `onEnded` property to the start note object
+- Feature: Add `onEnded` property to the start note object
 
 ## 0.4.3
 
-- Rename `getSoundfontInstrumentNames` to `getSoundfontNames` to keep naming consistency
+- Fix: Rename `getSoundfontInstrumentNames` to `getSoundfontNames` to keep naming consistency
 
 ## 0.4.2
 
-- Ensure mp3 Soundfonts are loaded in Safari
+- Fix: Ensure mp3 Soundfonts are loaded in Safari
 
 ## 0.4.1
 
-- Accept note name in SplendidGrandPiano
-- Show a console.warning if the buffer is not found
+- Fix: Accept note name in SplendidGrandPiano
+- Fix: Show a console.warning if the buffer is not found
 
 ## 0.4.0
 
-- b64f4f1: Add DrumMachine instrument
-- format selected based on browser compatibility
+- Feature: Add DrumMachine instrument
 
 ## 0.3.0
 
 Full rewrite. Samples stored at https://github.com/danigb/samples
-
-### Minor Changes
-
-- 9a41758: Sampler
-- 9a41758: Reverb from DattorroReverbNode
-- 267d7b1: SplendidGrandPiano
-- 66b6674: Soundfont
-- 643f724: SfzSampler and ElectricPiano
-- 2d02362: Tremolo
-- 2a350b6: Mallets
