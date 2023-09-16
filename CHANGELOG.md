@@ -2,8 +2,6 @@
 
 ## 0.8.0
 
-### Minor Changes
-
 - Feature: New Mellotron instrument
 - Deprecation: : use `load` property instead of `loaded()` function
 

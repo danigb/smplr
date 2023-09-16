@@ -20,7 +20,7 @@ export default function Home() {
       <main className={"max-w-4xl mx-auto my-20 p-4" + inter.className}>
         <div className="flex items-end mb-16">
           <h1 className="text-6xl font-bold">smplr</h1>
-          <div>0.7.0</div>
+          <div>0.8.0</div>
         </div>
 
         <div className="flex flex-col gap-8">
