@@ -1,82 +1,85 @@
-import { findSamplesInLayer } from "./layers";
-import { SampleLayer } from "./types";
+import { findSamplesInLayer, spreadRegions } from "./layers";
+import { SampleLayer, SampleRegion } from "./types";
 
 describe("findSamplesInLayer", () => {
-  it("find by range_midi", () => {
+  it("find by rangeMidi", () => {
     const layer: SampleLayer = {
       regions: [
-        { sample_name: "a", sample_center: 60, range_midi: [60, 75] },
-        { sample_name: "b", sample_center: 75, range_midi: [70, 80] },
+        { sampleName: "a", sampleCenter: 60, rangeMidi: [60, 75] },
+        { sampleName: "b", sampleCenter: 75, rangeMidi: [70, 80] },
       ],
+      options: {},
     };
 
-    expect(findSamplesInLayer({ note: 60 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 60 })).toEqual([
       { name: "a", detune: 0, note: 60 },
     ]);
-    expect(findSamplesInLayer({ note: 62 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 62 })).toEqual([
       { name: "a", detune: 200, note: 62 },
     ]);
-    expect(findSamplesInLayer({ note: 72 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 72 })).toEqual([
       { detune: 1200, name: "a", note: 72 },
       { detune: -300, name: "b", note: 72 },
     ]);
-    expect(findSamplesInLayer({ note: 80 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 80 })).toEqual([
       { detune: 500, name: "b", note: 80 },
     ]);
   });
 
-  it("find by range_vol", () => {
+  it("find by rangeVol", () => {
     const layer: SampleLayer = {
       regions: [
-        { sample_name: "a", sample_center: 60, range_vol: [0, 64] },
-        { sample_name: "b", sample_center: 60, range_vol: [64, 127] },
+        { sampleName: "a", sampleCenter: 60, rangeVol: [0, 64] },
+        { sampleName: "b", sampleCenter: 60, rangeVol: [64, 127] },
       ],
+      options: {},
     };
 
-    expect(findSamplesInLayer({ note: 60, velocity: 0 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 60, velocity: 0 })).toEqual([
       { name: "a", detune: 0, note: 60, velocity: 0 },
     ]);
-    expect(findSamplesInLayer({ note: 60, velocity: 64 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 60, velocity: 64 })).toEqual([
       { detune: 0, name: "a", note: 60, velocity: 64 },
       { detune: 0, name: "b", note: 60, velocity: 64 },
     ]);
-    expect(findSamplesInLayer({ note: 60, velocity: 127 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 60, velocity: 127 })).toEqual([
       { name: "b", detune: 0, note: 60, velocity: 127 },
     ]);
   });
 
-  it("find by range_midi and range_vol", () => {
+  it("find by rangeMidi and rangeVol", () => {
     const layer: SampleLayer = {
       regions: [
         {
-          sample_name: "a",
-          sample_center: 60,
-          range_midi: [60, 75],
-          range_vol: [0, 64],
+          sampleName: "a",
+          sampleCenter: 60,
+          rangeMidi: [60, 75],
+          rangeVol: [0, 64],
         },
         {
-          sample_name: "b",
-          sample_center: 75,
-          range_midi: [70, 80],
-          range_vol: [64, 127],
+          sampleName: "b",
+          sampleCenter: 75,
+          rangeMidi: [70, 80],
+          rangeVol: [64, 127],
         },
       ],
+      options: {},
     };
 
-    expect(findSamplesInLayer({ note: 60, velocity: 0 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 60, velocity: 0 })).toEqual([
       { name: "a", detune: 0, note: 60, velocity: 0 },
     ]);
-    expect(findSamplesInLayer({ note: 62, velocity: 64 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 62, velocity: 64 })).toEqual([
       { name: "a", detune: 200, note: 62, velocity: 64 },
     ]);
-    expect(findSamplesInLayer({ note: 72, velocity: 64 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 72, velocity: 64 })).toEqual([
       { detune: 1200, name: "a", note: 72, velocity: 64 },
       { detune: -300, name: "b", note: 72, velocity: 64 },
     ]);
-    expect(findSamplesInLayer({ note: 72, velocity: 127 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 72, velocity: 127 })).toEqual([
       { detune: -300, name: "b", note: 72, velocity: 127 },
     ]);
-    expect(findSamplesInLayer({ note: 80, velocity: 127 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 80, velocity: 127 })).toEqual([
       { detune: 500, name: "b", note: 80, velocity: 127 },
     ]);
   });
@@ -85,15 +88,61 @@ describe("findSamplesInLayer", () => {
     const layer: SampleLayer = {
       regions: [
         {
-          sample_name: "a",
-          sample_center: 60,
-          offset_detune: 10,
-          offset_vol: -15,
+          sampleName: "a",
+          sampleCenter: 60,
+          offsetDetune: 10,
+          offsetVol: -15,
         },
       ],
+      options: {},
     };
-    expect(findSamplesInLayer({ note: 65, velocity: 100 }, layer)).toEqual([
+    expect(findSamplesInLayer(layer, { note: 65, velocity: 100 })).toEqual([
       { detune: 510, name: "a", note: 65, velocity: 85 },
     ]);
   });
+});
+
+describe("spreadRegions", () => {
+  it("should correctly spread a single region", () => {
+    const regions: SampleRegion[] = [
+      {
+        sampleName: "A",
+        sampleCenter: 64,
+      },
+    ];
+    expect(spreadRegions(regions)).toEqual([
+      { rangeMidi: [0, 127], sampleCenter: 64, sampleName: "A" },
+    ]);
+  });
+
+  it("should correctly spread two regions", () => {
+    const regions: SampleRegion[] = [
+      { sampleName: "A", sampleCenter: 32 },
+      { sampleName: "B", sampleCenter: 96 },
+    ];
+    expect(spreadRegions(regions)).toEqual([
+      { rangeMidi: [0, 64], sampleCenter: 32, sampleName: "A" },
+      { rangeMidi: [65, 127], sampleCenter: 96, sampleName: "B" },
+    ]);
+  });
+
+  it("should correctly spread three regions", () => {
+    const regions: SampleRegion[] = [
+      { sampleName: "A", sampleCenter: 10 },
+      { sampleName: "B", sampleCenter: 80 },
+      { sampleName: "C", sampleCenter: 96 },
+    ];
+    expect(spreadRegions(regions)).toEqual([
+      { rangeMidi: [0, 45], sampleCenter: 10, sampleName: "A" },
+      { rangeMidi: [46, 88], sampleCenter: 80, sampleName: "B" },
+      { rangeMidi: [89, 127], sampleCenter: 96, sampleName: "C" },
+    ]);
+  });
+
+  it("should handle empty regions", () => {
+    const regions: SampleRegion[] = [];
+    expect(spreadRegions(regions)).toEqual([]);
+  });
+
+  // You can add more test cases based on different scenarios.
 });

@@ -43,12 +43,12 @@ export type SamplePlayerOptions = {
 } & SampleOptions;
 
 export type SampleRegion = {
-  sample_name: string;
-  sample_center: number;
-  range_midi?: [number, number];
-  range_vol?: [number, number];
-  offset_vol?: number;
-  offset_detune?: number;
+  sampleName: string;
+  sampleCenter: number;
+  rangeMidi?: [number, number];
+  rangeVol?: [number, number];
+  offsetVol?: number;
+  offsetDetune?: number;
 };
 
 export type SampleLayer = {

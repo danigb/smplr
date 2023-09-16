@@ -8,8 +8,8 @@ export function createEmptySampleLayer(
 }
 
 export function findSamplesInLayer(
-  sample: SampleStart,
-  layer: SampleLayer
+  layer: SampleLayer,
+  sample: SampleStart
 ): SampleStart[] {
   const results: SampleStart[] = [];
   const midi = toMidi(sample.note);
@@ -23,15 +23,16 @@ export function findSamplesInLayer(
 }
 
 export function findFirstSampleInLayer(
-  sample: SampleStart,
-  layer: SampleLayer
+  layer: SampleLayer,
+  sample: SampleStart
 ): SampleStart | undefined {
   const midi = toMidi(sample.note);
+
   if (midi === undefined) return undefined;
 
   for (const region of layer.regions) {
     const found = findSampleInRegion(midi, sample, region, layer.options);
-    return found;
+    if (found) return found;
   }
   return undefined;
 }
@@ -43,23 +44,37 @@ function findSampleInRegion(
   defaults: Partial<SampleOptions>
 ): SampleStart | undefined {
   const matchMidi =
-    !region.range_midi ||
-    (midi >= region.range_midi[0] && midi <= region.range_midi[1]);
+    !region.rangeMidi ||
+    (midi >= region.rangeMidi[0] && midi <= region.rangeMidi[1]);
   if (!matchMidi) return undefined;
   const matchVelocity =
     sample.velocity === undefined ||
-    !region.range_vol ||
-    (sample.velocity >= region.range_vol[0] &&
-      sample.velocity <= region.range_vol[1]);
+    !region.rangeVol ||
+    (sample.velocity >= region.rangeVol[0] &&
+      sample.velocity <= region.rangeVol[1]);
   if (!matchVelocity) return undefined;
 
-  const semitones = midi - region.sample_center;
+  const semitones = midi - region.sampleCenter;
   const velocity = sample.velocity ?? defaults.velocity;
   return {
     note: midi,
-    name: region.sample_name,
-    detune: 100 * semitones + (region.offset_detune ?? 0),
+    name: region.sampleName,
+    detune: 100 * semitones + (region.offsetDetune ?? 0),
     velocity:
-      velocity == undefined ? undefined : velocity + (region.offset_vol ?? 0),
+      velocity == undefined ? undefined : velocity + (region.offsetVol ?? 0),
   };
+}
+
+export function spreadRegions(regions: SampleRegion[]) {
+  if (regions.length === 0) return [];
+  regions.sort((a, b) => a.sampleCenter - b.sampleCenter);
+  regions[0].rangeMidi = [0, 127];
+  for (let i = 1; i < regions.length; i++) {
+    const prev = regions[i - 1];
+    const curr = regions[i];
+    const mid = Math.floor((prev.sampleCenter + curr.sampleCenter) / 2);
+    prev.rangeMidi![1] = mid;
+    curr.rangeMidi = [mid + 1, 127];
+  }
+  return regions;
 }
