@@ -20,6 +20,11 @@ import {
 } from "./player/types";
 import { HttpStorage, Storage } from "./storage";
 
+const INSTRUMENT_VARIATIONS: Record<string, [string, string]> = {
+  "300 STRINGS CELLO": ["300 STRINGS", "CELL"],
+  "300 STRINGS VIOLA": ["300 STRINGS", "VIOL"],
+};
+
 export function getMellotronNames() {
   return [
     "300 STRINGS CELL",
@@ -104,13 +109,11 @@ export class Mellotron implements InternalPlayer {
       typeof sample === "object" ? { ...sample } : { note: sample }
     );
 
-    console.log({ found, sample, reg: this.layer.regions });
-
     if (!found) return () => undefined;
 
     return this.player.start(found);
   }
-  stop(sample?: SampleStop | undefined) {
+  stop(sample?: SampleStop | string | number) {
     this.player.stop(sample);
   }
   disconnect() {
@@ -131,13 +134,8 @@ function loadMellotronInstrument(
   buffers: AudioBuffers,
   layer: SampleLayer
 ) {
-  // 300 STRINGS contains two sub-instruments
-  let variation = "";
-  if (instrument.startsWith("300 STRINGS")) {
-    variation = instrument.slice(12);
-    instrument = "300 STRINGS";
-    console.log({ variation, instrument });
-  }
+  let variation = INSTRUMENT_VARIATIONS[instrument];
+  if (variation) instrument = variation[0];
 
   return (context: BaseAudioContext, storage: Storage) => {
     const baseUrl = `https://smpldsnds.github.io/archiveorg-mellotron/${instrument}/`;
@@ -147,22 +145,30 @@ function loadMellotronInstrument(
       .then((sampleNames) =>
         Promise.all(
           sampleNames.map((sampleName) => {
-            if (variation && !sampleName.includes(variation)) return;
+            if (variation && !sampleName.includes(variation[1])) return;
 
             const midi = toMidi(sampleName.split(" ")[0] ?? "");
             if (!midi) return;
 
-            layer.regions.push({
-              sampleName: sampleName,
-              sampleCenter: midi,
-            });
             const sampleUrl = baseUrl + sampleName + audioExt;
             loadAudioBuffer(context, sampleUrl, storage).then((audioBuffer) => {
               buffers[sampleName] = audioBuffer;
+              const duration = audioBuffer?.duration ?? 0;
+              layer.regions.push({
+                sampleName: sampleName,
+                sampleCenter: midi,
+                sample: {
+                  loop: true,
+                  loopStart: duration / 10,
+                  loopEnd: duration - duration / 10,
+                },
+              });
             });
           })
         )
       )
-      .then(() => spreadRegions(layer.regions));
+      .then(() => {
+        spreadRegions(layer.regions);
+      });
   };
 }

@@ -61,8 +61,8 @@ export class SamplePlayer implements InternalPlayer {
     const velocity = sample.velocity ?? this.options.velocity ?? 100;
     volume.gain.value = this.velocityToGain(velocity);
 
-    // Loop
-    if (sample.loop) {
+    const loop = sample.loop ?? this.options.loop;
+    if (loop) {
       source.loop = true;
       source.loopStart = sample.loopStart ?? 0;
       source.loopEnd = sample.loopEnd ?? buffer.duration;

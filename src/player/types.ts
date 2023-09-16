@@ -49,9 +49,10 @@ export type SampleRegion = {
   rangeVol?: [number, number];
   offsetVol?: number;
   offsetDetune?: number;
+  sample?: Partial<SampleOptions>;
 };
 
 export type SampleLayer = {
   regions: SampleRegion[];
-  options: Partial<SampleOptions>;
+  sample: Partial<SampleOptions>;
 };

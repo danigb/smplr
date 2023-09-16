@@ -2,9 +2,9 @@ import { toMidi } from "./midi";
 import { SampleLayer, SampleOptions, SampleRegion, SampleStart } from "./types";
 
 export function createEmptySampleLayer(
-  options: Partial<SampleOptions> = {}
+  sample: Partial<SampleOptions> = {}
 ): SampleLayer {
-  return { regions: [], options };
+  return { regions: [], sample };
 }
 
 export function findSamplesInLayer(
@@ -16,7 +16,7 @@ export function findSamplesInLayer(
   if (midi === undefined) return results;
 
   for (const region of layer.regions) {
-    const found = findSampleInRegion(midi, sample, region, layer.options);
+    const found = findSampleInRegion(midi, sample, region, layer.sample);
     if (found) results.push(found);
   }
   return results;
@@ -31,7 +31,7 @@ export function findFirstSampleInLayer(
   if (midi === undefined) return undefined;
 
   for (const region of layer.regions) {
-    const found = findSampleInRegion(midi, sample, region, layer.options);
+    const found = findSampleInRegion(midi, sample, region, layer.sample);
     if (found) return found;
   }
   return undefined;
@@ -62,6 +62,17 @@ function findSampleInRegion(
     detune: 100 * semitones + (region.offsetDetune ?? 0),
     velocity:
       velocity == undefined ? undefined : velocity + (region.offsetVol ?? 0),
+
+    decayTime:
+      sample?.decayTime ?? region.sample?.decayTime ?? defaults.decayTime,
+    duration: sample?.duration ?? region.sample?.duration ?? defaults.duration,
+    loop: sample?.loop ?? region.sample?.loop ?? defaults.loop,
+    loopStart:
+      sample?.loopStart ?? region.sample?.loopStart ?? defaults.loopStart,
+    loopEnd: sample?.loopEnd ?? region.sample?.loopEnd ?? defaults.loopEnd,
+    lpfCutoffHz:
+      sample?.lpfCutoffHz ?? region.sample?.lpfCutoffHz ?? defaults.lpfCutoffHz,
+    stopId: sample.name,
   };
 }
 

@@ -8,7 +8,7 @@ describe("findSamplesInLayer", () => {
         { sampleName: "a", sampleCenter: 60, rangeMidi: [60, 75] },
         { sampleName: "b", sampleCenter: 75, rangeMidi: [70, 80] },
       ],
-      options: {},
+      sample: {},
     };
 
     expect(findSamplesInLayer(layer, { note: 60 })).toEqual([
@@ -32,7 +32,7 @@ describe("findSamplesInLayer", () => {
         { sampleName: "a", sampleCenter: 60, rangeVol: [0, 64] },
         { sampleName: "b", sampleCenter: 60, rangeVol: [64, 127] },
       ],
-      options: {},
+      sample: {},
     };
 
     expect(findSamplesInLayer(layer, { note: 60, velocity: 0 })).toEqual([
@@ -63,7 +63,7 @@ describe("findSamplesInLayer", () => {
           rangeVol: [64, 127],
         },
       ],
-      options: {},
+      sample: {},
     };
 
     expect(findSamplesInLayer(layer, { note: 60, velocity: 0 })).toEqual([
@@ -94,10 +94,46 @@ describe("findSamplesInLayer", () => {
           offsetVol: -15,
         },
       ],
-      options: {},
+      sample: {},
     };
     expect(findSamplesInLayer(layer, { note: 65, velocity: 100 })).toEqual([
       { detune: 510, name: "a", note: 65, velocity: 85 },
+    ]);
+  });
+
+  it("applies sample options", () => {
+    const layer: SampleLayer = {
+      regions: [
+        {
+          sampleName: "a",
+          sampleCenter: 60,
+          sample: { loopStart: 10, loopEnd: 20 },
+        },
+        {
+          sampleName: "b",
+          sampleCenter: 62,
+          sample: { loopStart: 10, loop: false },
+        },
+      ],
+      sample: { loopStart: 5, loopEnd: 25, loop: true },
+    };
+    expect(findSamplesInLayer(layer, { note: 65 })).toEqual([
+      {
+        name: "a",
+        note: 65,
+        detune: 500,
+        loop: true,
+        loopEnd: 20,
+        loopStart: 10,
+      },
+      {
+        name: "b",
+        note: 65,
+        detune: 300,
+        loop: false,
+        loopEnd: 25,
+        loopStart: 10,
+      },
     ]);
   });
 });
