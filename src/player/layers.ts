@@ -44,17 +44,15 @@ function findSampleInRegion(
   defaults: Partial<SampleOptions>
 ): SampleStart | undefined {
   const matchMidi =
-    !region.rangeMidi ||
-    (midi >= region.rangeMidi[0] && midi <= region.rangeMidi[1]);
+    midi >= (region.midiLow ?? 0) && midi <= (region.midiHigh ?? 127);
   if (!matchMidi) return undefined;
   const matchVelocity =
     sample.velocity === undefined ||
-    !region.rangeVol ||
-    (sample.velocity >= region.rangeVol[0] &&
-      sample.velocity <= region.rangeVol[1]);
+    (sample.velocity >= (region.velLow ?? 0) &&
+      sample.velocity <= (region.velHigh ?? 127));
   if (!matchVelocity) return undefined;
 
-  const semitones = midi - region.sampleCenter;
+  const semitones = midi - region.midiPitch;
   const velocity = sample.velocity ?? defaults.velocity;
   return {
     note: midi,
@@ -78,14 +76,19 @@ function findSampleInRegion(
 
 export function spreadRegions(regions: SampleRegion[]) {
   if (regions.length === 0) return [];
-  regions.sort((a, b) => a.sampleCenter - b.sampleCenter);
-  regions[0].rangeMidi = [0, 127];
+  regions.sort((a, b) => a.midiPitch - b.midiPitch);
+  regions[0].midiLow = 0;
+  regions[0].midiHigh = 127;
+  if (regions.length === 1) return regions;
+
   for (let i = 1; i < regions.length; i++) {
     const prev = regions[i - 1];
     const curr = regions[i];
-    const mid = Math.floor((prev.sampleCenter + curr.sampleCenter) / 2);
-    prev.rangeMidi![1] = mid;
-    curr.rangeMidi = [mid + 1, 127];
+    const mid = Math.floor((prev.midiPitch + curr.midiPitch) / 2);
+    prev.midiHigh = mid;
+    curr.midiLow = mid + 1;
   }
+  regions[regions.length - 1].midiHigh = 127;
+
   return regions;
 }

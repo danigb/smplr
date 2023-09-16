@@ -44,9 +44,11 @@ export type SamplePlayerOptions = {
 
 export type SampleRegion = {
   sampleName: string;
-  sampleCenter: number;
-  rangeMidi?: [number, number];
-  rangeVol?: [number, number];
+  midiPitch: number;
+  midiLow?: number;
+  midiHigh?: number;
+  velLow?: number;
+  velHigh?: number;
   offsetVol?: number;
   offsetDetune?: number;
   sample?: Partial<SampleOptions>;

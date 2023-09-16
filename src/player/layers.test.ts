@@ -5,8 +5,8 @@ describe("findSamplesInLayer", () => {
   it("find by rangeMidi", () => {
     const layer: SampleLayer = {
       regions: [
-        { sampleName: "a", sampleCenter: 60, rangeMidi: [60, 75] },
-        { sampleName: "b", sampleCenter: 75, rangeMidi: [70, 80] },
+        { sampleName: "a", midiPitch: 60, midiLow: 60, midiHigh: 75 },
+        { sampleName: "b", midiPitch: 75, midiLow: 70, midiHigh: 80 },
       ],
       sample: {},
     };
@@ -29,8 +29,8 @@ describe("findSamplesInLayer", () => {
   it("find by rangeVol", () => {
     const layer: SampleLayer = {
       regions: [
-        { sampleName: "a", sampleCenter: 60, rangeVol: [0, 64] },
-        { sampleName: "b", sampleCenter: 60, rangeVol: [64, 127] },
+        { sampleName: "a", midiPitch: 60, velLow: 0, velHigh: 64 },
+        { sampleName: "b", midiPitch: 60, velLow: 64, velHigh: 127 },
       ],
       sample: {},
     };
@@ -52,15 +52,19 @@ describe("findSamplesInLayer", () => {
       regions: [
         {
           sampleName: "a",
-          sampleCenter: 60,
-          rangeMidi: [60, 75],
-          rangeVol: [0, 64],
+          midiPitch: 60,
+          midiLow: 60,
+          midiHigh: 75,
+          velLow: 0,
+          velHigh: 64,
         },
         {
           sampleName: "b",
-          sampleCenter: 75,
-          rangeMidi: [70, 80],
-          rangeVol: [64, 127],
+          midiPitch: 75,
+          midiLow: 70,
+          midiHigh: 80,
+          velLow: 64,
+          velHigh: 127,
         },
       ],
       sample: {},
@@ -89,7 +93,7 @@ describe("findSamplesInLayer", () => {
       regions: [
         {
           sampleName: "a",
-          sampleCenter: 60,
+          midiPitch: 60,
           offsetDetune: 10,
           offsetVol: -15,
         },
@@ -106,12 +110,12 @@ describe("findSamplesInLayer", () => {
       regions: [
         {
           sampleName: "a",
-          sampleCenter: 60,
+          midiPitch: 60,
           sample: { loopStart: 10, loopEnd: 20 },
         },
         {
           sampleName: "b",
-          sampleCenter: 62,
+          midiPitch: 62,
           sample: { loopStart: 10, loop: false },
         },
       ],
@@ -143,35 +147,35 @@ describe("spreadRegions", () => {
     const regions: SampleRegion[] = [
       {
         sampleName: "A",
-        sampleCenter: 64,
+        midiPitch: 64,
       },
     ];
     expect(spreadRegions(regions)).toEqual([
-      { rangeMidi: [0, 127], sampleCenter: 64, sampleName: "A" },
+      { midiLow: 0, midiHigh: 127, midiPitch: 64, sampleName: "A" },
     ]);
   });
 
   it("should correctly spread two regions", () => {
     const regions: SampleRegion[] = [
-      { sampleName: "A", sampleCenter: 32 },
-      { sampleName: "B", sampleCenter: 96 },
+      { sampleName: "A", midiPitch: 32 },
+      { sampleName: "B", midiPitch: 96 },
     ];
     expect(spreadRegions(regions)).toEqual([
-      { rangeMidi: [0, 64], sampleCenter: 32, sampleName: "A" },
-      { rangeMidi: [65, 127], sampleCenter: 96, sampleName: "B" },
+      { midiLow: 0, midiHigh: 64, midiPitch: 32, sampleName: "A" },
+      { midiLow: 65, midiHigh: 127, midiPitch: 96, sampleName: "B" },
     ]);
   });
 
   it("should correctly spread three regions", () => {
     const regions: SampleRegion[] = [
-      { sampleName: "A", sampleCenter: 10 },
-      { sampleName: "B", sampleCenter: 80 },
-      { sampleName: "C", sampleCenter: 96 },
+      { sampleName: "A", midiPitch: 10 },
+      { sampleName: "B", midiPitch: 80 },
+      { sampleName: "C", midiPitch: 96 },
     ];
     expect(spreadRegions(regions)).toEqual([
-      { rangeMidi: [0, 45], sampleCenter: 10, sampleName: "A" },
-      { rangeMidi: [46, 88], sampleCenter: 80, sampleName: "B" },
-      { rangeMidi: [89, 127], sampleCenter: 96, sampleName: "C" },
+      { midiLow: 0, midiHigh: 45, midiPitch: 10, sampleName: "A" },
+      { midiLow: 46, midiHigh: 88, midiPitch: 80, sampleName: "B" },
+      { midiLow: 89, midiHigh: 127, midiPitch: 96, sampleName: "C" },
     ]);
   });
 
