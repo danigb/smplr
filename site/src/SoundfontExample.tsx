@@ -29,8 +29,7 @@ export function SoundfontExample({ className }: { className?: string }) {
       loadLoopData: true,
     });
     soundfont.output.addEffect("reverb", reverb, 0.0);
-    soundfont
-      .loaded()
+    soundfont.load
       .then((instrument) => {
         setStatus("ready");
         setInstrument((prevInstrument) => {

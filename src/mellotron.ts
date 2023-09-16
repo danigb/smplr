@@ -27,8 +27,8 @@ const INSTRUMENT_VARIATIONS: Record<string, [string, string]> = {
 
 export function getMellotronNames() {
   return [
-    "300 STRINGS CELL",
-    "300 STRINGS VIOL",
+    "300 STRINGS CELLO",
+    "300 STRINGS VIOLA",
     "8VOICE CHOIR",
     "BASSA+STRNGS",
     "BOYS CHOIR",

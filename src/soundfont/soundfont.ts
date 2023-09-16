@@ -40,7 +40,7 @@ export type SoundfontOptions = Partial<
 export class Soundfont {
   public readonly config: Readonly<SoundfontConfig>;
   private readonly player: DefaultPlayer;
-  #load: Promise<unknown>;
+  public readonly load: Promise<unknown>;
   #loops: LoopData;
 
   constructor(
@@ -54,16 +54,16 @@ export class Soundfont {
       this.config.instrumentUrl,
       this.config.storage
     );
-    this.#load = loader(context, this.player.buffers);
+    this.load = loader(context, this.player.buffers).then(() => this);
     this.#loops = { status: "not-loaded" };
     if (this.config.loopDataUrl) {
       this.#loops = { status: "loading" };
-      this.#load = Promise.all([
-        this.#load,
+      this.load = Promise.all([
+        this.load,
         fetchSoundfontLoopData(this.config.loopDataUrl).then((loopData) => {
           this.#loops = loopData;
         }),
-      ]);
+      ]).then(() => this);
     }
 
     const gain = new GainNode(context, { gain: this.config.extraGain });
@@ -75,8 +75,8 @@ export class Soundfont {
   }
 
   async loaded() {
-    await this.#load;
-    return this;
+    console.warn("deprecated: use load instead");
+    return this.load;
   }
 
   get hasLoops() {

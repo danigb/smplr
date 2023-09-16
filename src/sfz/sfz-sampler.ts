@@ -31,7 +31,7 @@ export class SfzSampler {
   public readonly options: Readonly<Partial<SfzSamplerConfig>>;
   private readonly player: DefaultPlayer;
   #websfz: Websfz;
-  #load: Promise<void>;
+  public readonly load: Promise<this>;
 
   constructor(
     public readonly context: AudioContext,
@@ -42,8 +42,8 @@ export class SfzSampler {
     this.#websfz = EMPTY_WEBSFZ;
 
     const storage = options.storage ?? HttpStorage;
-    this.#load = loadSfzInstrument(options.instrument, storage).then(
-      (result) => {
+    this.load = loadSfzInstrument(options.instrument, storage)
+      .then((result) => {
         this.#websfz = Object.freeze(result);
         return loadSfzBuffers(
           context,
@@ -51,8 +51,8 @@ export class SfzSampler {
           this.#websfz,
           storage
         );
-      }
-    );
+      })
+      .then(() => this);
   }
 
   get output() {
@@ -60,8 +60,8 @@ export class SfzSampler {
   }
 
   async loaded() {
-    await this.#load;
-    return this;
+    console.warn("deprecated: use load instead");
+    return this.load;
   }
 
   start(sample: SampleStart | string | number) {

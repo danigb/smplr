@@ -70,10 +70,10 @@ const marimba = new Soundfont(context, { instrument: "marimba" });
 
 #### Wait for audio loading
 
-You can start playing notes as soon as one audio is loaded. But if you want to wait for all of them, you can use the `loaded()` function that returns a promise:
+You can start playing notes as soon as one audio is loaded. But if you want to wait for all of them, you can use the `load` property that returns a promise:
 
 ```js
-piano.loaded().then(() => {
+piano.load.then(() => {
   // now the piano is fully loaded
 });
 ```
@@ -81,7 +81,7 @@ piano.loaded().then(() => {
 Since the promise returns the instrument instance, you can create and wait in a single line:
 
 ```js
-const piano = await new SplendidGrandPiano(context).loaded();
+const piano = await new SplendidGrandPiano(context).load;
 ```
 
 ### Play

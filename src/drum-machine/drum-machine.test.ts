@@ -28,7 +28,7 @@ describe("Drum machine", () => {
     const { context } = setup();
     const dm = await new DrumMachine(context, {
       instrument: "TR-808",
-    }).loaded();
+    }).load;
     const start = jest.fn();
 
     (dm as any).player.start = start;

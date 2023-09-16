@@ -30,7 +30,7 @@ export function MalletExample({ className }: { className?: string }) {
     });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setInstrument(newPiano);
-    newPiano.loaded().then(() => {
+    newPiano.load.then(() => {
       setStatus("ready");
     });
   }

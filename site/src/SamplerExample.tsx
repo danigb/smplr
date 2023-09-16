@@ -39,8 +39,7 @@ export function SamplerExample({ className }: { className?: string }) {
     const sampler = new Sampler(context, { buffers });
     sampler.output.addEffect("reverb", reverb, reverbMix);
 
-    sampler
-      .loaded()
+    sampler.load
       .then(() => {
         setStatus("ready");
         setSampler(sampler);

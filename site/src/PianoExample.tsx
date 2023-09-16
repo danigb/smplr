@@ -25,7 +25,7 @@ export function PianoExample({ className }: { className?: string }) {
     const newPiano = new SplendidGrandPiano(context, { volume, storage });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
-    newPiano.loaded().then(() => {
+    newPiano.load.then(() => {
       setStatus("ready");
     });
   }
