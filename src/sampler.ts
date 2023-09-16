@@ -1,10 +1,10 @@
+import { DefaultPlayer } from "./player/default-player";
 import {
   AudioBuffers,
   AudioBuffersLoader,
   loadAudioBuffer,
 } from "./player/load-audio";
 import { midiVelToGain } from "./player/midi";
-import { Player } from "./player/player";
 import { SampleStart, SampleStop } from "./player/types";
 import { HttpStorage, Storage } from "./storage";
 
@@ -28,8 +28,8 @@ export type SamplerConfig = {
  */
 export class Sampler {
   #options: SamplerConfig;
-  #load: Promise<void>;
-  private readonly player: Player;
+  private readonly player: DefaultPlayer;
+  public readonly load: Promise<this>;
 
   public constructor(
     public readonly context: AudioContext,
@@ -43,18 +43,18 @@ export class Sampler {
       buffers: options.buffers ?? {},
       volumeToGain: options.volumeToGain ?? midiVelToGain,
     };
-    this.player = new Player(context, this.#options);
+    this.player = new DefaultPlayer(context, this.#options);
     const storage = options.storage ?? HttpStorage;
     const loader =
       typeof this.#options.buffers === "function"
         ? this.#options.buffers
         : createAudioBuffersLoader(this.#options.buffers, storage);
-    this.#load = loader(context, this.player.buffers);
+    this.load = loader(context, this.player.buffers).then(() => this);
   }
 
-  async loaded(): Promise<this> {
-    await this.#load;
-    return this;
+  async loaded() {
+    console.warn("deprecated: use load instead");
+    return this.load;
   }
 
   get output() {

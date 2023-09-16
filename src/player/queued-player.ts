@@ -1,6 +1,10 @@
-import { SamplePlayer } from "./sample-player";
 import { SortedQueue } from "./sorted-queue";
-import { SampleOptions, SampleStart, SampleStop } from "./types";
+import {
+  InternalPlayer,
+  SampleOptions,
+  SampleStart,
+  SampleStop,
+} from "./types";
 
 type SampleStartWithTime = SampleStart & { time: number };
 
@@ -10,19 +14,20 @@ type SampleStartWithTime = SampleStart & { time: number };
  * @private
  */
 
-export class QueuedPlayer {
-  private readonly player: SamplePlayer;
+export class QueuedPlayer implements InternalPlayer {
+  private readonly player: InternalPlayer;
   #queue: SortedQueue<SampleStartWithTime>;
   #intervalId: NodeJS.Timeout | undefined;
 
-  public constructor(
-    public readonly destination: AudioNode,
-    options: Partial<SampleOptions>
-  ) {
+  public constructor(player: InternalPlayer, options: Partial<SampleOptions>) {
     this.#queue = new SortedQueue<SampleStartWithTime>(
       (a, b) => a.time - b.time
     );
-    this.player = new SamplePlayer(destination, options);
+    this.player = player;
+  }
+
+  get context() {
+    return this.player.context;
   }
 
   get buffers() {

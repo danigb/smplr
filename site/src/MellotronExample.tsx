@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { getMalletNames, Mallet, Reverb } from "smplr";
-import { getAudioContext } from "./audio-context";
+import { Mellotron, Reverb, getMellotronNames } from "smplr";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
+import { getAudioContext } from "./audio-context";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
 let reverb: Reverb | undefined;
-let instrumentNames = getMalletNames();
+let instrumentNames = getMellotronNames();
 
-export function MalletExample({ className }: { className?: string }) {
-  const [instrument, setInstrument] = useState<Mallet | undefined>(undefined);
+export function MellotronExample({ className }: { className?: string }) {
+  const [instrument, setInstrument] = useState<Mellotron | undefined>(
+    undefined
+  );
   const [instrumentName, setInstrumentName] = useState<string>(
     instrumentNames[0]
   );
@@ -19,18 +21,18 @@ export function MalletExample({ className }: { className?: string }) {
   const [reverbMix, setReverbMix] = useState(0);
   const [volume, setVolume] = useState(100);
 
-  function loadMallet(instrumentName: string) {
+  function loadMellotron(instrumentName: string) {
     if (instrument) instrument.disconnect();
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const newPiano = new Mallet(context, {
+    const newInstrument = new Mellotron(context, {
       instrument: instrumentName,
       volume,
     });
-    newPiano.output.addEffect("reverb", reverb, reverbMix);
-    setInstrument(newPiano);
-    newPiano.load.then(() => {
+    newInstrument.output.addEffect("reverb", reverb, reverbMix);
+    setInstrument(newInstrument);
+    newInstrument.load.then(() => {
       setStatus("ready");
     });
   }
@@ -38,11 +40,11 @@ export function MalletExample({ className }: { className?: string }) {
   return (
     <div className={className}>
       <div className="flex gap-2 items-end mb-2">
-        <h1 className="text-3xl">Mallet</h1>
+        <h1 className="text-3xl">Mellotron</h1>
 
         <LoadWithStatus
           status={status}
-          onClick={() => loadMallet(instrumentName)}
+          onClick={() => loadMellotron(instrumentName)}
         />
         <ConnectMidi instrument={instrument} />
       </div>
@@ -54,7 +56,7 @@ export function MalletExample({ className }: { className?: string }) {
             value={instrumentName}
             onChange={(e) => {
               const instrumentName = e.target.value;
-              loadMallet(instrumentName);
+              loadMellotron(instrumentName);
               setInstrumentName(instrumentName);
             }}
           >

@@ -2,14 +2,19 @@ import { connectSerial } from "./connect";
 import { AudioBuffers } from "./load-audio";
 import { midiVelToGain } from "./midi";
 import { Trigger, createTrigger, unsubscribeAll } from "./signals";
-import { SamplePlayerOptions, SampleStart, SampleStop } from "./types";
+import {
+  InternalPlayer,
+  SamplePlayerOptions,
+  SampleStart,
+  SampleStop,
+} from "./types";
 
 /**
  * A sample player. This is used internally by the Sampler.
  *
  * @private Not intended for public use
  */
-export class SamplePlayer {
+export class SamplePlayer implements InternalPlayer {
   public readonly context: BaseAudioContext;
   public readonly buffers: AudioBuffers;
   #disconnected = false;
@@ -31,7 +36,8 @@ export class SamplePlayer {
       throw new Error("Can't start a sample on disconnected player");
     }
     const { destination, context } = this;
-    const buffer = this.buffers[sample.note];
+    const buffer =
+      (sample.name && this.buffers[sample.name]) || this.buffers[sample.note];
     if (!buffer) {
       console.warn(`Sample not found: '${sample.note}'`);
       return () => undefined;
@@ -55,8 +61,8 @@ export class SamplePlayer {
     const velocity = sample.velocity ?? this.options.velocity ?? 100;
     volume.gain.value = this.velocityToGain(velocity);
 
-    // Loop
-    if (sample.loop) {
+    const loop = sample.loop ?? this.options.loop;
+    if (loop) {
       source.loop = true;
       source.loopStart = sample.loopStart ?? 0;
       source.loopEnd = sample.loopEnd ?? buffer.duration;
@@ -101,7 +107,7 @@ export class SamplePlayer {
     return stop;
   }
 
-  public stop(sample?: SampleStop) {
+  stop(sample?: SampleStop) {
     this.#stop.trigger(sample);
   }
 

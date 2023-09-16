@@ -1,4 +1,16 @@
+import { AudioBuffers } from "./load-audio";
 import { Subscribe } from "./signals";
+
+/**
+ * @private
+ */
+export type InternalPlayer = {
+  readonly buffers: AudioBuffers;
+  readonly context: BaseAudioContext;
+  start(sample: SampleStart): (time?: number) => void;
+  stop(sample?: SampleStop): void;
+  disconnect(): void;
+};
 
 export type SampleStop = {
   stopId?: string | number;
@@ -18,6 +30,7 @@ export type SampleOptions = {
 };
 
 export type SampleStart = {
+  name?: string;
   note: string | number;
   onEnded?: (sample: SampleStart) => void;
   stop?: Subscribe<number>;
@@ -28,3 +41,18 @@ export type SampleStart = {
 export type SamplePlayerOptions = {
   velocityToGain?: (velocity: number) => number;
 } & SampleOptions;
+
+export type SampleRegion = {
+  sampleName: string;
+  sampleCenter: number;
+  rangeMidi?: [number, number];
+  rangeVol?: [number, number];
+  offsetVol?: number;
+  offsetDetune?: number;
+  sample?: Partial<SampleOptions>;
+};
+
+export type SampleLayer = {
+  regions: SampleRegion[];
+  sample: Partial<SampleOptions>;
+};

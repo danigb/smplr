@@ -56,7 +56,7 @@ Samples are stored at https://github.com/danigb/samples and there is no need to 
 
 ## Documentation
 
-### Create an instrument
+### Create and load an instrument
 
 All instruments follows the same pattern: `new Instrument(context, options?)`. For example:
 
@@ -70,10 +70,10 @@ const marimba = new Soundfont(context, { instrument: "marimba" });
 
 #### Wait for audio loading
 
-You can start playing notes as soon as one audio is loaded. But if you want to wait for all of them, you can use the `loaded()` function that returns a promise:
+You can start playing notes as soon as one audio is loaded. But if you want to wait for all of them, you can use the `load` property that returns a promise:
 
 ```js
-piano.loaded().then(() => {
+piano.load.then(() => {
   // now the piano is fully loaded
 });
 ```
@@ -81,7 +81,7 @@ piano.loaded().then(() => {
 Since the promise returns the instrument instance, you can create and wait in a single line:
 
 ```js
-const piano = await new SplendidGrandPiano(context).loaded();
+const piano = await new SplendidGrandPiano(context).load;
 ```
 
 ### Play
@@ -132,7 +132,7 @@ const now = context.currentTime;
 });
 ```
 
-### Looping
+#### Looping
 
 You can loop a note by using `loop`, `loopStart` and `loopEnd`:
 
@@ -148,7 +148,7 @@ sampler.start({
 
 If `loopStart` or `loopEnd` is not specified it will be use by default 0 and total duration respectively.
 
-### Change volume
+#### Change volume
 
 Instrument `output` attribute represents the main output of the instrument. `output.setVolume` method accepts a number where 0 means no volume, and 127 is max volume without amplification:
 
@@ -193,9 +193,9 @@ piano.start({
 
 The callback will receive as parameter the same object you pass to the `start` function;
 
-#### Cache requests
+### Experimental features
 
-[Experimental]
+#### Cache requests
 
 If you use default samples, they are stored at github pages. Github rate limits the number of requests per second. That could be a problem, specially if you're using a development environment with hot reload (like most React frameworks).
 
@@ -326,6 +326,20 @@ import { Mallet, getMalletNames } from "smplr";
 const instruments = getMalletNames();
 
 const mallet = new Mallet(new AudioContext(), {
+  instrument: instruments[0],
+});
+```
+
+### Mellotron
+
+Samples from [archive.org](https://archive.org/details/mellotron-archive-cd-rom-nki-wav.-7z)
+
+```js
+import { Mellotron, getMellotronNames } from "smplr";
+
+const instruments = getMellotronNames();
+
+const mallet = new Mellotron(new AudioContext(), {
   instrument: instruments[0],
 });
 ```

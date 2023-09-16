@@ -6,3 +6,5 @@ _next/
 src/**/*.js
 .next
 .DS_Store
+tmp/
+bun.lockb

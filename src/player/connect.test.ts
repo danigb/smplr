@@ -3,7 +3,7 @@ import { connectSerial } from "./connect";
 
 describe("connect", () => {
   it("connects nodes in serial", () => {
-    const context = createAudioContextMock();
+    const context = createAudioContextMock().context;
 
     const node1 = context.createGain();
     const node2 = context.createGain();
@@ -16,7 +16,7 @@ describe("connect", () => {
   });
 
   it("it disconnects nodes", () => {
-    const context = createAudioContextMock();
+    const context = createAudioContextMock().context;
 
     const node1 = context.createGain();
     const node2 = context.createGain();

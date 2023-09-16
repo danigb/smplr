@@ -54,3 +54,8 @@ export function findFirstSupportedFormat(formats: string[]): string | null {
   }
   return null;
 }
+
+export function getPreferredAudioExtension() {
+  const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
+  return "." + format;
+}

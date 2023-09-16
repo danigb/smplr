@@ -1,5 +1,10 @@
 # smplr
 
+## 0.8.0
+
+- Feature: New Mellotron instrument
+- Deprecation: : use `load` property instead of `loaded()` function
+
 ## 0.7.0
 
 - Feature: Soundfont can play looped instruments using new loadLoopData option

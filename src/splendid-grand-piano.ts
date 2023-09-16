@@ -1,4 +1,4 @@
-import { HttpStorage } from "../dist";
+import { DefaultPlayer } from "./player/default-player";
 import {
   AudioBuffers,
   AudioBuffersLoader,
@@ -6,9 +6,8 @@ import {
   loadAudioBuffer,
 } from "./player/load-audio";
 import { toMidi } from "./player/midi";
-import { Player } from "./player/player";
 import { SampleStart, SampleStop } from "./player/types";
-import { Storage } from "./storage";
+import { HttpStorage, Storage } from "./storage";
 
 /**
  * Splendid Grand Piano options
@@ -28,8 +27,8 @@ const BASE_URL = "https://danigb.github.io/samples/splendid-grand-piano";
 
 export class SplendidGrandPiano {
   options: Readonly<SplendidGrandPianoConfig>;
-  private readonly player: Player;
-  #load: Promise<void>;
+  private readonly player: DefaultPlayer;
+  public readonly load: Promise<this>;
 
   constructor(
     public readonly context: AudioContext,
@@ -47,12 +46,12 @@ export class SplendidGrandPiano {
       },
       options
     );
-    this.player = new Player(context, this.options);
+    this.player = new DefaultPlayer(context, this.options);
     const loader = splendidGrandPianoLoader(
       this.options.baseUrl,
       this.options.storage
     );
-    this.#load = loader(context, this.player.buffers);
+    this.load = loader(context, this.player.buffers).then(() => this);
   }
 
   get output() {
@@ -64,8 +63,8 @@ export class SplendidGrandPiano {
   }
 
   async loaded() {
-    await this.#load;
-    return this;
+    console.warn("deprecated: use load instead");
+    return this.load;
   }
 
   start(sampleOrNote: SampleStart | number | string) {

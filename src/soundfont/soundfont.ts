@@ -1,6 +1,6 @@
 import { ChannelOptions } from "../player/channel";
+import { DefaultPlayer } from "../player/default-player";
 import { findNearestMidi, toMidi } from "../player/midi";
-import { Player } from "../player/player";
 import { SampleOptions, SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
 import {
@@ -39,8 +39,8 @@ export type SoundfontOptions = Partial<
 
 export class Soundfont {
   public readonly config: Readonly<SoundfontConfig>;
-  private readonly player: Player;
-  #load: Promise<unknown>;
+  private readonly player: DefaultPlayer;
+  public readonly load: Promise<unknown>;
   #loops: LoopData;
 
   constructor(
@@ -48,22 +48,22 @@ export class Soundfont {
     options: SoundfontOptions
   ) {
     this.config = getSoundfontConfig(options);
-    this.player = new Player(context, options);
+    this.player = new DefaultPlayer(context, options);
 
     const loader = soundfontInstrumentLoader(
       this.config.instrumentUrl,
       this.config.storage
     );
-    this.#load = loader(context, this.player.buffers);
+    this.load = loader(context, this.player.buffers).then(() => this);
     this.#loops = { status: "not-loaded" };
     if (this.config.loopDataUrl) {
       this.#loops = { status: "loading" };
-      this.#load = Promise.all([
-        this.#load,
+      this.load = Promise.all([
+        this.load,
         fetchSoundfontLoopData(this.config.loopDataUrl).then((loopData) => {
           this.#loops = loopData;
         }),
-      ]);
+      ]).then(() => this);
     }
 
     const gain = new GainNode(context, { gain: this.config.extraGain });
@@ -75,8 +75,8 @@ export class Soundfont {
   }
 
   async loaded() {
-    await this.#load;
-    return this;
+    console.warn("deprecated: use load instead");
+    return this.load;
   }
 
   get hasLoops() {
