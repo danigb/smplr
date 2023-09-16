@@ -59,7 +59,20 @@ export function SoundfontExample({ className }: { className?: string }) {
             loadSoundfont(libraryName, instrumentName);
           }}
         />
-        <ConnectMidi instrument={instrument} />
+        <ConnectMidi
+          instrument={{
+            start: (note) => {
+              if (!instrument) return;
+              instrument.start({
+                ...note,
+                loop: loopStatus === "loop",
+              });
+            },
+            stop: (midi) => {
+              instrument?.stop(midi);
+            },
+          }}
+        />
       </div>
       <div
         className={status !== "ready" ? "opacity-30 no-select" : "no-select"}

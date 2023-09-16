@@ -1,8 +1,7 @@
-import {
-  AudioBuffersLoader,
-  findFirstSupportedFormat,
-} from "../player/load-audio";
+import { spreadRegions } from "../player/layers";
+import { AudioBuffers, findFirstSupportedFormat } from "../player/load-audio";
 import { toMidi } from "../player/midi";
+import { SampleLayer } from "../player/types";
 import { Storage } from "../storage";
 
 export function gleitzKitUrl(name: string, kit: string) {
@@ -12,9 +11,10 @@ export function gleitzKitUrl(name: string, kit: string) {
 
 export function soundfontInstrumentLoader(
   url: string,
-  storage: Storage
-): AudioBuffersLoader {
-  return async (context, buffers) => {
+  buffers: AudioBuffers,
+  layer: SampleLayer
+) {
+  return async (context: BaseAudioContext, storage: Storage) => {
     const sourceFile = await (await storage.fetch(url)).text();
     const json = midiJsToJson(sourceFile);
 
@@ -27,9 +27,14 @@ export function soundfontInstrumentLoader(
           removeBase64Prefix(json[noteName])
         );
         const buffer = await context.decodeAudioData(audioData);
-        buffers[midi] = buffer;
+        buffers[noteName] = buffer;
+        layer.regions.push({
+          sampleName: noteName,
+          sampleCenter: midi,
+        });
       })
     );
+    spreadRegions(layer.regions);
   };
 }
 

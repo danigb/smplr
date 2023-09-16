@@ -97,7 +97,6 @@ export function ConnectMidi({
             disconnectMidi();
           }
           if (name) {
-            console.log("Connecting to MIDI device", name);
             connectMidi(name);
           }
         }}
