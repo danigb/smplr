@@ -2,14 +2,19 @@ import { connectSerial } from "./connect";
 import { AudioBuffers } from "./load-audio";
 import { midiVelToGain } from "./midi";
 import { Trigger, createTrigger, unsubscribeAll } from "./signals";
-import { SamplePlayerOptions, SampleStart, SampleStop } from "./types";
+import {
+  InternalPlayer,
+  SamplePlayerOptions,
+  SampleStart,
+  SampleStop,
+} from "./types";
 
 /**
  * A sample player. This is used internally by the Sampler.
  *
  * @private Not intended for public use
  */
-export class SamplePlayer {
+export class SamplePlayer implements InternalPlayer {
   public readonly context: BaseAudioContext;
   public readonly buffers: AudioBuffers;
   #disconnected = false;
@@ -102,7 +107,7 @@ export class SamplePlayer {
     return stop;
   }
 
-  public stop(sample?: SampleStop) {
+  stop(sample?: SampleStop) {
     this.#stop.trigger(sample);
   }
 
