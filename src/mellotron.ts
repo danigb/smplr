@@ -22,7 +22,8 @@ import { HttpStorage, Storage } from "./storage";
 
 export function getMellotronNames() {
   return [
-    "300 STRINGS",
+    "300 STRINGS CELL",
+    "300 STRINGS VIOL",
     "8VOICE CHOIR",
     "BASSA+STRNGS",
     "BOYS CHOIR",
@@ -71,7 +72,7 @@ export class Mellotron implements InternalPlayer {
   private readonly config: MellotronConfig;
   private readonly player: DefaultPlayer;
   private readonly layer: SampleLayer;
-  readonly onLoad: Promise<this>;
+  readonly load: Promise<this>;
 
   public constructor(
     public readonly context: BaseAudioContext,
@@ -83,12 +84,10 @@ export class Mellotron implements InternalPlayer {
 
     const loader = loadMellotronInstrument(
       this.config.instrument,
-      context,
-      this.config.storage,
       this.player.buffers,
       this.layer
     );
-    this.onLoad = loader.then(() => this);
+    this.load = loader(context, this.config.storage).then(() => this);
   }
 
   get buffers() {
@@ -129,31 +128,41 @@ function getMellotronConfig(
 }
 function loadMellotronInstrument(
   instrument: string,
-  context: BaseAudioContext,
-  storage: Storage,
   buffers: AudioBuffers,
   layer: SampleLayer
 ) {
-  const baseUrl = `https://smpldsnds.github.io/archiveorg-mellotron/${instrument}/`;
-  const audioExt = getPreferredAudioExtension();
-  return fetch(baseUrl + "files.json")
-    .then((res) => res.json() as Promise<string[]>)
-    .then((sampleNames) =>
-      Promise.all(
-        sampleNames.map((sampleName) => {
-          const midi = toMidi(sampleName.split(" ")[0] ?? "");
-          if (!midi) return;
+  // 300 STRINGS contains two sub-instruments
+  let variation = "";
+  if (instrument.startsWith("300 STRINGS")) {
+    variation = instrument.slice(12);
+    instrument = "300 STRINGS";
+    console.log({ variation, instrument });
+  }
 
-          layer.regions.push({
-            sampleName: sampleName,
-            sampleCenter: midi,
-          });
-          const sampleUrl = baseUrl + sampleName + audioExt;
-          loadAudioBuffer(context, sampleUrl, storage).then((audioBuffer) => {
-            buffers[sampleName] = audioBuffer;
-          });
-        })
+  return (context: BaseAudioContext, storage: Storage) => {
+    const baseUrl = `https://smpldsnds.github.io/archiveorg-mellotron/${instrument}/`;
+    const audioExt = getPreferredAudioExtension();
+    return fetch(baseUrl + "files.json")
+      .then((res) => res.json() as Promise<string[]>)
+      .then((sampleNames) =>
+        Promise.all(
+          sampleNames.map((sampleName) => {
+            if (variation && !sampleName.includes(variation)) return;
+
+            const midi = toMidi(sampleName.split(" ")[0] ?? "");
+            if (!midi) return;
+
+            layer.regions.push({
+              sampleName: sampleName,
+              sampleCenter: midi,
+            });
+            const sampleUrl = baseUrl + sampleName + audioExt;
+            loadAudioBuffer(context, sampleUrl, storage).then((audioBuffer) => {
+              buffers[sampleName] = audioBuffer;
+            });
+          })
+        )
       )
-    )
-    .then(() => spreadRegions(layer.regions));
+      .then(() => spreadRegions(layer.regions));
+  };
 }

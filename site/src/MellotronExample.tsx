@@ -32,7 +32,7 @@ export function MellotronExample({ className }: { className?: string }) {
     });
     newInstrument.output.addEffect("reverb", reverb, reverbMix);
     setInstrument(newInstrument);
-    newInstrument.onLoad.then(() => {
+    newInstrument.load.then(() => {
       setStatus("ready");
     });
   }
