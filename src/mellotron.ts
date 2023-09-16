@@ -106,7 +106,7 @@ export class Mellotron implements InternalPlayer {
   start(sample: SampleStart | string | number) {
     const found = findFirstSampleInLayer(
       this.layer,
-      typeof sample === "object" ? { ...sample } : { note: sample }
+      typeof sample === "object" ? sample : { note: sample }
     );
 
     if (!found) return () => undefined;
