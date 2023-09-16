@@ -18,6 +18,7 @@ export type SampleOptions = {
 };
 
 export type SampleStart = {
+  name?: string;
   note: string | number;
   onEnded?: (sample: SampleStart) => void;
   stop?: Subscribe<number>;
@@ -28,3 +29,17 @@ export type SampleStart = {
 export type SamplePlayerOptions = {
   velocityToGain?: (velocity: number) => number;
 } & SampleOptions;
+
+export type SampleRegion = {
+  sample_name: string;
+  sample_center: number;
+  range_midi?: [number, number];
+  range_vol?: [number, number];
+  offset_vol?: number;
+  offset_detune?: number;
+};
+
+export type SampleLayer = {
+  regions: SampleRegion[];
+  options?: Partial<SampleOptions>;
+};
