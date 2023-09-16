@@ -123,7 +123,7 @@ function soundfontLoader(
 
     if (loops) {
       layer.regions.forEach((region) => {
-        const loop = loops[region.sampleCenter];
+        const loop = loops[region.midiPitch];
         if (loop) {
           region.sample ??= {};
           region.sample.loop = true;

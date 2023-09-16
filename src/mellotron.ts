@@ -156,7 +156,7 @@ function loadMellotronInstrument(
               const duration = audioBuffer?.duration ?? 0;
               layer.regions.push({
                 sampleName: sampleName,
-                sampleCenter: midi,
+                midiPitch: midi,
                 sample: {
                   loop: true,
                   loopStart: duration / 10,

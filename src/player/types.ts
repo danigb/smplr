@@ -49,9 +49,14 @@ export type SampleRegion = {
   midiHigh?: number;
   velLow?: number;
   velHigh?: number;
+  bendUp?: number;
+  bendDown?: number;
   offsetVol?: number;
   offsetDetune?: number;
+  ampVelCurve?: [number, number];
   sample?: Partial<SampleOptions>;
+  seqLength?: number;
+  seqPosition?: number;
 };
 
 export type SampleLayer = {
