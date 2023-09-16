@@ -56,7 +56,7 @@ Samples are stored at https://github.com/danigb/samples and there is no need to 
 
 ## Documentation
 
-### Create and load instrument
+### Create and load an instrument
 
 All instruments follows the same pattern: `new Instrument(context, options?)`. For example:
 
