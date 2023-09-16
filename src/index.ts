@@ -1,6 +1,7 @@
 export * from "./drum-machine/drum-machine";
 export * from "./electric-piano";
 export * from "./mallet";
+export * from "./mellotron";
 export * from "./reverb/reverb";
 export * from "./sampler";
 export * from "./soundfont/soundfont";

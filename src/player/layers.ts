@@ -1,6 +1,12 @@
 import { toMidi } from "./midi";
 import { SampleLayer, SampleOptions, SampleRegion, SampleStart } from "./types";
 
+export function createEmptySampleLayer(
+  options: Partial<SampleOptions> = {}
+): SampleLayer {
+  return { regions: [], options };
+}
+
 export function findSamplesInLayer(
   sample: SampleStart,
   layer: SampleLayer
@@ -34,7 +40,7 @@ function findSampleInRegion(
   midi: number,
   sample: SampleStart,
   region: SampleRegion,
-  options?: Partial<SampleOptions>
+  defaults: Partial<SampleOptions>
 ): SampleStart | undefined {
   const matchMidi =
     !region.range_midi ||
@@ -48,7 +54,7 @@ function findSampleInRegion(
   if (!matchVelocity) return undefined;
 
   const semitones = midi - region.sample_center;
-  const velocity = sample.velocity ?? options?.velocity;
+  const velocity = sample.velocity ?? defaults.velocity;
   return {
     note: midi,
     name: region.sample_name,

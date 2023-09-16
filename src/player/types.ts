@@ -1,6 +1,9 @@
 import { AudioBuffers } from "./load-audio";
 import { Subscribe } from "./signals";
 
+/**
+ * @private
+ */
 export type InternalPlayer = {
   readonly buffers: AudioBuffers;
   readonly context: BaseAudioContext;
@@ -50,5 +53,5 @@ export type SampleRegion = {
 
 export type SampleLayer = {
   regions: SampleRegion[];
-  options?: Partial<SampleOptions>;
+  options: Partial<SampleOptions>;
 };
