@@ -40,7 +40,7 @@ export type SoundfontOptions = Partial<
 export class Soundfont {
   public readonly config: Readonly<SoundfontConfig>;
   private readonly player: DefaultPlayer;
-  public readonly load: Promise<unknown>;
+  public readonly load: Promise<this>;
   #loops: LoopData;
 
   constructor(
