@@ -1,7 +1,15 @@
 import { ChannelOptions } from "./player/channel";
 import { DefaultPlayer } from "./player/default-player";
-import { createEmptySampleLayer } from "./player/layers";
-import { AudioBuffers } from "./player/load-audio";
+import {
+  createEmptySampleLayer,
+  findFirstSampleInLayer,
+  spreadRegions,
+} from "./player/layers";
+import {
+  AudioBuffers,
+  getPreferredAudioExtension,
+  loadAudioBuffer,
+} from "./player/load-audio";
 import { toMidi } from "./player/midi";
 import {
   InternalPlayer,
@@ -13,40 +21,40 @@ import {
 import { HttpStorage, Storage } from "./storage";
 
 export function getMellotronNames() {
-  [
-    "CHMB FEMALE",
+  return [
+    "300 STRINGS",
+    "8VOICE CHOIR",
+    "BASSA+STRNGS",
+    "BOYS CHOIR",
     "CHA CHA FLT",
-    "TRON CELLO",
-    "MKII VIBES",
-    "MIXED STRGS",
+    "CHM CLARINET",
     "CHMB 3 VLNS",
+    "CHMB ALTOSAX",
+    "CHMB FEMALE",
     "CHMB MALE VC",
+    "CHMB TNR SAX",
+    "CHMB TRMBONE",
     "CHMB TRUMPET",
     "CHMBLN CELLO",
-    "FOXTROT+SAX",
-    "CHM CLARINET",
-    "CHMB TNR SAX",
-    "CHMB ALTOSAX",
-    "300 STRINGS",
-    "DIXIE+TRMBN",
-    "MKII ORGAN",
     "CHMBLN FLUTE",
-    "BASSA+STRNGS",
-    "TRON VIOLA",
-    "TRON FLUTE",
-    "HALFSP.BRASS",
-    "STRGS+BRASS",
-    "MKII SAX",
-    "BOYS CHOIR",
-    "MKII BRASS",
-    "CHMB TRMBONE",
-    "MKII VIOLINS",
-    "MKII GUITAR",
-    "MOVE BS+STGS",
-    "TRON 16VLNS",
-    "8VOICE CHOIR",
-    "TROMB+TRMPT",
     "CHMBLN OBOE",
+    "DIXIE+TRMBN",
+    "FOXTROT+SAX",
+    "HALFSP.BRASS",
+    "MIXED STRGS",
+    "MKII BRASS",
+    "MKII GUITAR",
+    "MKII ORGAN",
+    "MKII SAX",
+    "MKII VIBES",
+    "MKII VIOLINS",
+    "MOVE BS+STGS",
+    "STRGS+BRASS",
+    "TROMB+TRMPT",
+    "TRON 16VLNS",
+    "TRON CELLO",
+    "TRON FLUTE",
+    "TRON VIOLA",
   ];
 }
 
@@ -76,6 +84,7 @@ export class Mellotron implements InternalPlayer {
     const loader = loadMellotronInstrument(
       this.config.instrument,
       context,
+      this.config.storage,
       this.player.buffers,
       this.layer
     );
@@ -90,8 +99,17 @@ export class Mellotron implements InternalPlayer {
     return this.player.output;
   }
 
-  start(sample: SampleStart) {
-    return this.player.start(sample);
+  start(sample: SampleStart | string | number) {
+    const found = findFirstSampleInLayer(
+      this.layer,
+      typeof sample === "object" ? { ...sample } : { note: sample }
+    );
+
+    console.log({ found, sample, reg: this.layer.regions });
+
+    if (!found) return () => undefined;
+
+    return this.player.start(found);
   }
   stop(sample?: SampleStop | undefined) {
     this.player.stop(sample);
@@ -109,18 +127,33 @@ function getMellotronConfig(
     storage: options.storage ?? HttpStorage,
   };
 }
-async function loadMellotronInstrument(
+function loadMellotronInstrument(
   instrument: string,
   context: BaseAudioContext,
+  storage: Storage,
   buffers: AudioBuffers,
   layer: SampleLayer
 ) {
-  const instrumentUrl = `https://smpldsnds.github.io/archiveorg-mellotron/${instrument}/files.json`;
-  const files = await fetch(instrumentUrl).then(
-    (res) => res.json() as Promise<string[]>
-  );
-  for (const fileName of files) {
-    const midi = toMidi(fileName.split(" ")[0] ?? "");
-    console.log({ fileName, midi });
-  }
+  const baseUrl = `https://smpldsnds.github.io/archiveorg-mellotron/${instrument}/`;
+  const audioExt = getPreferredAudioExtension();
+  return fetch(baseUrl + "files.json")
+    .then((res) => res.json() as Promise<string[]>)
+    .then((sampleNames) =>
+      Promise.all(
+        sampleNames.map((sampleName) => {
+          const midi = toMidi(sampleName.split(" ")[0] ?? "");
+          if (!midi) return;
+
+          layer.regions.push({
+            sampleName: sampleName,
+            sampleCenter: midi,
+          });
+          const sampleUrl = baseUrl + sampleName + audioExt;
+          loadAudioBuffer(context, sampleUrl, storage).then((audioBuffer) => {
+            buffers[sampleName] = audioBuffer;
+          });
+        })
+      )
+    )
+    .then(() => spreadRegions(layer.regions));
 }
