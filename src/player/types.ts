@@ -1,5 +1,10 @@
 import { Subscribe } from "./signals";
 
+export type Player = {
+  start(sample: SampleStart | string | number): void;
+  stop(sample?: SampleStop | string | number): void;
+};
+
 export type SampleStop = {
   stopId?: string | number;
   time?: number;

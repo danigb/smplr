@@ -1,5 +1,5 @@
+import { DefaultPlayer } from "../player/default-player";
 import { toMidi } from "../player/midi";
-import { Player } from "../player/player";
 import { SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
 import { SfzInstrument } from "./sfz-kits";
@@ -29,7 +29,7 @@ const EMPTY_WEBSFZ: Websfz = Object.freeze({
 
 export class SfzSampler {
   public readonly options: Readonly<Partial<SfzSamplerConfig>>;
-  private readonly player: Player;
+  private readonly player: DefaultPlayer;
   #websfz: Websfz;
   #load: Promise<void>;
 
@@ -38,7 +38,7 @@ export class SfzSampler {
     options: Partial<SfzSamplerConfig> & Pick<SfzSamplerConfig, "instrument">
   ) {
     this.options = Object.freeze(Object.assign({}, options));
-    this.player = new Player(context, options);
+    this.player = new DefaultPlayer(context, options);
     this.#websfz = EMPTY_WEBSFZ;
 
     const storage = options.storage ?? HttpStorage;

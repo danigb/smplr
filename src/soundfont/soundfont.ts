@@ -1,6 +1,6 @@
 import { ChannelOptions } from "../player/channel";
+import { DefaultPlayer } from "../player/default-player";
 import { findNearestMidi, toMidi } from "../player/midi";
-import { Player } from "../player/player";
 import { SampleOptions, SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
 import {
@@ -39,7 +39,7 @@ export type SoundfontOptions = Partial<
 
 export class Soundfont {
   public readonly config: Readonly<SoundfontConfig>;
-  private readonly player: Player;
+  private readonly player: DefaultPlayer;
   #load: Promise<unknown>;
   #loops: LoopData;
 
@@ -48,7 +48,7 @@ export class Soundfont {
     options: SoundfontOptions
   ) {
     this.config = getSoundfontConfig(options);
-    this.player = new Player(context, options);
+    this.player = new DefaultPlayer(context, options);
 
     const loader = soundfontInstrumentLoader(
       this.config.instrumentUrl,

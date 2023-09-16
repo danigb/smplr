@@ -1,10 +1,10 @@
 import { ChannelOptions, OutputChannel } from "../player/channel";
+import { DefaultPlayer } from "../player/default-player";
 import {
   AudioBuffers,
   findFirstSupportedFormat,
   loadAudioBuffer,
 } from "../player/load-audio";
-import { Player } from "../player/player";
 import { SampleOptions, SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
 import {
@@ -35,7 +35,7 @@ export type DrumMachineConfig = ChannelOptions &
 
 export class DrumMachine {
   #instrument = EMPTY_INSTRUMENT;
-  private readonly player: Player;
+  private readonly player: DefaultPlayer;
   #load: Promise<unknown>;
   public readonly output: OutputChannel;
 
@@ -49,7 +49,7 @@ export class DrumMachine {
     if (!url) throw new Error("Invalid instrument: " + options.instrument);
 
     const instrument = fetchDrumMachineInstrument(url, storage);
-    this.player = new Player(context, options);
+    this.player = new DefaultPlayer(context, options);
     this.output = this.player.output;
     this.#load = drumMachineLoader(
       context,

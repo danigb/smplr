@@ -8,7 +8,7 @@ type PlayerOptions = ChannelOptions & SampleOptions;
  * Player used by instruments
  * @private
  */
-export class Player {
+export class DefaultPlayer {
   public readonly output: OutputChannel;
   private readonly player: QueuedPlayer;
 
