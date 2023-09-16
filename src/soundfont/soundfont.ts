@@ -1,7 +1,16 @@
 import { ChannelOptions } from "../player/channel";
 import { DefaultPlayer } from "../player/default-player";
-import { findNearestMidi, toMidi } from "../player/midi";
-import { SampleOptions, SampleStart, SampleStop } from "../player/types";
+import {
+  createEmptySampleLayer,
+  findFirstSampleInLayer,
+} from "../player/layers";
+import { AudioBuffers } from "../player/load-audio";
+import {
+  SampleLayer,
+  SampleOptions,
+  SampleStart,
+  SampleStop,
+} from "../player/types";
 import { HttpStorage, Storage } from "../storage";
 import {
   SOUNDFONT_INSTRUMENTS,
@@ -10,7 +19,6 @@ import {
   soundfontInstrumentLoader,
 } from "./soundfont-instrument";
 import {
-  LoopData,
   fetchSoundfontLoopData,
   getGoldstSoundfontLoopsUrl,
 } from "./soundfont-loops";
@@ -41,7 +49,8 @@ export class Soundfont {
   public readonly config: Readonly<SoundfontConfig>;
   private readonly player: DefaultPlayer;
   public readonly load: Promise<this>;
-  #loops: LoopData;
+  public readonly layer: SampleLayer;
+  #hasLoops: boolean;
 
   constructor(
     public readonly context: AudioContext,
@@ -49,22 +58,19 @@ export class Soundfont {
   ) {
     this.config = getSoundfontConfig(options);
     this.player = new DefaultPlayer(context, options);
+    this.layer = createEmptySampleLayer();
 
-    const loader = soundfontInstrumentLoader(
+    this.#hasLoops = false;
+    const loader = soundfontLoader(
       this.config.instrumentUrl,
-      this.config.storage
+      this.config.loopDataUrl,
+      this.player.buffers,
+      this.layer
     );
-    this.load = loader(context, this.player.buffers).then(() => this);
-    this.#loops = { status: "not-loaded" };
-    if (this.config.loopDataUrl) {
-      this.#loops = { status: "loading" };
-      this.load = Promise.all([
-        this.load,
-        fetchSoundfontLoopData(this.config.loopDataUrl).then((loopData) => {
-          this.#loops = loopData;
-        }),
-      ]).then(() => this);
-    }
+    this.load = loader(context, this.config.storage).then((hasLoops) => {
+      this.#hasLoops = hasLoops;
+      return this;
+    });
 
     const gain = new GainNode(context, { gain: this.config.extraGain });
     this.player.output.addInsert(gain);
@@ -74,42 +80,60 @@ export class Soundfont {
     return this.player.output;
   }
 
+  get hasLoops() {
+    return this.#hasLoops;
+  }
+
   async loaded() {
     console.warn("deprecated: use load instead");
     return this.load;
   }
 
-  get hasLoops() {
-    return this.#loops.status === "loaded";
-  }
-
   public disconnect() {
-    console.log("disconnecting");
     this.player.disconnect();
   }
 
-  start(sample: SampleStart) {
-    const midi = toMidi(sample.note);
-    const [note, detune] =
-      midi === undefined ? ["", 0] : findNearestMidi(midi, this.player.buffers);
-    const loop =
-      typeof midi === "number" && this.#loops.status === "loaded"
-        ? this.#loops.data[midi]
-        : undefined;
+  start(sample: SampleStart | string | number) {
+    const found = findFirstSampleInLayer(
+      this.layer,
+      typeof sample === "object" ? sample : { note: sample }
+    );
+    if (!found) return () => undefined;
 
-    return this.player.start({
-      ...sample,
-      note,
-      detune,
-      loop: loop !== undefined,
-      loopStart: loop?.[0],
-      loopEnd: loop?.[1],
-    });
+    return this.player.start(found);
   }
 
   stop(sample?: SampleStop | string | number) {
     return this.player.stop(sample);
   }
+}
+
+function soundfontLoader(
+  url: string,
+  loopsUrl: string | undefined,
+  buffers: AudioBuffers,
+  layer: SampleLayer
+) {
+  const loadInstrument = soundfontInstrumentLoader(url, buffers, layer);
+  return async (context: BaseAudioContext, storage: Storage) => {
+    const [_, loops] = await Promise.all([
+      loadInstrument(context, storage),
+      fetchSoundfontLoopData(loopsUrl),
+    ]);
+
+    if (loops) {
+      layer.regions.forEach((region) => {
+        const loop = loops[region.sampleCenter];
+        if (loop) {
+          region.sample ??= {};
+          region.sample.loop = true;
+          region.sample.loopStart = loop[0];
+          region.sample.loopEnd = loop[1];
+        }
+      });
+    }
+    return !!loops;
+  };
 }
 
 function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
