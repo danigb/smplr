@@ -1,4 +1,74 @@
+import {
+  AudioBuffers,
+  getPreferredAudioExtension,
+  loadAudioBuffer,
+} from "./player/load-audio";
 import { SampleLayer, SampleRegion } from "./player/types";
+import { Storage } from "./storage";
+
+export function loadSfzInstrument(
+  url: string,
+  buffers: AudioBuffers,
+  layer: SampleLayer
+) {
+  const audioExt = getPreferredAudioExtension();
+
+  return async (context: BaseAudioContext, storage: Storage) => {
+    const sfz = await fetch(url).then((res) => res.text());
+    const errors = sfzToLayer(sfz, layer);
+    if (errors.length) {
+      console.warn("Problems converting sfz", errors);
+    }
+    const sampleNames = new Set<string>();
+    layer.regions.forEach((r) => sampleNames.add(r.sampleName));
+    return Promise.all(
+      Array.from(sampleNames).map(async (sampleName) => {
+        const samplePath = sampleName
+          .replace("\\", "/")
+          .replace(".wav", audioExt);
+        const sampleUrl = `https://smpldsnds.github.io/sfzinstruments-dsmolken-double-bass/${samplePath}`;
+        const buffer = await loadAudioBuffer(context, sampleUrl, storage);
+        buffers[sampleName] = buffer;
+      })
+    );
+  };
+}
+
+export function sfzToLayer(sfz: string, layer: SampleLayer) {
+  let mode = "global";
+  const tokens = sfz
+    .split("\n")
+    .map(parseToken)
+    .filter((x): x is Token => !!x);
+
+  const scope = new Scope();
+  let errors: (string | undefined)[] = [];
+
+  for (const token of tokens) {
+    switch (token.type) {
+      case "mode":
+        errors.push(scope.closeScope(mode, layer));
+        mode = token.value;
+
+        break;
+
+      case "prop:num":
+      case "prop:str":
+      case "prop:num_arr":
+        scope.push(token.key, token.value);
+        break;
+
+      case "unknown":
+        console.warn("Unknown SFZ token", token.value);
+        break;
+    }
+  }
+  closeScope(mode, scope, layer);
+
+  return errors.filter((x) => !!x) as string[];
+
+  function closeScope(mode: string, scope: Scope, layer: SampleLayer) {}
+}
 
 type Token =
   | { type: "unknown"; value: string }
@@ -44,42 +114,6 @@ function parseToken(line: string): Token | undefined {
     };
 
   return { type: "unknown", value: line };
-}
-
-export function sfzToLayer(sfz: string, layer: SampleLayer) {
-  let mode = "global";
-  const tokens = sfz
-    .split("\n")
-    .map(parseToken)
-    .filter((x): x is Token => !!x);
-
-  const scope = new Scope();
-  let errors: (string | undefined)[] = [];
-
-  for (const token of tokens) {
-    switch (token.type) {
-      case "mode":
-        errors.push(scope.closeScope(mode, layer));
-        mode = token.value;
-
-        break;
-
-      case "prop:num":
-      case "prop:str":
-      case "prop:num_arr":
-        scope.push(token.key, token.value);
-        break;
-
-      case "unknown":
-        console.warn("Unknown SFZ token", token.value);
-        break;
-    }
-  }
-  closeScope(mode, scope, layer);
-
-  return errors.filter((x) => !!x) as string[];
-
-  function closeScope(mode: string, scope: Scope, layer: SampleLayer) {}
 }
 
 type DestKey = keyof SampleRegion | "ignore";
