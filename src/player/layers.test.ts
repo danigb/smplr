@@ -1,9 +1,9 @@
-import { findSamplesInLayer, spreadRegions } from "./layers";
-import { SampleLayer, SampleRegion } from "./types";
+import { findSamplesInRegions, spreadRegions } from "./layers";
+import { RegionGroup, SampleRegion } from "./types";
 
-describe("findSamplesInLayer", () => {
+describe("findSamplesInRegions", () => {
   it("find by rangeMidi", () => {
-    const layer: SampleLayer = {
+    const group: RegionGroup = {
       regions: [
         { sampleName: "a", midiPitch: 60, midiLow: 60, midiHigh: 75 },
         { sampleName: "b", midiPitch: 75, midiLow: 70, midiHigh: 80 },
@@ -11,23 +11,23 @@ describe("findSamplesInLayer", () => {
       sample: {},
     };
 
-    expect(findSamplesInLayer(layer, { note: 60 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 60 })).toEqual([
       { name: "a", detune: 0, note: 60 },
     ]);
-    expect(findSamplesInLayer(layer, { note: 62 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 62 })).toEqual([
       { name: "a", detune: 200, note: 62 },
     ]);
-    expect(findSamplesInLayer(layer, { note: 72 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 72 })).toEqual([
       { detune: 1200, name: "a", note: 72 },
       { detune: -300, name: "b", note: 72 },
     ]);
-    expect(findSamplesInLayer(layer, { note: 80 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 80 })).toEqual([
       { detune: 500, name: "b", note: 80 },
     ]);
   });
 
   it("find by rangeVol", () => {
-    const layer: SampleLayer = {
+    const group: RegionGroup = {
       regions: [
         { sampleName: "a", midiPitch: 60, velLow: 0, velHigh: 64 },
         { sampleName: "b", midiPitch: 60, velLow: 64, velHigh: 127 },
@@ -35,20 +35,31 @@ describe("findSamplesInLayer", () => {
       sample: {},
     };
 
-    expect(findSamplesInLayer(layer, { note: 60, velocity: 0 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 60, velocity: 0 })).toEqual([
       { name: "a", detune: 0, note: 60, velocity: 0 },
     ]);
-    expect(findSamplesInLayer(layer, { note: 60, velocity: 64 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 60, velocity: 64 })).toEqual([
       { detune: 0, name: "a", note: 60, velocity: 64 },
       { detune: 0, name: "b", note: 60, velocity: 64 },
     ]);
-    expect(findSamplesInLayer(layer, { note: 60, velocity: 127 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 60, velocity: 127 })).toEqual([
       { name: "b", detune: 0, note: 60, velocity: 127 },
     ]);
   });
 
+  it("keeps start time", () => {
+    const group: RegionGroup = {
+      regions: [{ sampleName: "a", midiPitch: 60 }],
+      sample: {},
+    };
+
+    expect(
+      findSamplesInRegions(group, { note: 70, velocity: 0, time: 1.5 })
+    ).toEqual([{ note: 70, name: "a", detune: 1000, time: 1.5, velocity: 0 }]);
+  });
+
   it("find by rangeMidi and rangeVol", () => {
-    const layer: SampleLayer = {
+    const group: RegionGroup = {
       regions: [
         {
           sampleName: "a",
@@ -70,43 +81,62 @@ describe("findSamplesInLayer", () => {
       sample: {},
     };
 
-    expect(findSamplesInLayer(layer, { note: 60, velocity: 0 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 60, velocity: 0 })).toEqual([
       { name: "a", detune: 0, note: 60, velocity: 0 },
     ]);
-    expect(findSamplesInLayer(layer, { note: 62, velocity: 64 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 62, velocity: 64 })).toEqual([
       { name: "a", detune: 200, note: 62, velocity: 64 },
     ]);
-    expect(findSamplesInLayer(layer, { note: 72, velocity: 64 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 72, velocity: 64 })).toEqual([
       { detune: 1200, name: "a", note: 72, velocity: 64 },
       { detune: -300, name: "b", note: 72, velocity: 64 },
     ]);
-    expect(findSamplesInLayer(layer, { note: 72, velocity: 127 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 72, velocity: 127 })).toEqual([
       { detune: -300, name: "b", note: 72, velocity: 127 },
     ]);
-    expect(findSamplesInLayer(layer, { note: 80, velocity: 127 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 80, velocity: 127 })).toEqual([
       { detune: 500, name: "b", note: 80, velocity: 127 },
     ]);
   });
 
-  it("applies offsets", () => {
-    const layer: SampleLayer = {
+  describe("applies modifiers", () => {
+    const createGroup = (region: Partial<SampleRegion>): RegionGroup => ({
       regions: [
         {
           sampleName: "a",
           midiPitch: 60,
-          offsetDetune: 10,
-          offsetVol: -15,
+          ...region,
         },
       ],
       sample: {},
-    };
-    expect(findSamplesInLayer(layer, { note: 65, velocity: 100 })).toEqual([
-      { detune: 510, name: "a", note: 65, velocity: 85 },
-    ]);
+    });
+    it("applies tune", () => {
+      const group = createGroup({ tune: 1 });
+      expect(findSamplesInRegions(group, { note: 65, velocity: 100 })).toEqual([
+        {
+          detune: 600,
+          name: "a",
+          note: 65,
+          velocity: 100,
+        },
+      ]);
+    });
+    it("applies volume", () => {
+      const group = createGroup({ volume: 1 });
+      expect(findSamplesInRegions(group, { note: 65, velocity: 100 })).toEqual([
+        {
+          detune: 500,
+          name: "a",
+          note: 65,
+          velocity: 100,
+          gainOffset: 1.1220184543019633,
+        },
+      ]);
+    });
   });
 
   it("applies sample options", () => {
-    const layer: SampleLayer = {
+    const group: RegionGroup = {
       regions: [
         {
           sampleName: "a",
@@ -121,7 +151,7 @@ describe("findSamplesInLayer", () => {
       ],
       sample: { loopStart: 5, loopEnd: 25, loop: true },
     };
-    expect(findSamplesInLayer(layer, { note: 65 })).toEqual([
+    expect(findSamplesInRegions(group, { note: 65 })).toEqual([
       {
         name: "a",
         note: 65,

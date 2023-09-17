@@ -1,14 +1,15 @@
 import { toMidi } from "./midi";
-import { SampleLayer, SampleOptions, SampleRegion, SampleStart } from "./types";
+import { RegionGroup, SampleOptions, SampleRegion, SampleStart } from "./types";
+import { dbToGain } from "./volume";
 
-export function createEmptySampleLayer(
+export function createEmptyRegionGroup(
   sample: Partial<SampleOptions> = {}
-): SampleLayer {
+): RegionGroup {
   return { regions: [], sample };
 }
 
-export function findSamplesInLayer(
-  layer: SampleLayer,
+export function findSamplesInRegions(
+  group: RegionGroup,
   sample: SampleStart,
   seqNumber?: number
 ): SampleStart[] {
@@ -16,21 +17,21 @@ export function findSamplesInLayer(
   const midi = toMidi(sample.note);
   if (midi === undefined) return results;
 
-  for (const region of layer.regions) {
+  for (const region of group.regions) {
     const found = findSampleInRegion(
       midi,
       seqNumber ?? 0,
       sample,
       region,
-      layer.sample
+      group.sample
     );
     if (found) results.push(found);
   }
   return results;
 }
 
-export function findFirstSampleInLayer(
-  layer: SampleLayer,
+export function findFirstSampleInRegions(
+  group: RegionGroup,
   sample: SampleStart,
   seqNumber?: number
 ): SampleStart | undefined {
@@ -38,13 +39,13 @@ export function findFirstSampleInLayer(
 
   if (midi === undefined) return undefined;
 
-  for (const region of layer.regions) {
+  for (const region of group.regions) {
     const found = findSampleInRegion(
       midi,
       seqNumber ?? 0,
       sample,
       region,
-      layer.sample
+      group.sample
     );
     if (found) return found;
   }
@@ -75,12 +76,13 @@ function findSampleInRegion(
 
   const semitones = midi - region.midiPitch;
   const velocity = sample.velocity ?? defaults.velocity;
+  const regionGainOffset = region.volume ? dbToGain(region.volume) : 0;
+  const sampleGainOffset = sample.gainOffset ?? defaults.gainOffset ?? 0;
   return {
     note: midi,
     name: region.sampleName,
-    detune: 100 * semitones + (region.offsetDetune ?? 0),
-    velocity:
-      velocity == undefined ? undefined : velocity + (region.offsetVol ?? 0),
+    detune: 100 * (semitones + (region.tune ?? 0)),
+    velocity: velocity == undefined ? undefined : velocity,
 
     decayTime:
       sample?.decayTime ?? region.sample?.decayTime ?? defaults.decayTime,
@@ -92,6 +94,8 @@ function findSampleInRegion(
     lpfCutoffHz:
       sample?.lpfCutoffHz ?? region.sample?.lpfCutoffHz ?? defaults.lpfCutoffHz,
     stopId: sample.name,
+    gainOffset: sampleGainOffset + regionGainOffset || undefined,
+    time: sample.time,
   };
 }
 

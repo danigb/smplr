@@ -1,6 +1,6 @@
 import { AudioInsert, connectSerial } from "./connect";
-import { midiVelToGain } from "./midi";
 import { createControl } from "./signals";
+import { midiVelToGain } from "./volume";
 
 export type ChannelOptions = {
   destination: AudioNode;

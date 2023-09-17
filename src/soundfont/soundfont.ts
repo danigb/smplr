@@ -1,12 +1,12 @@
 import { ChannelOptions } from "../player/channel";
 import { DefaultPlayer } from "../player/default-player";
 import {
-  createEmptySampleLayer,
-  findFirstSampleInLayer,
+  createEmptyRegionGroup,
+  findFirstSampleInRegions,
 } from "../player/layers";
 import { AudioBuffers } from "../player/load-audio";
 import {
-  SampleLayer,
+  RegionGroup,
   SampleOptions,
   SampleStart,
   SampleStop,
@@ -49,7 +49,7 @@ export class Soundfont {
   public readonly config: Readonly<SoundfontConfig>;
   private readonly player: DefaultPlayer;
   public readonly load: Promise<this>;
-  public readonly layer: SampleLayer;
+  public readonly group: RegionGroup;
   #hasLoops: boolean;
 
   constructor(
@@ -58,14 +58,14 @@ export class Soundfont {
   ) {
     this.config = getSoundfontConfig(options);
     this.player = new DefaultPlayer(context, options);
-    this.layer = createEmptySampleLayer();
+    this.group = createEmptyRegionGroup();
 
     this.#hasLoops = false;
     const loader = soundfontLoader(
       this.config.instrumentUrl,
       this.config.loopDataUrl,
       this.player.buffers,
-      this.layer
+      this.group
     );
     this.load = loader(context, this.config.storage).then((hasLoops) => {
       this.#hasLoops = hasLoops;
@@ -94,8 +94,8 @@ export class Soundfont {
   }
 
   start(sample: SampleStart | string | number) {
-    const found = findFirstSampleInLayer(
-      this.layer,
+    const found = findFirstSampleInRegions(
+      this.group,
       typeof sample === "object" ? sample : { note: sample }
     );
     if (!found) return () => undefined;
@@ -112,9 +112,9 @@ function soundfontLoader(
   url: string,
   loopsUrl: string | undefined,
   buffers: AudioBuffers,
-  layer: SampleLayer
+  group: RegionGroup
 ) {
-  const loadInstrument = soundfontInstrumentLoader(url, buffers, layer);
+  const loadInstrument = soundfontInstrumentLoader(url, buffers, group);
   return async (context: BaseAudioContext, storage: Storage) => {
     const [_, loops] = await Promise.all([
       loadInstrument(context, storage),
@@ -122,7 +122,7 @@ function soundfontLoader(
     ]);
 
     if (loops) {
-      layer.regions.forEach((region) => {
+      group.regions.forEach((region) => {
         const loop = loops[region.midiPitch];
         if (loop) {
           region.sample ??= {};

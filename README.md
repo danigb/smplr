@@ -280,7 +280,7 @@ Bear in mind that currently that feature produces click on lot of instruments.
 
 ### Piano
 
-A sampled acoustic piano. It uses Steinway samples with 4 velocity layers from
+A sampled acoustic piano. It uses Steinway samples with 4 velocity groups from
 [SplendidGrandPiano](https://github.com/sfzinstruments/SplendidGrandPiano)
 
 ```js
@@ -364,6 +364,38 @@ drums.getVariations("kick").forEach((variation, index) => {
 });
 ```
 
+### Smolken double bass
+
+```js
+import { Smolken, getSmolkenNames } from "smplr";
+
+const instruments = getSmolkenNames(); // => Arco, Pizzicato & Switched
+
+// Create an instrument
+const context = new AudioContext();
+const doubleBass = await new Smolken(context, { instrument: "Arco" }).load;
+```
+
+### Versilian
+
+Versilian is a sample capable of using the [Versilian Community Sample Library](https://github.com/sgossner/VCSL).
+
+⚠️ Not all features are implemented. Some instruments may sound incorrect ⚠️
+
+```js
+import { Versilian, getVersilianInstruments } from "smplr";
+
+// getVersilianInstruments returns a Promise
+const instrumentNames = await getVersilianInstruments();
+
+const context = new AudioContext();
+const sampler = new Versilian(context, { instrument: instrumentNAmes[0] });
+```
+
 ## License
 
 MIT License
+
+```
+
+```

@@ -1,4 +1,73 @@
-import { SampleLayer, SampleRegion } from "./player/types";
+import {
+  AudioBuffers,
+  getPreferredAudioExtension,
+  loadAudioBuffer,
+} from "./player/load-audio";
+import { RegionGroup, SampleRegion } from "./player/types";
+import { Storage } from "./storage";
+
+export type SfzLoaderConfig = {
+  urlFromSampleName: (sampleName: string, audioExt: string) => string;
+  buffers: AudioBuffers;
+  group: RegionGroup;
+};
+
+export function SfzInstrumentLoader(url: string, config: SfzLoaderConfig) {
+  const audioExt = getPreferredAudioExtension();
+
+  return async (context: BaseAudioContext, storage: Storage) => {
+    const sfz = await fetch(url).then((res) => res.text());
+    const errors = sfzToLayer(sfz, config.group);
+    if (errors.length) {
+      console.warn("Problems converting sfz", errors);
+    }
+    const sampleNames = new Set<string>();
+    config.group.regions.forEach((r) => sampleNames.add(r.sampleName));
+    return Promise.all(
+      Array.from(sampleNames).map(async (sampleName) => {
+        const sampleUrl = config.urlFromSampleName(sampleName, audioExt);
+        const buffer = await loadAudioBuffer(context, sampleUrl, storage);
+        config.buffers[sampleName] = buffer;
+      })
+    );
+  };
+}
+
+export function sfzToLayer(sfz: string, group: RegionGroup) {
+  let mode = "global";
+  const tokens = sfz
+    .split("\n")
+    .map(parseToken)
+    .filter((x): x is Token => !!x);
+
+  const scope = new Scope();
+  let errors: (string | undefined)[] = [];
+
+  for (const token of tokens) {
+    switch (token.type) {
+      case "mode":
+        errors.push(scope.closeScope(mode, group));
+        mode = token.value;
+
+        break;
+
+      case "prop:num":
+      case "prop:str":
+      case "prop:num_arr":
+        scope.push(token.key, token.value);
+        break;
+
+      case "unknown":
+        console.warn("Unknown SFZ token", token.value);
+        break;
+    }
+  }
+  closeScope(mode, scope, group);
+
+  return errors.filter((x) => !!x) as string[];
+
+  function closeScope(mode: string, scope: Scope, group: RegionGroup) {}
+}
 
 type Token =
   | { type: "unknown"; value: string }
@@ -46,42 +115,6 @@ function parseToken(line: string): Token | undefined {
   return { type: "unknown", value: line };
 }
 
-export function sfzToLayer(sfz: string, layer: SampleLayer) {
-  let mode = "global";
-  const tokens = sfz
-    .split("\n")
-    .map(parseToken)
-    .filter((x): x is Token => !!x);
-
-  const scope = new Scope();
-  let errors: (string | undefined)[] = [];
-
-  for (const token of tokens) {
-    switch (token.type) {
-      case "mode":
-        errors.push(scope.closeScope(mode, layer));
-        mode = token.value;
-
-        break;
-
-      case "prop:num":
-      case "prop:str":
-      case "prop:num_arr":
-        scope.push(token.key, token.value);
-        break;
-
-      case "unknown":
-        console.warn("Unknown SFZ token", token.value);
-        break;
-    }
-  }
-  closeScope(mode, scope, layer);
-
-  return errors.filter((x) => !!x) as string[];
-
-  function closeScope(mode: string, scope: Scope, layer: SampleLayer) {}
-}
-
 type DestKey = keyof SampleRegion | "ignore";
 
 class Scope {
@@ -89,7 +122,7 @@ class Scope {
   global: Partial<SampleRegion> = {};
   group: Partial<SampleRegion> = {};
 
-  closeScope(mode: string, layer: SampleLayer) {
+  closeScope(mode: string, group: RegionGroup) {
     if (mode === "global") {
       // Save global properties
       this.#closeRegion(this.global as SampleRegion);
@@ -127,7 +160,7 @@ class Scope {
         region.sample = { decayTime: region.ampRelease };
         delete region.ampRelease;
       }
-      layer.regions.push(region);
+      group.regions.push(region);
     }
   }
 
@@ -135,25 +168,29 @@ class Scope {
     this.popStr("sample", region, "sampleName");
     this.popNum("pitch_keycenter", region, "midiPitch");
 
-    this.popNum("lokey", region, "midiLow");
-    this.popNum("hikey", region, "midiHigh");
-
-    this.popNum("lovel", region, "velLow");
-    this.popNum("hivel", region, "velHigh");
-    this.popNum("pitch_keytrack", region, "ignore");
-    this.popNum("bend_up", region, "bendUp");
+    this.popNum("ampeg_attack", region, "ampAttack");
+    this.popNum("ampeg_release", region, "ampRelease");
     this.popNum("bend_down", region, "bendDown");
-    this.popNumArr("amp_velcurve", region, "ampVelCurve");
+    this.popNum("bend_up", region, "bendUp");
+    this.popNum("group", region, "group");
+    this.popNum("hikey", region, "midiHigh");
+    this.popNum("hivel", region, "velHigh");
+    this.popNum("lokey", region, "midiLow");
+    this.popNum("offset", region, "offset");
+    this.popNum("lovel", region, "velLow");
+    this.popNum("off_by", region, "groupOffBy");
+    this.popNum("pitch_keytrack", region, "ignore");
     this.popNum("seq_length", region, "seqLength");
     this.popNum("seq_position", region, "seqPosition");
-    this.popNum("ampeg_release", region, "ampRelease");
-    this.popNum("group", region, "group");
-    this.popNum("off_by", region, "groupOffBy");
+    this.popNum("tune", region, "tune");
+    this.popNum("volume", region, "volume");
+    this.popNumArr("amp_velcurve", region, "ampVelCurve");
 
-    const remainingKeys = Object.keys(this.values);
-    if (remainingKeys.length) {
-      console.warn("Remaining keys in scope: ", remainingKeys);
-    }
+    // Enable only this while development
+    // const remainingKeys = Object.keys(this.values);
+    // if (remainingKeys.length) {
+    //   console.warn("Remaining keys in scope: ", remainingKeys);
+    // }
     this.values = {};
     return region;
   }

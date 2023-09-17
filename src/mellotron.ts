@@ -1,8 +1,8 @@
 import { ChannelOptions } from "./player/channel";
 import { DefaultPlayer } from "./player/default-player";
 import {
-  createEmptySampleLayer,
-  findFirstSampleInLayer,
+  createEmptyRegionGroup,
+  findFirstSampleInRegions,
   spreadRegions,
 } from "./player/layers";
 import {
@@ -13,7 +13,7 @@ import {
 import { toMidi } from "./player/midi";
 import {
   InternalPlayer,
-  SampleLayer,
+  RegionGroup,
   SampleOptions,
   SampleStart,
   SampleStop,
@@ -76,7 +76,7 @@ export type MellotronOptions = Partial<
 export class Mellotron implements InternalPlayer {
   private readonly config: MellotronConfig;
   private readonly player: DefaultPlayer;
-  private readonly layer: SampleLayer;
+  private readonly group: RegionGroup;
   readonly load: Promise<this>;
 
   public constructor(
@@ -85,12 +85,12 @@ export class Mellotron implements InternalPlayer {
   ) {
     this.config = getMellotronConfig(options);
     this.player = new DefaultPlayer(context, options);
-    this.layer = createEmptySampleLayer(options);
+    this.group = createEmptyRegionGroup(options);
 
     const loader = loadMellotronInstrument(
       this.config.instrument,
       this.player.buffers,
-      this.layer
+      this.group
     );
     this.load = loader(context, this.config.storage).then(() => this);
   }
@@ -104,8 +104,8 @@ export class Mellotron implements InternalPlayer {
   }
 
   start(sample: SampleStart | string | number) {
-    const found = findFirstSampleInLayer(
-      this.layer,
+    const found = findFirstSampleInRegions(
+      this.group,
       typeof sample === "object" ? sample : { note: sample }
     );
 
@@ -132,7 +132,7 @@ function getMellotronConfig(
 function loadMellotronInstrument(
   instrument: string,
   buffers: AudioBuffers,
-  layer: SampleLayer
+  group: RegionGroup
 ) {
   let variation = INSTRUMENT_VARIATIONS[instrument];
   if (variation) instrument = variation[0];
@@ -154,7 +154,7 @@ function loadMellotronInstrument(
             loadAudioBuffer(context, sampleUrl, storage).then((audioBuffer) => {
               buffers[sampleName] = audioBuffer;
               const duration = audioBuffer?.duration ?? 0;
-              layer.regions.push({
+              group.regions.push({
                 sampleName: sampleName,
                 midiPitch: midi,
                 sample: {
@@ -168,7 +168,7 @@ function loadMellotronInstrument(
         )
       )
       .then(() => {
-        spreadRegions(layer.regions);
+        spreadRegions(group.regions);
       });
   };
 }

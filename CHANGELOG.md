@@ -1,5 +1,9 @@
 # smplr
 
+## 0.10.0
+
+- Feature: Versilian VCSL instrument (not fully implemented)
+
 ## 0.9.0
 
 - Feature: Support for SFZ file parsing
@@ -8,7 +12,7 @@
 ## 0.8.1
 
 - Fix: soundfont.loop returns this
-- Improvement: Soundfont uses layer abstraction. Simplify code
+- Improvement: Soundfont uses group abstraction. Simplify code
 
 ## 0.8.0
 

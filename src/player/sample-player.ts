@@ -1,6 +1,5 @@
 import { connectSerial } from "./connect";
 import { AudioBuffers } from "./load-audio";
-import { midiVelToGain } from "./midi";
 import { Trigger, createTrigger, unsubscribeAll } from "./signals";
 import {
   InternalPlayer,
@@ -8,6 +7,7 @@ import {
   SampleStart,
   SampleStop,
 } from "./types";
+import { midiVelToGain } from "./volume";
 
 /**
  * A sample player. This is used internally by the Sampler.
@@ -81,9 +81,21 @@ export class SamplePlayer implements InternalPlayer {
       }
     }
 
+    // Compensate gain
+    const gainCompensation = sample.gainOffset
+      ? new GainNode(context, { gain: sample.gainOffset })
+      : undefined;
+
     const stopId = sample.stopId ?? sample.note;
     const cleanup = unsubscribeAll([
-      connectSerial([source, lpf, volume, decay, destination]),
+      connectSerial([
+        source,
+        lpf,
+        volume,
+        decay,
+        gainCompensation,
+        destination,
+      ]),
       sample.stop?.(stop),
       this.#stop.subscribe((event) => {
         if (!event || event.stopId === undefined || event.stopId === stopId) {
