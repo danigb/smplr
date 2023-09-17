@@ -1,5 +1,10 @@
 # smplr
 
+## 0.9.0
+
+- Feature: Support for SFZ file parsing
+- Feature: New Smolken double bass instrument
+
 ## 0.8.1
 
 - Fix: soundfont.loop returns this

@@ -40,7 +40,7 @@ export function SmolkenExample({ className }: { className?: string }) {
   return (
     <div className={className}>
       <div className="flex gap-2 items-end mb-2">
-        <h1 className="text-3xl">Smolken</h1>
+        <h1 className="text-3xl">Smolken Double Bass</h1>
 
         <LoadWithStatus
           status={status}
