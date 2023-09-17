@@ -4,6 +4,7 @@ export * from "./mallet";
 export * from "./mellotron";
 export * from "./reverb/reverb";
 export * from "./sampler";
+export * from "./smolken";
 export * from "./soundfont/soundfont";
 export * from "./splendid-grand-piano";
 export * from "./storage";

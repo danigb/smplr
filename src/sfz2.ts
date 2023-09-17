@@ -8,7 +8,7 @@ type Token =
   | { type: "prop:str"; key: string; value: string };
 
 const MODE_REGEX = /^<([^>]+)>$/;
-const PROP_NUM_REGEX = /^([^=]+)=(\d+)$/;
+const PROP_NUM_REGEX = /^([^=]+)=([-\.\d]+)$/;
 const PROP_STR_REGEX = /^([^=]+)=(.+)$/;
 const PROP_NUM_ARR_REGEX = /^([^=]+)_(\d+)=(\d+)$/;
 function parseToken(line: string): Token | undefined {
@@ -59,8 +59,7 @@ export function sfzToLayer(sfz: string, layer: SampleLayer) {
   for (const token of tokens) {
     switch (token.type) {
       case "mode":
-        errors.push(closeScope(mode, scope, layer));
-        scope.clear();
+        errors.push(scope.closeScope(mode, layer));
         mode = token.value;
 
         break;
@@ -83,26 +82,32 @@ export function sfzToLayer(sfz: string, layer: SampleLayer) {
   function closeScope(mode: string, scope: Scope, layer: SampleLayer) {}
 }
 
+type DestKey = keyof SampleRegion | "ignore";
+
 class Scope {
   values: Record<string, any> = {};
-  lastNum = 0;
-  lastStr = "";
-  lastNumArr: [number, number] = [0, 0];
+  global: Partial<SampleRegion> = {};
+  group: Partial<SampleRegion> = {};
 
   closeScope(mode: string, layer: SampleLayer) {
-    if (mode === "global" || mode === "group") {
-      console.log("group", { ...this.values });
+    if (mode === "global") {
+      // Save global properties
+      this.#closeRegion(this.global as SampleRegion);
+    } else if (mode === "group") {
+      // Save group properties
+      this.group = this.#closeRegion({} as SampleRegion);
     } else if (mode === "region") {
-      const region: SampleRegion = { sampleName: "", midiPitch: 0 };
+      const region = this.#closeRegion({
+        sampleName: "",
+        midiPitch: -1,
+        ...this.global,
+        ...this.group,
+      });
 
-      if (!this.popStr("sample", region, "sampleName")) {
-        console.log("Missing sample name", { ...this.values });
+      if (region.sampleName === "") {
         return "Missing sample name";
       }
-
-      this.popNum("lokey", region, "midiLow");
-      this.popNum("hikey", region, "midiHigh");
-      if (!this.popNum("pitch_keycenter", region, "midiPitch")) {
+      if (region.midiPitch === -1) {
         // By default, if pitch_keycenter is not specified, the sampler will often use the value
         // of lokey as the pitch key center.
         if (region.midiLow !== undefined) {
@@ -112,20 +117,40 @@ class Scope {
         }
       }
 
-      this.popNum("lovel", region, "velLow");
-      this.popNum("hivel", region, "velHigh");
-      this.popNum("pitch_keytrack", region, "ignore");
-      this.popNum("bend_up", region, "bendUp");
-      this.popNum("bend_down", region, "bendDown");
-      this.popNumArr("amp_velcurve", region, "ampVelCurve");
-      this.popNum("seq_length", region, "seqLength");
-      this.popNum("seq_position", region, "seqPosition");
-
-      if (!this.empty) {
-        console.log("Unknown properties", { ...this.values });
-        return `Unknown properties: ${this.keys.join(", ")}`;
+      // Move amp_release to sample options
+      if (region.ampRelease) {
+        region.sample = { decayTime: region.ampRelease };
+        delete region.ampRelease;
       }
+      layer.regions.push(region);
     }
+  }
+
+  #closeRegion(region: SampleRegion) {
+    this.popStr("sample", region, "sampleName");
+    this.popNum("pitch_keycenter", region, "midiPitch");
+
+    this.popNum("lokey", region, "midiLow");
+    this.popNum("hikey", region, "midiHigh");
+
+    this.popNum("lovel", region, "velLow");
+    this.popNum("hivel", region, "velHigh");
+    this.popNum("pitch_keytrack", region, "ignore");
+    this.popNum("bend_up", region, "bendUp");
+    this.popNum("bend_down", region, "bendDown");
+    this.popNumArr("amp_velcurve", region, "ampVelCurve");
+    this.popNum("seq_length", region, "seqLength");
+    this.popNum("seq_position", region, "seqPosition");
+    this.popNum("ampeg_release", region, "seqPosition");
+    this.popNum("group", region, "group");
+    this.popNum("off_by", region, "groupOffBy");
+
+    const remainingKeys = Object.keys(this.values);
+    if (remainingKeys.length) {
+      console.warn("Remaining keys in scope: ", remainingKeys);
+    }
+    this.values = {};
+    return region;
   }
 
   get empty() {
@@ -136,29 +161,25 @@ class Scope {
     return Object.keys(this.values);
   }
 
-  clear() {
-    this.values = {};
-  }
-
   push(key: string, value: any) {
     this.values[key] = value;
   }
 
-  popNum(key: string, dest: Record<string, any>, destKey: string): boolean {
+  popNum(key: string, dest: Record<string, any>, destKey: DestKey): boolean {
     if (typeof this.values[key] !== "number") return false;
     dest[destKey] = this.values[key];
     delete this.values[key];
     return true;
   }
 
-  popStr(key: string, dest: Record<string, any>, destKey: string): boolean {
+  popStr(key: string, dest: Record<string, any>, destKey: DestKey): boolean {
     if (typeof this.values[key] !== "string") return false;
     dest[destKey] = this.values[key];
     delete this.values[key];
     return true;
   }
 
-  popNumArr(key: string, dest: Record<string, any>, destKey: string): boolean {
+  popNumArr(key: string, dest: Record<string, any>, destKey: DestKey): boolean {
     if (!Array.isArray(this.values[key])) return false;
     dest[destKey] = this.values[key];
     delete this.values[key];

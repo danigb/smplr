@@ -4,6 +4,7 @@ import { DrumMachineExample } from "src/DrumMachineExample";
 import { ElectricPianoExample } from "src/ElectricPianoExample";
 import { MalletExample } from "src/MalletExample";
 import { MellotronExample } from "src/MellotronExample";
+import { SmolkenExample } from "src/SmolkenExample";
 import { SoundfontExample } from "src/SoundfontExample";
 import { PianoExample } from "../src/PianoExample";
 
@@ -30,6 +31,7 @@ export default function Home() {
           <MalletExample />
           <DrumMachineExample />
           <MellotronExample />
+          <SmolkenExample />
         </div>
       </main>
     </>
