@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Reverb, Smolken, getSmolkenNames } from "smplr";
+import { CacheStorage, Reverb, Smolken, Storage, getSmolkenNames } from "smplr";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { getAudioContext } from "./audio-context";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
 let reverb: Reverb | undefined;
+let storage: Storage | undefined;
 let instrumentNames = getSmolkenNames();
 
 export function SmolkenExample({ className }: { className?: string }) {
@@ -24,6 +25,7 @@ export function SmolkenExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
+    storage ??= new CacheStorage("smolken");
     const newInstrument = new Smolken(context, {
       instrument: instrumentName,
       volume,

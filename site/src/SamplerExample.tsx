@@ -46,7 +46,7 @@ export function SamplerExample({ className }: { className?: string }) {
       })
       .catch((err) => {
         setStatus("error");
-        console.log("Instrument error", err);
+        console.error("Instrument error", err);
       });
   }
 
