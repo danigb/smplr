@@ -1,7 +1,7 @@
 export const GRANDPIANO = {
   meta: {
     name: "Splendid Grand Piano",
-    description: "Steinway samples with 4 velocity layers",
+    description: "Steinway samples with 4 velocity groups",
     source: "https://github.com/sfzinstruments/SplendidGrandPiano",
     license: "Public Domain",
   },

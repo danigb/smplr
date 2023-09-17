@@ -31,14 +31,14 @@ function getVcslInstrumentSfzUrl(instrument: string) {
 export function VcslInstrumentLoader(
   instrument: string,
   buffers: AudioBuffers,
-  layer: RegionGroup
+  group: RegionGroup
 ) {
   const url = getVcslInstrumentSfzUrl(instrument);
   const base = instrument.slice(0, instrument.lastIndexOf("/") + 1);
   const sampleBase = `https://smpldsnds.github.io/sgossner-vcsl/${base}`;
   return SfzInstrumentLoader(url, {
     buffers: buffers,
-    layer: layer,
+    group: group,
     urlFromSampleName: (sampleName, audioExt) => {
       return sampleBase + "/" + sampleName.replace(".wav", audioExt);
     },
@@ -74,7 +74,7 @@ export class Versilian implements InternalPlayer {
     const loader = VcslInstrumentLoader(
       this.config.instrument,
       this.player.buffers,
-      this.player.layer
+      this.player.group
     );
     this.load = loader(context, this.config.storage).then(() => this);
   }

@@ -12,7 +12,7 @@ export function gleitzKitUrl(name: string, kit: string) {
 export function soundfontInstrumentLoader(
   url: string,
   buffers: AudioBuffers,
-  layer: RegionGroup
+  group: RegionGroup
 ) {
   return async (context: BaseAudioContext, storage: Storage) => {
     const sourceFile = await (await storage.fetch(url)).text();
@@ -28,13 +28,13 @@ export function soundfontInstrumentLoader(
         );
         const buffer = await context.decodeAudioData(audioData);
         buffers[noteName] = buffer;
-        layer.regions.push({
+        group.regions.push({
           sampleName: noteName,
           midiPitch: midi,
         });
       })
     );
-    spreadRegions(layer.regions);
+    spreadRegions(group.regions);
   };
 }
 

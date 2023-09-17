@@ -8,8 +8,8 @@ export function createEmptyRegionGroup(
   return { regions: [], sample };
 }
 
-export function findSamplesInLayer(
-  layer: RegionGroup,
+export function findSamplesInRegions(
+  group: RegionGroup,
   sample: SampleStart,
   seqNumber?: number
 ): SampleStart[] {
@@ -17,21 +17,21 @@ export function findSamplesInLayer(
   const midi = toMidi(sample.note);
   if (midi === undefined) return results;
 
-  for (const region of layer.regions) {
+  for (const region of group.regions) {
     const found = findSampleInRegion(
       midi,
       seqNumber ?? 0,
       sample,
       region,
-      layer.sample
+      group.sample
     );
     if (found) results.push(found);
   }
   return results;
 }
 
-export function findFirstSampleInLayer(
-  layer: RegionGroup,
+export function findFirstSampleInRegions(
+  group: RegionGroup,
   sample: SampleStart,
   seqNumber?: number
 ): SampleStart | undefined {
@@ -39,13 +39,13 @@ export function findFirstSampleInLayer(
 
   if (midi === undefined) return undefined;
 
-  for (const region of layer.regions) {
+  for (const region of group.regions) {
     const found = findSampleInRegion(
       midi,
       seqNumber ?? 0,
       sample,
       region,
-      layer.sample
+      group.sample
     );
     if (found) return found;
   }

@@ -1,6 +1,6 @@
 import { ChannelOptions } from "./player/channel";
 import { DefaultPlayer } from "./player/default-player";
-import { createEmptyRegionGroup, findSamplesInLayer } from "./player/layers";
+import { createEmptyRegionGroup, findSamplesInRegions } from "./player/layers";
 import { AudioBuffers } from "./player/load-audio";
 import { toMidi } from "./player/midi";
 import {
@@ -36,7 +36,7 @@ export type SmolkenOptions = Partial<
 
 export class Smolken implements InternalPlayer {
   private readonly player: DefaultPlayer;
-  private readonly layer: RegionGroup;
+  private readonly group: RegionGroup;
   public readonly load: Promise<this>;
   private config: SmolkenConfig;
   private seqNum = 0;
@@ -47,12 +47,12 @@ export class Smolken implements InternalPlayer {
       storage: options.storage ?? HttpStorage,
     };
     this.player = new DefaultPlayer(context, options);
-    this.layer = createEmptyRegionGroup();
+    this.group = createEmptyRegionGroup();
     const url = getSmolkenUrl(this.config.instrument);
 
     const loader = SfzInstrumentLoader(url, {
       buffers: this.player.buffers,
-      layer: this.layer,
+      group: this.group,
       urlFromSampleName: (sampleName, audioExt) => {
         const samplePath = sampleName
           .replace("\\", "/")
@@ -76,8 +76,8 @@ export class Smolken implements InternalPlayer {
   }
 
   start(sample: SampleStart | string | number) {
-    const found = findSamplesInLayer(
-      this.layer,
+    const found = findSamplesInRegions(
+      this.group,
       typeof sample === "object" ? sample : { note: sample },
       this.seqNum
     );

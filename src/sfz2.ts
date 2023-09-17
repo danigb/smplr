@@ -9,7 +9,7 @@ import { Storage } from "./storage";
 export type SfzLoaderConfig = {
   urlFromSampleName: (sampleName: string, audioExt: string) => string;
   buffers: AudioBuffers;
-  layer: RegionGroup;
+  group: RegionGroup;
 };
 
 export function SfzInstrumentLoader(url: string, config: SfzLoaderConfig) {
@@ -17,12 +17,12 @@ export function SfzInstrumentLoader(url: string, config: SfzLoaderConfig) {
 
   return async (context: BaseAudioContext, storage: Storage) => {
     const sfz = await fetch(url).then((res) => res.text());
-    const errors = sfzToLayer(sfz, config.layer);
+    const errors = sfzToLayer(sfz, config.group);
     if (errors.length) {
       console.warn("Problems converting sfz", errors);
     }
     const sampleNames = new Set<string>();
-    config.layer.regions.forEach((r) => sampleNames.add(r.sampleName));
+    config.group.regions.forEach((r) => sampleNames.add(r.sampleName));
     return Promise.all(
       Array.from(sampleNames).map(async (sampleName) => {
         const sampleUrl = config.urlFromSampleName(sampleName, audioExt);
@@ -33,7 +33,7 @@ export function SfzInstrumentLoader(url: string, config: SfzLoaderConfig) {
   };
 }
 
-export function sfzToLayer(sfz: string, layer: RegionGroup) {
+export function sfzToLayer(sfz: string, group: RegionGroup) {
   let mode = "global";
   const tokens = sfz
     .split("\n")
@@ -46,7 +46,7 @@ export function sfzToLayer(sfz: string, layer: RegionGroup) {
   for (const token of tokens) {
     switch (token.type) {
       case "mode":
-        errors.push(scope.closeScope(mode, layer));
+        errors.push(scope.closeScope(mode, group));
         mode = token.value;
 
         break;
@@ -62,11 +62,11 @@ export function sfzToLayer(sfz: string, layer: RegionGroup) {
         break;
     }
   }
-  closeScope(mode, scope, layer);
+  closeScope(mode, scope, group);
 
   return errors.filter((x) => !!x) as string[];
 
-  function closeScope(mode: string, scope: Scope, layer: RegionGroup) {}
+  function closeScope(mode: string, scope: Scope, group: RegionGroup) {}
 }
 
 type Token =
@@ -122,7 +122,7 @@ class Scope {
   global: Partial<SampleRegion> = {};
   group: Partial<SampleRegion> = {};
 
-  closeScope(mode: string, layer: RegionGroup) {
+  closeScope(mode: string, group: RegionGroup) {
     if (mode === "global") {
       // Save global properties
       this.#closeRegion(this.global as SampleRegion);
@@ -160,7 +160,7 @@ class Scope {
         region.sample = { decayTime: region.ampRelease };
         delete region.ampRelease;
       }
-      layer.regions.push(region);
+      group.regions.push(region);
     }
   }
 

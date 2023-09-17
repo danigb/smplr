@@ -280,7 +280,7 @@ Bear in mind that currently that feature produces click on lot of instruments.
 
 ### Piano
 
-A sampled acoustic piano. It uses Steinway samples with 4 velocity layers from
+A sampled acoustic piano. It uses Steinway samples with 4 velocity groups from
 [SplendidGrandPiano](https://github.com/sfzinstruments/SplendidGrandPiano)
 
 ```js
