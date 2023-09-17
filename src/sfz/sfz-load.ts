@@ -19,7 +19,7 @@ export async function loadSfzBuffers(
   });
 }
 
-export async function loadSfzInstrument(
+export async function SfzInstrumentLoader(
   instrument: string | Websfz | SfzInstrument,
   storage: Storage
 ): Promise<Websfz> {

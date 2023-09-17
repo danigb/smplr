@@ -8,3 +8,4 @@ export * from "./smolken";
 export * from "./soundfont/soundfont";
 export * from "./splendid-grand-piano";
 export * from "./storage";
+export * from "./versilian";

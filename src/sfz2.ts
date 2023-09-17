@@ -6,29 +6,28 @@ import {
 import { SampleLayer, SampleRegion } from "./player/types";
 import { Storage } from "./storage";
 
-export function loadSfzInstrument(
-  url: string,
-  buffers: AudioBuffers,
-  layer: SampleLayer
-) {
+export type SfzLoaderConfig = {
+  urlFromSampleName: (sampleName: string, audioExt: string) => string;
+  buffers: AudioBuffers;
+  layer: SampleLayer;
+};
+
+export function SfzInstrumentLoader(url: string, config: SfzLoaderConfig) {
   const audioExt = getPreferredAudioExtension();
 
   return async (context: BaseAudioContext, storage: Storage) => {
     const sfz = await fetch(url).then((res) => res.text());
-    const errors = sfzToLayer(sfz, layer);
+    const errors = sfzToLayer(sfz, config.layer);
     if (errors.length) {
       console.warn("Problems converting sfz", errors);
     }
     const sampleNames = new Set<string>();
-    layer.regions.forEach((r) => sampleNames.add(r.sampleName));
+    config.layer.regions.forEach((r) => sampleNames.add(r.sampleName));
     return Promise.all(
       Array.from(sampleNames).map(async (sampleName) => {
-        const samplePath = sampleName
-          .replace("\\", "/")
-          .replace(".wav", audioExt);
-        const sampleUrl = `https://smpldsnds.github.io/sfzinstruments-dsmolken-double-bass/${samplePath}`;
+        const sampleUrl = config.urlFromSampleName(sampleName, audioExt);
         const buffer = await loadAudioBuffer(context, sampleUrl, storage);
-        buffers[sampleName] = buffer;
+        config.buffers[sampleName] = buffer;
       })
     );
   };
@@ -169,20 +168,20 @@ class Scope {
     this.popStr("sample", region, "sampleName");
     this.popNum("pitch_keycenter", region, "midiPitch");
 
-    this.popNum("lokey", region, "midiLow");
-    this.popNum("hikey", region, "midiHigh");
-
-    this.popNum("lovel", region, "velLow");
-    this.popNum("hivel", region, "velHigh");
-    this.popNum("pitch_keytrack", region, "ignore");
-    this.popNum("bend_up", region, "bendUp");
+    this.popNum("ampeg_release", region, "ampRelease");
     this.popNum("bend_down", region, "bendDown");
-    this.popNumArr("amp_velcurve", region, "ampVelCurve");
+    this.popNum("bend_up", region, "bendUp");
+    this.popNum("group", region, "group");
+    this.popNum("hikey", region, "midiHigh");
+    this.popNum("hivel", region, "velHigh");
+    this.popNum("lokey", region, "midiLow");
+    this.popNum("lovel", region, "velLow");
+    this.popNum("off_by", region, "groupOffBy");
+    this.popNum("pitch_keytrack", region, "ignore");
     this.popNum("seq_length", region, "seqLength");
     this.popNum("seq_position", region, "seqPosition");
-    this.popNum("ampeg_release", region, "ampRelease");
-    this.popNum("group", region, "group");
-    this.popNum("off_by", region, "groupOffBy");
+    this.popNum("volume", region, "volume");
+    this.popNumArr("amp_velcurve", region, "ampVelCurve");
 
     const remainingKeys = Object.keys(this.values);
     if (remainingKeys.length) {

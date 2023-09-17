@@ -3,7 +3,7 @@ import { toMidi } from "../player/midi";
 import { SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
 import { SfzInstrument } from "./sfz-kits";
-import { loadSfzBuffers, loadSfzInstrument } from "./sfz-load";
+import { SfzInstrumentLoader, loadSfzBuffers } from "./sfz-load";
 import { findRegions } from "./sfz-regions";
 import { Websfz } from "./websfz";
 
@@ -42,7 +42,7 @@ export class SfzSampler {
     this.#websfz = EMPTY_WEBSFZ;
 
     const storage = options.storage ?? HttpStorage;
-    this.load = loadSfzInstrument(options.instrument, storage)
+    this.load = SfzInstrumentLoader(options.instrument, storage)
       .then((result) => {
         this.#websfz = Object.freeze(result);
         return loadSfzBuffers(

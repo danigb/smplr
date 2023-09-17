@@ -82,7 +82,6 @@ export type SampleRegion = {
    * at volume Gain when the note's velocity is Vel
    */
   ampVelCurve?: [number, number];
-  sample?: Partial<SampleOptions>;
 
   /**
    * seqLength defines how many samples are in the sequence.
@@ -115,6 +114,18 @@ export type SampleRegion = {
    * currently playing in the specified group number
    */
   groupOffBy?: number;
+
+  /**
+   * The volume opcode in SFZ defines the default playback volume for a given region.
+   * It specifies an adjustment to the sample's original amplitude.
+   * The unit for the volume opcode is decibels (dB).
+   */
+  volume?: number;
+
+  /**
+   * sample options for this particular region
+   */
+  sample?: Partial<SampleOptions>;
 };
 
 export type SampleLayer = {

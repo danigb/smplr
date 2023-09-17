@@ -13,51 +13,69 @@ import {
 import { SfzInstrumentLoader } from "./sfz2";
 import { HttpStorage, Storage } from "./storage";
 
-export function getSmolkenNames() {
-  return ["Pizzicato", "Arco", "Switched"];
+let instruments: string[] = [];
+
+const BASE_URL = "https://smpldsnds.github.io/sgossner-vcsl/";
+
+export async function getVersilianInstruments(): Promise<string[]> {
+  if (instruments.length) return instruments;
+
+  instruments = await fetch(BASE_URL + "sfz_files.json").then((res) =>
+    res.json()
+  );
+  return instruments;
 }
 
-function getSmolkenUrl(instrument: string) {
-  const FILES: Record<string, string> = {
-    Arco: "arco",
-    Pizzicato: "pizz",
-    Switched: "switched",
-  };
-  return `https://smpldsnds.github.io/sfzinstruments-dsmolken-double-bass/d_smolken_rubner_bass_${FILES[instrument]}.sfz`;
+function getVcslInstrumentSfzUrl(instrument: string) {
+  return BASE_URL + instrument + ".sfz";
 }
 
-export type SmolkenConfig = {
+function getVcslInstrumentSamplesUrl(instrument: string) {
+  const base = instrument.slice(0, instrument.lastIndexOf("/") + 1);
+  console.log({ instrument, base });
+  return `https://smpldsnds.github.io/sgossner-vcsl/${base}`;
+}
+
+export type VersilianConfig = {
   instrument: string;
   storage: Storage;
 };
-export type SmolkenOptions = Partial<
-  SmolkenConfig & SampleOptions & ChannelOptions
+export type VersilianOptions = Partial<
+  VersilianConfig & SampleOptions & ChannelOptions
 >;
 
-export class Smolken implements InternalPlayer {
+/**
+ * Versilian
+ *
+ * The Versilian Community Sample Library is an open CC0 general-purpose sample library created by Versilian Studios LLC
+ * for the purpose of introducing a set of quality, publicly available samples suitable for use in software and media of all kinds.
+ */
+export class Versilian implements InternalPlayer {
   private readonly player: DefaultPlayer;
   private readonly layer: SampleLayer;
   public readonly load: Promise<this>;
-  private config: SmolkenConfig;
+  private config: VersilianConfig;
   private seqNum = 0;
 
-  constructor(context: BaseAudioContext, options: SmolkenOptions = {}) {
+  constructor(context: BaseAudioContext, options: VersilianOptions = {}) {
     this.config = {
       instrument: options.instrument ?? "Arco",
       storage: options.storage ?? HttpStorage,
     };
     this.player = new DefaultPlayer(context, options);
     this.layer = createEmptySampleLayer();
-    const url = getSmolkenUrl(this.config.instrument);
+    const url = getVcslInstrumentSfzUrl(this.config.instrument);
 
+    // REAL
+    // https://smpldsnds.github.io/sgossner-vcsl/Electrophones/TX81Z/FM%20Piano/FMPiano_C0_vl1.m4a
+    // https://smpldsnds.github.io/sgossner-vcsl/TX81Z%20-%20Piano%201/TX81Z/Piano%201/Piano%201_G%230_vl2.ogg
+
+    const sampleBase = getVcslInstrumentSamplesUrl(this.config.instrument);
     const loader = SfzInstrumentLoader(url, {
       buffers: this.player.buffers,
       layer: this.layer,
       urlFromSampleName: (sampleName, audioExt) => {
-        const samplePath = sampleName
-          .replace("\\", "/")
-          .replace(".wav", audioExt);
-        return `https://smpldsnds.github.io/sfzinstruments-dsmolken-double-bass/${samplePath}`;
+        return sampleBase + "/" + sampleName.replace(".wav", audioExt);
       },
     });
     this.load = loader(context, this.config.storage).then(() => this);
