@@ -1,15 +1,15 @@
 import { toMidi } from "./midi";
-import { SampleLayer, SampleOptions, SampleRegion, SampleStart } from "./types";
+import { RegionGroup, SampleOptions, SampleRegion, SampleStart } from "./types";
 import { dbToGain } from "./volume";
 
-export function createEmptySampleLayer(
+export function createEmptyRegionGroup(
   sample: Partial<SampleOptions> = {}
-): SampleLayer {
+): RegionGroup {
   return { regions: [], sample };
 }
 
 export function findSamplesInLayer(
-  layer: SampleLayer,
+  layer: RegionGroup,
   sample: SampleStart,
   seqNumber?: number
 ): SampleStart[] {
@@ -31,7 +31,7 @@ export function findSamplesInLayer(
 }
 
 export function findFirstSampleInLayer(
-  layer: SampleLayer,
+  layer: RegionGroup,
   sample: SampleStart,
   seqNumber?: number
 ): SampleStart | undefined {

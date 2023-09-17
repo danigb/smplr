@@ -1,7 +1,7 @@
 import { ChannelOptions } from "./player/channel";
 import { DefaultPlayer } from "./player/default-player";
 import {
-  createEmptySampleLayer,
+  createEmptyRegionGroup,
   findFirstSampleInLayer,
   spreadRegions,
 } from "./player/layers";
@@ -13,7 +13,7 @@ import {
 import { toMidi } from "./player/midi";
 import {
   InternalPlayer,
-  SampleLayer,
+  RegionGroup,
   SampleOptions,
   SampleStart,
   SampleStop,
@@ -76,7 +76,7 @@ export type MellotronOptions = Partial<
 export class Mellotron implements InternalPlayer {
   private readonly config: MellotronConfig;
   private readonly player: DefaultPlayer;
-  private readonly layer: SampleLayer;
+  private readonly layer: RegionGroup;
   readonly load: Promise<this>;
 
   public constructor(
@@ -85,7 +85,7 @@ export class Mellotron implements InternalPlayer {
   ) {
     this.config = getMellotronConfig(options);
     this.player = new DefaultPlayer(context, options);
-    this.layer = createEmptySampleLayer(options);
+    this.layer = createEmptyRegionGroup(options);
 
     const loader = loadMellotronInstrument(
       this.config.instrument,
@@ -132,7 +132,7 @@ function getMellotronConfig(
 function loadMellotronInstrument(
   instrument: string,
   buffers: AudioBuffers,
-  layer: SampleLayer
+  layer: RegionGroup
 ) {
   let variation = INSTRUMENT_VARIATIONS[instrument];
   if (variation) instrument = variation[0];

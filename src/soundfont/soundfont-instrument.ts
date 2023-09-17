@@ -1,7 +1,7 @@
 import { spreadRegions } from "../player/layers";
 import { AudioBuffers, findFirstSupportedFormat } from "../player/load-audio";
 import { toMidi } from "../player/midi";
-import { SampleLayer } from "../player/types";
+import { RegionGroup } from "../player/types";
 import { Storage } from "../storage";
 
 export function gleitzKitUrl(name: string, kit: string) {
@@ -12,7 +12,7 @@ export function gleitzKitUrl(name: string, kit: string) {
 export function soundfontInstrumentLoader(
   url: string,
   buffers: AudioBuffers,
-  layer: SampleLayer
+  layer: RegionGroup
 ) {
   return async (context: BaseAudioContext, storage: Storage) => {
     const sourceFile = await (await storage.fetch(url)).text();

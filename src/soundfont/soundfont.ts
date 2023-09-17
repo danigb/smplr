@@ -1,12 +1,12 @@
 import { ChannelOptions } from "../player/channel";
 import { DefaultPlayer } from "../player/default-player";
 import {
-  createEmptySampleLayer,
+  createEmptyRegionGroup,
   findFirstSampleInLayer,
 } from "../player/layers";
 import { AudioBuffers } from "../player/load-audio";
 import {
-  SampleLayer,
+  RegionGroup,
   SampleOptions,
   SampleStart,
   SampleStop,
@@ -49,7 +49,7 @@ export class Soundfont {
   public readonly config: Readonly<SoundfontConfig>;
   private readonly player: DefaultPlayer;
   public readonly load: Promise<this>;
-  public readonly layer: SampleLayer;
+  public readonly layer: RegionGroup;
   #hasLoops: boolean;
 
   constructor(
@@ -58,7 +58,7 @@ export class Soundfont {
   ) {
     this.config = getSoundfontConfig(options);
     this.player = new DefaultPlayer(context, options);
-    this.layer = createEmptySampleLayer();
+    this.layer = createEmptyRegionGroup();
 
     this.#hasLoops = false;
     const loader = soundfontLoader(
@@ -112,7 +112,7 @@ function soundfontLoader(
   url: string,
   loopsUrl: string | undefined,
   buffers: AudioBuffers,
-  layer: SampleLayer
+  layer: RegionGroup
 ) {
   const loadInstrument = soundfontInstrumentLoader(url, buffers, layer);
   return async (context: BaseAudioContext, storage: Storage) => {

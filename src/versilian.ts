@@ -3,7 +3,7 @@ import { AudioBuffers } from "./player/load-audio";
 import { RegionPlayer } from "./player/region-player";
 import {
   InternalPlayer,
-  SampleLayer,
+  RegionGroup,
   SampleOptions,
   SampleStart,
   SampleStop,
@@ -31,7 +31,7 @@ function getVcslInstrumentSfzUrl(instrument: string) {
 export function VcslInstrumentLoader(
   instrument: string,
   buffers: AudioBuffers,
-  layer: SampleLayer
+  layer: RegionGroup
 ) {
   const url = getVcslInstrumentSfzUrl(instrument);
   const base = instrument.slice(0, instrument.lastIndexOf("/") + 1);

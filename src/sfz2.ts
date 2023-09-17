@@ -3,13 +3,13 @@ import {
   getPreferredAudioExtension,
   loadAudioBuffer,
 } from "./player/load-audio";
-import { SampleLayer, SampleRegion } from "./player/types";
+import { RegionGroup, SampleRegion } from "./player/types";
 import { Storage } from "./storage";
 
 export type SfzLoaderConfig = {
   urlFromSampleName: (sampleName: string, audioExt: string) => string;
   buffers: AudioBuffers;
-  layer: SampleLayer;
+  layer: RegionGroup;
 };
 
 export function SfzInstrumentLoader(url: string, config: SfzLoaderConfig) {
@@ -33,7 +33,7 @@ export function SfzInstrumentLoader(url: string, config: SfzLoaderConfig) {
   };
 }
 
-export function sfzToLayer(sfz: string, layer: SampleLayer) {
+export function sfzToLayer(sfz: string, layer: RegionGroup) {
   let mode = "global";
   const tokens = sfz
     .split("\n")
@@ -66,7 +66,7 @@ export function sfzToLayer(sfz: string, layer: SampleLayer) {
 
   return errors.filter((x) => !!x) as string[];
 
-  function closeScope(mode: string, scope: Scope, layer: SampleLayer) {}
+  function closeScope(mode: string, scope: Scope, layer: RegionGroup) {}
 }
 
 type Token =
@@ -122,7 +122,7 @@ class Scope {
   global: Partial<SampleRegion> = {};
   group: Partial<SampleRegion> = {};
 
-  closeScope(mode: string, layer: SampleLayer) {
+  closeScope(mode: string, layer: RegionGroup) {
     if (mode === "global") {
       // Save global properties
       this.#closeRegion(this.global as SampleRegion);

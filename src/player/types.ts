@@ -143,7 +143,7 @@ export type SampleRegion = {
   sample?: Partial<SampleOptions>;
 };
 
-export type SampleLayer = {
+export type RegionGroup = {
   regions: SampleRegion[];
   sample: Partial<SampleOptions>;
 };

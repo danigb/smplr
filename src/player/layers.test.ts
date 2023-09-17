@@ -1,9 +1,9 @@
 import { findSamplesInLayer, spreadRegions } from "./layers";
-import { SampleLayer, SampleRegion } from "./types";
+import { RegionGroup, SampleRegion } from "./types";
 
 describe("findSamplesInLayer", () => {
   it("find by rangeMidi", () => {
-    const layer: SampleLayer = {
+    const layer: RegionGroup = {
       regions: [
         { sampleName: "a", midiPitch: 60, midiLow: 60, midiHigh: 75 },
         { sampleName: "b", midiPitch: 75, midiLow: 70, midiHigh: 80 },
@@ -27,7 +27,7 @@ describe("findSamplesInLayer", () => {
   });
 
   it("find by rangeVol", () => {
-    const layer: SampleLayer = {
+    const layer: RegionGroup = {
       regions: [
         { sampleName: "a", midiPitch: 60, velLow: 0, velHigh: 64 },
         { sampleName: "b", midiPitch: 60, velLow: 64, velHigh: 127 },
@@ -48,7 +48,7 @@ describe("findSamplesInLayer", () => {
   });
 
   it("keeps start time", () => {
-    const layer: SampleLayer = {
+    const layer: RegionGroup = {
       regions: [{ sampleName: "a", midiPitch: 60 }],
       sample: {},
     };
@@ -59,7 +59,7 @@ describe("findSamplesInLayer", () => {
   });
 
   it("find by rangeMidi and rangeVol", () => {
-    const layer: SampleLayer = {
+    const layer: RegionGroup = {
       regions: [
         {
           sampleName: "a",
@@ -100,7 +100,7 @@ describe("findSamplesInLayer", () => {
   });
 
   describe("applies modifiers", () => {
-    const createLayer = (region: Partial<SampleRegion>): SampleLayer => ({
+    const createLayer = (region: Partial<SampleRegion>): RegionGroup => ({
       regions: [
         {
           sampleName: "a",
@@ -136,7 +136,7 @@ describe("findSamplesInLayer", () => {
   });
 
   it("applies sample options", () => {
-    const layer: SampleLayer = {
+    const layer: RegionGroup = {
       regions: [
         {
           sampleName: "a",
