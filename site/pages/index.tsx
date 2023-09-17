@@ -6,6 +6,7 @@ import { MalletExample } from "src/MalletExample";
 import { MellotronExample } from "src/MellotronExample";
 import { SmolkenExample } from "src/SmolkenExample";
 import { SoundfontExample } from "src/SoundfontExample";
+import { VersilianExample } from "src/VersilianExample";
 import { PianoExample } from "../src/PianoExample";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -32,6 +33,7 @@ export default function Home() {
           <DrumMachineExample />
           <MellotronExample />
           <SmolkenExample />
+          <VersilianExample />
         </div>
       </main>
     </>
