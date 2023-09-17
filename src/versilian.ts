@@ -1,8 +1,6 @@
 import { ChannelOptions } from "./player/channel";
-import { DefaultPlayer } from "./player/default-player";
-import { createEmptySampleLayer, findSamplesInLayer } from "./player/layers";
 import { AudioBuffers } from "./player/load-audio";
-import { toMidi } from "./player/midi";
+import { RegionPlayer } from "./player/region-player";
 import {
   InternalPlayer,
   SampleLayer,
@@ -30,9 +28,21 @@ function getVcslInstrumentSfzUrl(instrument: string) {
   return BASE_URL + instrument + ".sfz";
 }
 
-function getVcslInstrumentSamplesUrl(instrument: string) {
+export function VcslInstrumentLoader(
+  instrument: string,
+  buffers: AudioBuffers,
+  layer: SampleLayer
+) {
+  const url = getVcslInstrumentSfzUrl(instrument);
   const base = instrument.slice(0, instrument.lastIndexOf("/") + 1);
-  return `https://smpldsnds.github.io/sgossner-vcsl/${base}`;
+  const sampleBase = `https://smpldsnds.github.io/sgossner-vcsl/${base}`;
+  return SfzInstrumentLoader(url, {
+    buffers: buffers,
+    layer: layer,
+    urlFromSampleName: (sampleName, audioExt) => {
+      return sampleBase + "/" + sampleName.replace(".wav", audioExt);
+    },
+  });
 }
 
 export type VersilianConfig = {
@@ -50,33 +60,22 @@ export type VersilianOptions = Partial<
  * for the purpose of introducing a set of quality, publicly available samples suitable for use in software and media of all kinds.
  */
 export class Versilian implements InternalPlayer {
-  private readonly player: DefaultPlayer;
-  private readonly layer: SampleLayer;
+  private readonly player: RegionPlayer;
   public readonly load: Promise<this>;
   private config: VersilianConfig;
-  private seqNum = 0;
 
   constructor(context: BaseAudioContext, options: VersilianOptions = {}) {
     this.config = {
       instrument: options.instrument ?? "Arco",
       storage: options.storage ?? HttpStorage,
     };
-    this.player = new DefaultPlayer(context, options);
-    this.layer = createEmptySampleLayer();
-    const url = getVcslInstrumentSfzUrl(this.config.instrument);
+    this.player = new RegionPlayer(context, options);
 
-    // REAL
-    // https://smpldsnds.github.io/sgossner-vcsl/Electrophones/TX81Z/FM%20Piano/FMPiano_C0_vl1.m4a
-    // https://smpldsnds.github.io/sgossner-vcsl/TX81Z%20-%20Piano%201/TX81Z/Piano%201/Piano%201_G%230_vl2.ogg
-
-    const sampleBase = getVcslInstrumentSamplesUrl(this.config.instrument);
-    const loader = SfzInstrumentLoader(url, {
-      buffers: this.player.buffers,
-      layer: this.layer,
-      urlFromSampleName: (sampleName, audioExt) => {
-        return sampleBase + "/" + sampleName.replace(".wav", audioExt);
-      },
-    });
+    const loader = VcslInstrumentLoader(
+      this.config.instrument,
+      this.player.buffers,
+      this.player.layer
+    );
     this.load = loader(context, this.config.storage).then(() => this);
   }
 
@@ -93,27 +92,11 @@ export class Versilian implements InternalPlayer {
   }
 
   start(sample: SampleStart | string | number) {
-    const found = findSamplesInLayer(
-      this.layer,
-      typeof sample === "object" ? sample : { note: sample },
-      this.seqNum
-    );
-    this.seqNum++;
-    const stopAll = found.map((sample) => this.player.start(sample));
-    return (time?: number) => stopAll.forEach((stop) => stop(time));
+    return this.player.start(sample);
   }
 
   stop(sample?: SampleStop | string | number) {
-    if (sample == undefined) {
-      this.player.stop();
-      return;
-    }
-
-    const toStop = typeof sample === "object" ? sample : { stopId: sample };
-    const midi = toMidi(toStop.stopId);
-    if (!midi) return;
-    toStop.stopId = midi;
-    this.player.stop(toStop);
+    return this.player.stop(sample);
   }
 
   disconnect(): void {

@@ -57,7 +57,12 @@ export function VersilianExample({ className }: { className?: string }) {
   return (
     <div className={className}>
       <div className="flex gap-2 items-end mb-2">
-        <h1 className="text-3xl">Versilian Community Sample Library</h1>
+        <div className="flex flex-col">
+          <h1 className="text-3xl">Versilian </h1>
+          <h2>Versilian Community Sample Library</h2>
+        </div>
+
+        <div>(experimental)</div>
 
         <LoadWithStatus
           status={status}
