@@ -47,6 +47,17 @@ describe("findSamplesInLayer", () => {
     ]);
   });
 
+  it("keeps start time", () => {
+    const layer: SampleLayer = {
+      regions: [{ sampleName: "a", midiPitch: 60 }],
+      sample: {},
+    };
+
+    expect(
+      findSamplesInLayer(layer, { note: 70, velocity: 0, time: 1.5 })
+    ).toEqual([{ note: 70, name: "a", detune: 1000, time: 1.5 }]);
+  });
+
   it("find by rangeMidi and rangeVol", () => {
     const layer: SampleLayer = {
       regions: [

@@ -81,6 +81,19 @@ export type SampleRegion = {
    * at volume Gain when the note's velocity is Vel
    */
   ampVelCurve?: [number, number];
+  /**
+   * Amplitude envelope release time in seconds.
+   * Stored here for convenience (flatness) but needs to be
+   * copied inside sample options before playback
+   */
+  ampRelease?: number;
+
+  /**
+   * Attack time in seconds. Currently not implemented
+   *
+   * @see http://sfzformat.com/opcodes/amp_attack.html
+   */
+  ampAttack?: number;
 
   /**
    * seqLength defines how many samples are in the sequence.
@@ -96,13 +109,6 @@ export type SampleRegion = {
   seqPosition?: number;
 
   /**
-   * Amplitude envelope release time in seconds.
-   * Stored here for convenience (flatness) but needs to be
-   * copied inside sample options before playback
-   */
-  ampRelease?: number;
-
-  /**
    * This assigns the group to a specific number.
    * Group numbers can be used in combination with groupOffBy to implement
    * exclusive groups, where playing one sample can stop another sample from playing.
@@ -113,6 +119,11 @@ export type SampleRegion = {
    * currently playing in the specified group number
    */
   groupOffBy?: number;
+
+  /**
+   * Start offset (in samples). Not implemented (yet)
+   */
+  offset?: number;
 
   /**
    * Adjust the playback pitch of a sample (in semitones)

@@ -95,6 +95,7 @@ function findSampleInRegion(
       sample?.lpfCutoffHz ?? region.sample?.lpfCutoffHz ?? defaults.lpfCutoffHz,
     stopId: sample.name,
     gainOffset: sampleGainOffset + regionGainOffset || undefined,
+    time: sample.time,
   };
 }
 

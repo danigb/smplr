@@ -32,7 +32,6 @@ function getVcslInstrumentSfzUrl(instrument: string) {
 
 function getVcslInstrumentSamplesUrl(instrument: string) {
   const base = instrument.slice(0, instrument.lastIndexOf("/") + 1);
-  console.log({ instrument, base });
   return `https://smpldsnds.github.io/sgossner-vcsl/${base}`;
 }
 

@@ -168,6 +168,7 @@ class Scope {
     this.popStr("sample", region, "sampleName");
     this.popNum("pitch_keycenter", region, "midiPitch");
 
+    this.popNum("ampeg_attack", region, "ampAttack");
     this.popNum("ampeg_release", region, "ampRelease");
     this.popNum("bend_down", region, "bendDown");
     this.popNum("bend_up", region, "bendUp");
@@ -175,6 +176,7 @@ class Scope {
     this.popNum("hikey", region, "midiHigh");
     this.popNum("hivel", region, "velHigh");
     this.popNum("lokey", region, "midiLow");
+    this.popNum("offset", region, "offset");
     this.popNum("lovel", region, "velLow");
     this.popNum("off_by", region, "groupOffBy");
     this.popNum("pitch_keytrack", region, "ignore");
@@ -184,10 +186,11 @@ class Scope {
     this.popNum("volume", region, "volume");
     this.popNumArr("amp_velcurve", region, "ampVelCurve");
 
-    const remainingKeys = Object.keys(this.values);
-    if (remainingKeys.length) {
-      console.warn("Remaining keys in scope: ", remainingKeys);
-    }
+    // Enable only this while development
+    // const remainingKeys = Object.keys(this.values);
+    // if (remainingKeys.length) {
+    //   console.warn("Remaining keys in scope: ", remainingKeys);
+    // }
     this.values = {};
     return region;
   }
