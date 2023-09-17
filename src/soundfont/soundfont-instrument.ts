@@ -30,7 +30,7 @@ export function soundfontInstrumentLoader(
         buffers[noteName] = buffer;
         layer.regions.push({
           sampleName: noteName,
-          sampleCenter: midi,
+          midiPitch: midi,
         });
       })
     );

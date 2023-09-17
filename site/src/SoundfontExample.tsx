@@ -34,7 +34,6 @@ export function SoundfontExample({ className }: { className?: string }) {
         setStatus("ready");
         setInstrument((prevInstrument) => {
           if (prevInstrument) {
-            console.log({ prevInstrument });
             prevInstrument.disconnect();
           }
           return instrument;
@@ -45,7 +44,7 @@ export function SoundfontExample({ className }: { className?: string }) {
       })
       .catch((err) => {
         setStatus("error");
-        console.log("Instrument error", err);
+        console.error("Instrument error", err);
       });
   }
 
