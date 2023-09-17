@@ -1,5 +1,9 @@
 # smplr
 
+## 0.10.0
+
+- Feature: Versilian VCSL instrument (not fully implemented)
+
 ## 0.9.0
 
 - Feature: Support for SFZ file parsing
