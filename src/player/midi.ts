@@ -21,12 +21,6 @@ export function toMidi(note: string | number | undefined): number | undefined {
     : noteNameToMidi(note);
 }
 
-/// This is how the MIDI association converts midi velocity [0..127] into gain [0..1]
-/// @see https://www.midi.org/specifications/file-format-specifications/dls-downloadable-sounds/dls-level-1
-export function midiVelToGain(vel: number) {
-  return (vel * vel) / 16129; // 16129 = 127 * 127
-}
-
 export function findNearestMidi(
   midi: number,
   isAvailable: Record<string | number, unknown>

@@ -1,6 +1,5 @@
 import { connectSerial } from "./connect";
 import { AudioBuffers } from "./load-audio";
-import { midiVelToGain } from "./midi";
 import { Trigger, createTrigger, unsubscribeAll } from "./signals";
 import {
   InternalPlayer,
@@ -8,6 +7,7 @@ import {
   SampleStart,
   SampleStop,
 } from "./types";
+import { midiVelToGain } from "./volume";
 
 /**
  * A sample player. This is used internally by the Sampler.

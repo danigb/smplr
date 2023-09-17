@@ -180,6 +180,7 @@ class Scope {
     this.popNum("pitch_keytrack", region, "ignore");
     this.popNum("seq_length", region, "seqLength");
     this.popNum("seq_position", region, "seqPosition");
+    this.popNum("tune", region, "tune");
     this.popNum("volume", region, "volume");
     this.popNumArr("amp_velcurve", region, "ampVelCurve");
 

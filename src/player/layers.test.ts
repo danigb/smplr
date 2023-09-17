@@ -88,21 +88,40 @@ describe("findSamplesInLayer", () => {
     ]);
   });
 
-  it("applies offsets", () => {
-    const layer: SampleLayer = {
+  describe("applies modifiers", () => {
+    const createLayer = (region: Partial<SampleRegion>): SampleLayer => ({
       regions: [
         {
           sampleName: "a",
           midiPitch: 60,
-          offsetDetune: 10,
-          offsetVol: -15,
+          ...region,
         },
       ],
       sample: {},
-    };
-    expect(findSamplesInLayer(layer, { note: 65, velocity: 100 })).toEqual([
-      { detune: 510, name: "a", note: 65, velocity: 85 },
-    ]);
+    });
+    it("applies tune", () => {
+      const layer = createLayer({ tune: 1 });
+      expect(findSamplesInLayer(layer, { note: 65, velocity: 100 })).toEqual([
+        {
+          detune: 600,
+          name: "a",
+          note: 65,
+          velocity: 100,
+        },
+      ]);
+    });
+    it("applies volume", () => {
+      const layer = createLayer({ volume: 1 });
+      expect(findSamplesInLayer(layer, { note: 65, velocity: 100 })).toEqual([
+        {
+          detune: 500,
+          name: "a",
+          note: 65,
+          velocity: 100,
+          gainOffset: 1.1220184543019633,
+        },
+      ]);
+    });
   });
 
   it("applies sample options", () => {

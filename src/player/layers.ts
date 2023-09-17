@@ -1,5 +1,6 @@
 import { toMidi } from "./midi";
 import { SampleLayer, SampleOptions, SampleRegion, SampleStart } from "./types";
+import { dbToGain } from "./volume";
 
 export function createEmptySampleLayer(
   sample: Partial<SampleOptions> = {}
@@ -75,12 +76,13 @@ function findSampleInRegion(
 
   const semitones = midi - region.midiPitch;
   const velocity = sample.velocity ?? defaults.velocity;
+  const regionGainOffset = region.volume ? dbToGain(region.volume) : 0;
+  const sampleGainOffset = sample.gainOffset ?? defaults.gainOffset ?? 0;
   return {
     note: midi,
     name: region.sampleName,
-    detune: 100 * semitones + (region.offsetDetune ?? 0),
-    velocity:
-      velocity == undefined ? undefined : velocity + (region.offsetVol ?? 0),
+    detune: 100 * (semitones + (region.tune ?? 0)),
+    velocity: velocity == undefined ? undefined : velocity,
 
     decayTime:
       sample?.decayTime ?? region.sample?.decayTime ?? defaults.decayTime,
@@ -92,6 +94,7 @@ function findSampleInRegion(
     lpfCutoffHz:
       sample?.lpfCutoffHz ?? region.sample?.lpfCutoffHz ?? defaults.lpfCutoffHz,
     stopId: sample.name,
+    gainOffset: sampleGainOffset + regionGainOffset || undefined,
   };
 }
 

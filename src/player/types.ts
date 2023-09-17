@@ -27,6 +27,8 @@ export type SampleOptions = {
   loop?: boolean;
   loopStart?: number;
   loopEnd?: number;
+  // not implemented yet
+  gainOffset?: number;
 };
 
 export type SampleStart = {
@@ -74,9 +76,6 @@ export type SampleRegion = {
   bendUp?: number;
   bendDown?: number;
 
-  offsetVol?: number;
-  offsetDetune?: number;
-
   /**
    * Velocity-based amplitude scaling. [Vel, Gain] tells the sampler to play the sample
    * at volume Gain when the note's velocity is Vel
@@ -114,6 +113,11 @@ export type SampleRegion = {
    * currently playing in the specified group number
    */
   groupOffBy?: number;
+
+  /**
+   * Adjust the playback pitch of a sample (in semitones)
+   */
+  tune?: number;
 
   /**
    * The volume opcode in SFZ defines the default playback volume for a given region.
