@@ -43,6 +43,7 @@ export class Smolken implements InternalPlayer {
   private readonly layer: SampleLayer;
   public readonly load: Promise<this>;
   private config: SmolkenConfig;
+  private seqNum = 0;
 
   constructor(context: BaseAudioContext, options: SmolkenOptions = {}) {
     this.config = {
@@ -75,9 +76,10 @@ export class Smolken implements InternalPlayer {
   start(sample: SampleStart | string | number) {
     const found = findSamplesInLayer(
       this.layer,
-      typeof sample === "object" ? sample : { note: sample }
+      typeof sample === "object" ? sample : { note: sample },
+      this.seqNum
     );
-    console.log(">>> start", { sample, found });
+    this.seqNum++;
     const stopAll = found.map((sample) => this.player.start(sample));
     return (time?: number) => stopAll.forEach((stop) => stop(time));
   }
@@ -91,14 +93,8 @@ export class Smolken implements InternalPlayer {
     const toStop = typeof sample === "object" ? sample : { stopId: sample };
     const midi = toMidi(toStop.stopId);
     if (!midi) return;
-
-    console.log(">>> stop", { sample, toStop, midi });
-
-    const found = findSamplesInLayer(this.layer, { note: midi });
-    found.forEach((sample) => {
-      toStop.stopId = sample.stopId;
-      this.player.stop(toStop);
-    });
+    toStop.stopId = midi;
+    this.player.stop(toStop);
   }
 
   disconnect(): void {
@@ -122,7 +118,6 @@ function loadSmolkenInstrument(
     if (errors.length) {
       console.warn("Problems converting sfz", errors);
     }
-    console.log("SFZ loaded", url, layer);
     const sampleNames = new Set<string>();
     layer.regions.forEach((r) => sampleNames.add(r.sampleName));
     return Promise.all(

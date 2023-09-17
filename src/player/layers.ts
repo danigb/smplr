@@ -9,14 +9,21 @@ export function createEmptySampleLayer(
 
 export function findSamplesInLayer(
   layer: SampleLayer,
-  sample: SampleStart
+  sample: SampleStart,
+  seqNumber?: number
 ): SampleStart[] {
   const results: SampleStart[] = [];
   const midi = toMidi(sample.note);
   if (midi === undefined) return results;
 
   for (const region of layer.regions) {
-    const found = findSampleInRegion(midi, sample, region, layer.sample);
+    const found = findSampleInRegion(
+      midi,
+      seqNumber ?? 0,
+      sample,
+      region,
+      layer.sample
+    );
     if (found) results.push(found);
   }
   return results;
@@ -24,14 +31,21 @@ export function findSamplesInLayer(
 
 export function findFirstSampleInLayer(
   layer: SampleLayer,
-  sample: SampleStart
+  sample: SampleStart,
+  seqNumber?: number
 ): SampleStart | undefined {
   const midi = toMidi(sample.note);
 
   if (midi === undefined) return undefined;
 
   for (const region of layer.regions) {
-    const found = findSampleInRegion(midi, sample, region, layer.sample);
+    const found = findSampleInRegion(
+      midi,
+      seqNumber ?? 0,
+      sample,
+      region,
+      layer.sample
+    );
     if (found) return found;
   }
   return undefined;
@@ -39,6 +53,7 @@ export function findFirstSampleInLayer(
 
 function findSampleInRegion(
   midi: number,
+  seqNum: number,
   sample: SampleStart,
   region: SampleRegion,
   defaults: Partial<SampleOptions>
@@ -51,6 +66,12 @@ function findSampleInRegion(
     (sample.velocity >= (region.velLow ?? 0) &&
       sample.velocity <= (region.velHigh ?? 127));
   if (!matchVelocity) return undefined;
+
+  if (region.seqLength) {
+    const currentSeq = seqNum % region.seqLength;
+    const regionIndex = (region.seqPosition ?? 1) - 1;
+    if (currentSeq !== regionIndex) return undefined;
+  }
 
   const semitones = midi - region.midiPitch;
   const velocity = sample.velocity ?? defaults.velocity;

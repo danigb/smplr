@@ -71,7 +71,7 @@ export function sfzToLayer(sfz: string, layer: SampleLayer) {
         break;
 
       case "unknown":
-        console.log("Unknown token", token.value);
+        console.warn("Unknown SFZ token", token.value);
         break;
     }
   }
@@ -117,6 +117,11 @@ class Scope {
         }
       }
 
+      // Set default sequence number
+      if (region.seqLength && region.seqPosition === undefined) {
+        region.seqPosition = 1;
+      }
+
       // Move amp_release to sample options
       if (region.ampRelease) {
         region.sample = { decayTime: region.ampRelease };
@@ -141,7 +146,7 @@ class Scope {
     this.popNumArr("amp_velcurve", region, "ampVelCurve");
     this.popNum("seq_length", region, "seqLength");
     this.popNum("seq_position", region, "seqPosition");
-    this.popNum("ampeg_release", region, "seqPosition");
+    this.popNum("ampeg_release", region, "ampRelease");
     this.popNum("group", region, "group");
     this.popNum("off_by", region, "groupOffBy");
 
