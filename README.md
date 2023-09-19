@@ -44,21 +44,49 @@ Read [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md) for cha
 - Easy to use: everything should be intuitive for non-experienced developers
 - Decent sounding: uses high quality open source samples. For better or worse, it is sample based 🤷
 
-## Install
+## Setup
 
-Install with npm or your favourite package manager:
+You can install the library with a package manager or use it directly by importing from the browser.
+
+Samples are stored at https://github.com/smpldsnds and there is no need to download them. Kudos to all _samplerist_ 🙌
+
+#### Using a package manger
+
+Use npm or your favourite package manager to install the library to use it in your project:
 
 ```
 npm i smplr
 ```
 
-Samples are stored at https://github.com/danigb/samples and there is no need to install them. Kudos to all samplers 🙌
+#### Usage from the browser
+
+You can import directly from the browser. For example:
+
+```html
+<html>
+  <body>
+    <button id="btn">play</button>
+  </body>
+  <script type="module">
+    import { SplendidGrandPiano } from "https://unpkg.com/smplr@0.10.0/dist/index.mjs"; // needs to be a url
+    const context = new AudioContext(); // create the audio context
+    const marimba = new SplendidGrandPiano(context); // create and load the instrument
+
+    document.getElementById("btn").onclick = () => {
+      context.resume(); // enable audio context after a user interaction
+      marimba.start({ note: 60, velocity: 80 }); // play the note
+    };
+  </script>
+</html>
+```
+
+The package needs to be serve as a url from a service like [unpkg](unpkg.com) or similar.
 
 ## Documentation
 
 ### Create and load an instrument
 
-All instruments follows the same pattern: `new Instrument(context, options?)`. For example:
+All instruments follows the same pattern: `new Instrument(context, options)`. For example:
 
 ```js
 import { SplendidGrandPiano, Soundfont } from "smplr";
@@ -83,6 +111,8 @@ Since the promise returns the instrument instance, you can create and wait in a 
 ```js
 const piano = await new SplendidGrandPiano(context).load;
 ```
+
+⚠️ In versions lower than 0.8.0 a `loaded()` function was exposed instead.
 
 ### Play
 
@@ -121,7 +151,7 @@ piano.stop(60);
 
 #### Schedule notes
 
-You can schedule notes using `time` and `duration` properties. Both are measured in seconds, and time is the number of seconds since the AudioContext was created.
+You can schedule notes using `time` and `duration` properties. Both are measured in seconds. Time is the number of seconds since the AudioContext was created, like in `audioContext.currentTime`
 
 For example, next example plays a C major arpeggio, one note per second:
 
@@ -137,16 +167,16 @@ const now = context.currentTime;
 You can loop a note by using `loop`, `loopStart` and `loopEnd`:
 
 ```js
-const sampler = new Sampler(audioContext, { string: "mi-long-sample.mp3" });
+const sampler = new Sampler(audioContext, { duh: "duh-duh-ah.mp3" });
 sampler.start({
-  note: "string",
-  loop: "true",
+  note: "duh"
+  loop: true
   loopStart: 1.0,
   loopEnd: 9.0,
 });
 ```
 
-If `loopStart` or `loopEnd` is not specified it will be use by default 0 and total duration respectively.
+If `loop` is true but `loopStart` or `loopEnd` are not specified, 0 and total duration will be used by default, respectively.
 
 #### Change volume
 
@@ -156,9 +186,27 @@ Instrument `output` attribute represents the main output of the instrument. `out
 piano.output.setVolume(80);
 ```
 
-Bear in mind that `volume` is global to the instrument, but `velocity` is specific for each note.
+⚠️ `volume` is global to the instrument, but `velocity` is specific for each note.
+
+#### Events
+
+You can add a `onEnded` callback that will be invoked when the note ends:
+
+```js
+piano.start({
+  note: "C4",
+  duration: 1,
+  onEnded: () => {
+    // will be called after 1 second
+  },
+});
+```
+
+The callback will receive as parameter the same object you pass to the `start` function;
 
 ### Effects
+
+#### Reverb
 
 An packed version of [DattorroReverbNode](https://github.com/khoin/DattorroReverbNode) algorithmic reverb is included.
 
@@ -176,22 +224,6 @@ To change the mix level, use `output.sendEffect(name, mix)`:
 ```js
 piano.output.sendEffect("reverb", 0.5);
 ```
-
-#### Events
-
-You can add a `onEnded` callback that will be invoked when the note ends:
-
-```js
-piano.start({
-  note: "C4",
-  duration: 1,
-  onEnded: () => {
-    // will be called after 1 second
-  },
-});
-```
-
-The callback will receive as parameter the same object you pass to the `start` function;
 
 ### Experimental features
 
@@ -265,7 +297,7 @@ const marimba = new Soundfont(context, {
 });
 ```
 
-#### Looping (experimental)
+#### Soundfont sustained notes
 
 You can enable note looping to make note names indefinitely long by loading loop data:
 
@@ -276,9 +308,9 @@ const marimba = new Soundfont(context, {
 });
 ```
 
-Bear in mind that currently that feature produces click on lot of instruments.
+⚠️ This feature is still experimental and can produces clicks on lot of instruments.
 
-### Piano
+### SplendidGrandPiano
 
 A sampled acoustic piano. It uses Steinway samples with 4 velocity groups from
 [SplendidGrandPiano](https://github.com/sfzinstruments/SplendidGrandPiano)
@@ -395,7 +427,3 @@ const sampler = new Versilian(context, { instrument: instrumentNAmes[0] });
 ## License
 
 MIT License
-
-```
-
-```
