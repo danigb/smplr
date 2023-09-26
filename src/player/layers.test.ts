@@ -1,6 +1,17 @@
 import { findSamplesInRegions, spreadRegions } from "./layers";
 import { RegionGroup, SampleRegion } from "./types";
 
+const createGroup = (region: Partial<SampleRegion>): RegionGroup => ({
+  regions: [
+    {
+      sampleName: "a",
+      midiPitch: 60,
+      ...region,
+    },
+  ],
+  sample: {},
+});
+
 describe("findSamplesInRegions", () => {
   it("find by rangeMidi", () => {
     const group: RegionGroup = {
@@ -100,16 +111,6 @@ describe("findSamplesInRegions", () => {
   });
 
   describe("applies modifiers", () => {
-    const createGroup = (region: Partial<SampleRegion>): RegionGroup => ({
-      regions: [
-        {
-          sampleName: "a",
-          midiPitch: 60,
-          ...region,
-        },
-      ],
-      sample: {},
-    });
     it("applies tune", () => {
       const group = createGroup({ tune: 1 });
       expect(findSamplesInRegions(group, { note: 65, velocity: 100 })).toEqual([
@@ -133,6 +134,19 @@ describe("findSamplesInRegions", () => {
         },
       ]);
     });
+  });
+
+  it("applies sample properties", () => {
+    const onEnded = jest.fn();
+    const group = createGroup({});
+    expect(findSamplesInRegions(group, { note: 62, onEnded })).toEqual([
+      {
+        name: "a",
+        note: 62,
+        detune: 200,
+        onEnded,
+      },
+    ]);
   });
 
   it("applies sample options", () => {
