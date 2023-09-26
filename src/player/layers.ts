@@ -79,23 +79,23 @@ function findSampleInRegion(
   const regionGainOffset = region.volume ? dbToGain(region.volume) : 0;
   const sampleGainOffset = sample.gainOffset ?? defaults.gainOffset ?? 0;
   return {
-    note: midi,
-    name: region.sampleName,
-    detune: 100 * (semitones + (region.tune ?? 0)),
-    velocity: velocity == undefined ? undefined : velocity,
-
     decayTime:
       sample?.decayTime ?? region.sample?.decayTime ?? defaults.decayTime,
+    detune: 100 * (semitones + (region.tune ?? 0)),
     duration: sample?.duration ?? region.sample?.duration ?? defaults.duration,
+    gainOffset: sampleGainOffset + regionGainOffset || undefined,
     loop: sample?.loop ?? region.sample?.loop ?? defaults.loop,
+    loopEnd: sample?.loopEnd ?? region.sample?.loopEnd ?? defaults.loopEnd,
     loopStart:
       sample?.loopStart ?? region.sample?.loopStart ?? defaults.loopStart,
-    loopEnd: sample?.loopEnd ?? region.sample?.loopEnd ?? defaults.loopEnd,
     lpfCutoffHz:
       sample?.lpfCutoffHz ?? region.sample?.lpfCutoffHz ?? defaults.lpfCutoffHz,
+    name: region.sampleName,
+    note: midi,
+    onEnded: sample.onEnded,
     stopId: sample.name,
-    gainOffset: sampleGainOffset + regionGainOffset || undefined,
     time: sample.time,
+    velocity: velocity == undefined ? undefined : velocity,
   };
 }
 

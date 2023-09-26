@@ -1,5 +1,9 @@
 # smplr
 
+## 0.10.1
+
+- Fix onEnded not working
+
 ## 0.10.0
 
 - Feature: Versilian VCSL instrument (not fully implemented)
