@@ -1,8 +1,9 @@
 # smplr
 
-## 0.10.1
+## 0.10.2
 
-- Fix onEnded not working
+- 0.10.2 - Remove console.log
+- 0.10.1 - Fix onEnded not working
 
 ## 0.10.0
 
