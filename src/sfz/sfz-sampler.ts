@@ -1,4 +1,4 @@
-import { DefaultPlayer } from "../player/default-player";
+import { DefaultPlayer, DefaultPlayerConfig } from "../player/default-player";
 import { toMidi } from "../player/midi";
 import { SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
@@ -35,7 +35,8 @@ export class SfzSampler {
 
   constructor(
     public readonly context: AudioContext,
-    options: Partial<SfzSamplerConfig> & Pick<SfzSamplerConfig, "instrument">
+    options: Partial<SfzSamplerConfig & DefaultPlayerConfig> &
+      Pick<SfzSamplerConfig, "instrument">
   ) {
     this.options = Object.freeze(Object.assign({}, options));
     this.player = new DefaultPlayer(context, options);

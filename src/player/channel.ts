@@ -34,13 +34,12 @@ export class Channel {
 
   constructor(
     public readonly context: BaseAudioContext,
-    options: Partial<ChannelConfig>
+    options?: Partial<ChannelConfig>
   ) {
     this.#config = {
-      destination: context.destination,
-      volume: 100,
-      volumeToGain: midiVelToGain,
-      ...options,
+      destination: options?.destination ?? context.destination,
+      volume: options?.volume ?? 100,
+      volumeToGain: options?.volumeToGain ?? midiVelToGain,
     };
 
     this.input = context.createGain();
@@ -52,11 +51,10 @@ export class Channel {
       this.#config.destination,
     ]);
 
-    const volume = createControl(options.volume ?? 100);
+    const volume = createControl(this.#config.volume);
     this.setVolume = volume.set;
-    const volumeToGain = options.volumeToGain ?? midiVelToGain;
     this.#unsubscribe = volume.subscribe((volume) => {
-      this.#volume.gain.value = volumeToGain(volume);
+      this.#volume.gain.value = this.#config.volumeToGain(volume);
     });
   }
 

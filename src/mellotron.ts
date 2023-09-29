@@ -1,5 +1,5 @@
 import { ChannelConfig } from "./player/channel";
-import { DefaultPlayer } from "./player/default-player";
+import { DefaultPlayer, DefaultPlayerConfig } from "./player/default-player";
 import {
   createEmptyRegionGroup,
   findFirstSampleInRegions,
@@ -69,9 +69,7 @@ export type MellotronConfig = {
   storage: Storage;
 };
 
-export type MellotronOptions = Partial<
-  SampleOptions & ChannelConfig & MellotronConfig
->;
+export type MellotronOptions = Partial<MellotronConfig & DefaultPlayerConfig>;
 
 export class Mellotron implements InternalPlayer {
   private readonly config: MellotronConfig;
