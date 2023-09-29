@@ -68,7 +68,7 @@ You can import directly from the browser. For example:
     <button id="btn">play</button>
   </body>
   <script type="module">
-    import { SplendidGrandPiano } from "https://unpkg.com/smplr@0.10.0/dist/index.mjs"; // needs to be a url
+    import { SplendidGrandPiano } from "https://unpkg.com/smplr/dist/index.mjs"; // needs to be a url
     const context = new AudioContext(); // create the audio context
     const marimba = new SplendidGrandPiano(context); // create and load the instrument
 
