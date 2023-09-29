@@ -1,4 +1,4 @@
-import { ChannelOptions } from "../player/channel";
+import { ChannelConfig } from "../player/channel";
 import { DefaultPlayer } from "../player/default-player";
 import {
   createEmptyRegionGroup,
@@ -42,7 +42,7 @@ type SoundfontConfig = {
 };
 
 export type SoundfontOptions = Partial<
-  SoundfontConfig & SampleOptions & ChannelOptions
+  SoundfontConfig & SampleOptions & ChannelConfig
 >;
 
 export class Soundfont {

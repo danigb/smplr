@@ -1,4 +1,4 @@
-import { ChannelOptions, OutputChannel } from "../player/channel";
+import { ChannelConfig, OutputChannel } from "../player/channel";
 import { DefaultPlayer } from "../player/default-player";
 import {
   AudioBuffers,
@@ -27,7 +27,7 @@ const INSTRUMENTS: Record<string, string> = {
     "https://danigb.github.io/samples/drum-machines/Roland-CR-8000/dm.json",
 };
 
-export type DrumMachineConfig = ChannelOptions &
+export type DrumMachineConfig = ChannelConfig &
   SampleOptions & {
     instrument: string;
     storage?: Storage;

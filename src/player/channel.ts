@@ -2,7 +2,7 @@ import { AudioInsert, connectSerial } from "./connect";
 import { createControl } from "./signals";
 import { midiVelToGain } from "./volume";
 
-export type ChannelOptions = {
+export type ChannelConfig = {
   destination: AudioNode;
   volume: number;
   volumeToGain: (volume: number) => number;
@@ -29,14 +29,14 @@ export class Channel {
   #inserts?: (AudioNode | AudioInsert)[];
   #disconnect: () => void;
   #unsubscribe: () => void;
-  #options: Readonly<ChannelOptions>;
+  #config: Readonly<ChannelConfig>;
   #disconnected = false;
 
   constructor(
     public readonly context: BaseAudioContext,
-    options: Partial<ChannelOptions>
+    options: Partial<ChannelConfig>
   ) {
-    this.#options = {
+    this.#config = {
       destination: context.destination,
       volume: 100,
       volumeToGain: midiVelToGain,
@@ -49,7 +49,7 @@ export class Channel {
     this.#disconnect = connectSerial([
       this.input,
       this.#volume,
-      this.#options.destination,
+      this.#config.destination,
     ]);
 
     const volume = createControl(options.volume ?? 100);
@@ -71,7 +71,7 @@ export class Channel {
       this.input,
       ...this.#inserts,
       this.#volume,
-      this.#options.destination,
+      this.#config.destination,
     ]);
   }
 

@@ -1,14 +1,10 @@
-import { Channel, ChannelOptions, OutputChannel } from "./channel";
-import { QueuedPlayer } from "./queued-player";
+import { SamplerConfig } from "../../dist";
+import { Channel, ChannelConfig, OutputChannel } from "./channel";
+import { QueuedPlayer, QueuedPlayerConfig } from "./queued-player";
 import { SamplePlayer } from "./sample-player";
-import {
-  InternalPlayer,
-  SampleOptions,
-  SampleStart,
-  SampleStop,
-} from "./types";
+import { InternalPlayer, SampleStart, SampleStop } from "./types";
 
-type PlayerOptions = ChannelOptions & SampleOptions;
+type DefaultPlayerConfig = ChannelConfig & SamplerConfig & QueuedPlayerConfig;
 
 /**
  * Player used by instruments
@@ -20,11 +16,11 @@ export class DefaultPlayer implements InternalPlayer {
 
   constructor(
     public readonly context: BaseAudioContext,
-    options: Partial<PlayerOptions>
+    options: Partial<DefaultPlayerConfig>
   ) {
     const channel = new Channel(context, options);
     this.player = new QueuedPlayer(
-      new SamplePlayer(channel.input, options),
+      new SamplePlayer(context, { ...options, destination: channel.input }),
       options
     );
     this.output = channel;

@@ -1,4 +1,4 @@
-import { ChannelOptions } from "./player/channel";
+import { ChannelConfig } from "./player/channel";
 import { AudioBuffers } from "./player/load-audio";
 import { RegionPlayer } from "./player/region-player";
 import {
@@ -50,7 +50,7 @@ export type VersilianConfig = {
   storage: Storage;
 };
 export type VersilianOptions = Partial<
-  VersilianConfig & SampleOptions & ChannelOptions
+  VersilianConfig & SampleOptions & ChannelConfig
 >;
 
 /**

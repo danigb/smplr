@@ -40,10 +40,6 @@ export type SampleStart = {
   time?: number;
 } & SampleOptions;
 
-export type SamplePlayerOptions = {
-  velocityToGain?: (velocity: number) => number;
-} & SampleOptions;
-
 /**
  * Heavily inspired by SFZ format
  */

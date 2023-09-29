@@ -1,4 +1,4 @@
-import { Channel, ChannelOptions, OutputChannel } from "./channel";
+import { Channel, ChannelConfig, OutputChannel } from "./channel";
 import { createEmptyRegionGroup, findSamplesInRegions } from "./layers";
 import { toMidi } from "./midi";
 import { QueuedPlayer } from "./queued-player";
@@ -11,7 +11,7 @@ import {
   SampleStop,
 } from "./types";
 
-type PlayerOptions = ChannelOptions & SampleOptions;
+type PlayerOptions = ChannelConfig & SampleOptions;
 
 /**
  * A player with an channel output and a region group to read samples info from
