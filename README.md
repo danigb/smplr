@@ -112,6 +112,8 @@ Since the promise returns the instrument instance, you can create and wait in a 
 const piano = await new SplendidGrandPiano(context).load;
 ```
 
+⚠️ In versions lower than 0.8.0 a `loaded()` function was exposed instead.
+
 #### Shared configuration options
 
 All instruments share some configuration options that are passed as second argument of the constructor. As it name implies, all fields are optional:
@@ -119,12 +121,10 @@ All instruments share some configuration options that are passed as second argum
 - `volume`: A number from 0 to 127 representing the instrument global volume. 100 by default
 - `destination`: An `AudioNode` that is the output of the instrument. `AudioContext.destination` is used by default
 - `volumeToGain`: a function to convert the volume to gain. It uses MIDI standard as default.
-- `scheduleLookaheadMs`: the lookahead of the scheduler. If the start time of the note is less than current time plus this lookahead time, the note will be started. It's 200ms by default.
+- `scheduleLookaheadMs`: the lookahead of the scheduler. If the start time of the note is less than current time plus this lookahead time, the note will be started. 200ms by default.
 - `scheduleIntervalMs`: the interval of the scheduler. 50ms by default.
 - `onStart`: a function that is called when starting a note. It receives the note started as parameter. Bear in mind that the time this function is called is not precise, and it's determined by lookahead.
 - `onEnded`: a function that is called when the note ends. It receives the started note as parameter.
-
-⚠️ In versions lower than 0.8.0 a `loaded()` function was exposed instead.
 
 ### Play
 
