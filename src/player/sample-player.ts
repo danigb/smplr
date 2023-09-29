@@ -114,6 +114,7 @@ export class SamplePlayer implements InternalPlayer {
       sample.onEnded?.(sample);
     };
 
+    sample.onStart?.(sample);
     const startAt = Math.max(sample.time ?? 0, context.currentTime);
     source.start(sample.time);
 

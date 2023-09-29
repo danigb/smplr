@@ -3,6 +3,15 @@ import { InternalPlayer, SampleStart, SampleStop } from "./types";
 
 type SampleStartWithTime = SampleStart & { time: number };
 
+function compose<T>(a?: (x: T) => void, b?: (x: T) => void) {
+  return a && b
+    ? (x: T) => {
+        a(x);
+        b(x);
+      }
+    : a ?? b;
+}
+
 export type QueuedPlayerConfig = {
   scheduleLookaheadMs: number;
   scheduleIntervalMs: number;
@@ -36,7 +45,6 @@ function getConfig(options: Partial<QueuedPlayerConfig>) {
  *
  * @private
  */
-
 export class QueuedPlayer implements InternalPlayer {
   private readonly player: InternalPlayer;
   #config: QueuedPlayerConfig;
@@ -72,8 +80,8 @@ export class QueuedPlayer implements InternalPlayer {
     const now = context.currentTime;
     const startAt = sample.time ?? now;
     const lookAhead = this.#config.scheduleLookaheadMs / 1000;
-    sample.onStart = this.#config.onStart;
-    sample.onEnded = this.#config.onEnded;
+    sample.onStart = compose(sample.onStart, this.#config.onStart);
+    sample.onEnded = compose(sample.onEnded, this.#config.onEnded);
 
     if (startAt < now + lookAhead) {
       return this.player.start(sample);
