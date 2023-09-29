@@ -32,7 +32,6 @@ export class SamplePlayer implements InternalPlayer {
     this.#config = {
       velocityToGain: options.velocityToGain ?? midiVelToGain,
       destination: options.destination ?? context.destination,
-      ...options,
     };
     this.buffers = {};
     this.#stop = createTrigger();
