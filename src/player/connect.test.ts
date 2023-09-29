@@ -1,4 +1,4 @@
-import { createAudioContextMock } from "../test/audio-context-test-helpers";
+import { createAudioContextMock } from "../test-helpers";
 import { connectSerial } from "./connect";
 
 describe("connect", () => {

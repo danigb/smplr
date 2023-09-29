@@ -1,4 +1,4 @@
-import { createAudioContextMock } from "../test/audio-context-test-helpers";
+import { createAudioContextMock } from "../test-helpers";
 import { SamplePlayer } from "./sample-player";
 
 describe("SamplePlayer", () => {
