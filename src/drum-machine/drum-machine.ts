@@ -1,11 +1,11 @@
-import { ChannelOptions, OutputChannel } from "../player/channel";
-import { DefaultPlayer } from "../player/default-player";
+import { OutputChannel } from "../player/channel";
+import { DefaultPlayer, DefaultPlayerConfig } from "../player/default-player";
 import {
   AudioBuffers,
   findFirstSupportedFormat,
   loadAudioBuffer,
 } from "../player/load-audio";
-import { SampleOptions, SampleStart, SampleStop } from "../player/types";
+import { SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
 import {
   DrumMachineInstrument,
@@ -27,11 +27,27 @@ const INSTRUMENTS: Record<string, string> = {
     "https://danigb.github.io/samples/drum-machines/Roland-CR-8000/dm.json",
 };
 
-export type DrumMachineConfig = ChannelOptions &
-  SampleOptions & {
-    instrument: string;
-    storage?: Storage;
+type DrumMachineConfig = {
+  instrument: string;
+  url: string;
+  storage: Storage;
+};
+
+export type DrumMachineOptions = Partial<
+  DrumMachineConfig & DefaultPlayerConfig
+>;
+
+function getConfig(options?: DrumMachineOptions): DrumMachineConfig {
+  const config = {
+    instrument: options?.instrument ?? "TR-808",
+    storage: options?.storage ?? HttpStorage,
+    url: options?.url ?? "",
   };
+  config.url ||= INSTRUMENTS[config.instrument];
+  if (!config.url) throw new Error("Invalid instrument: " + config.instrument);
+
+  return config;
+}
 
 export class DrumMachine {
   #instrument = EMPTY_INSTRUMENT;
@@ -39,23 +55,17 @@ export class DrumMachine {
   public readonly load: Promise<this>;
   public readonly output: OutputChannel;
 
-  public constructor(
-    context: AudioContext,
-    options?: Partial<DrumMachineConfig>
-  ) {
-    options = Object.assign({}, options);
-    const storage: Storage = options.storage ?? HttpStorage;
-    const url = INSTRUMENTS[options.instrument ?? "TR-808"];
-    if (!url) throw new Error("Invalid instrument: " + options.instrument);
+  public constructor(context: AudioContext, options?: DrumMachineOptions) {
+    const config = getConfig(options);
 
-    const instrument = fetchDrumMachineInstrument(url, storage);
+    const instrument = fetchDrumMachineInstrument(config.url, config.storage);
     this.player = new DefaultPlayer(context, options);
     this.output = this.player.output;
     this.load = drumMachineLoader(
       context,
       this.player.buffers,
       instrument,
-      storage
+      config.storage
     ).then(() => this);
 
     instrument.then((instrument) => {

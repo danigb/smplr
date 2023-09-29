@@ -62,7 +62,7 @@ class AudioBufferMock {
   }
 }
 
-class AudioContextMock {
+export class AudioContextMock {
   gains: GainNodeMock[] = [];
   bufferSources: BufferSourceMock[] = [];
   currentTime = 0;

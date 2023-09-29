@@ -1,12 +1,10 @@
-import { ChannelOptions } from "./player/channel";
-import { DefaultPlayer } from "./player/default-player";
+import { DefaultPlayer, DefaultPlayerConfig } from "./player/default-player";
 import { createEmptyRegionGroup, findSamplesInRegions } from "./player/layers";
 import { AudioBuffers } from "./player/load-audio";
 import { toMidi } from "./player/midi";
 import {
   InternalPlayer,
   RegionGroup,
-  SampleOptions,
   SampleStart,
   SampleStop,
 } from "./player/types";
@@ -30,9 +28,7 @@ export type SmolkenConfig = {
   instrument: string;
   storage: Storage;
 };
-export type SmolkenOptions = Partial<
-  SmolkenConfig & SampleOptions & ChannelOptions
->;
+export type SmolkenOptions = Partial<SmolkenConfig & DefaultPlayerConfig>;
 
 export class Smolken implements InternalPlayer {
   private readonly player: DefaultPlayer;

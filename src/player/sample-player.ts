@@ -3,11 +3,16 @@ import { AudioBuffers } from "./load-audio";
 import { Trigger, createTrigger, unsubscribeAll } from "./signals";
 import {
   InternalPlayer,
-  SamplePlayerOptions,
+  SampleOptions,
   SampleStart,
   SampleStop,
 } from "./types";
 import { midiVelToGain } from "./volume";
+
+export type SamplePlayerConfig = {
+  velocityToGain: (velocity: number) => number;
+  destination: AudioNode;
+} & SampleOptions;
 
 /**
  * A sample player. This is used internally by the Sampler.
@@ -15,27 +20,28 @@ import { midiVelToGain } from "./volume";
  * @private Not intended for public use
  */
 export class SamplePlayer implements InternalPlayer {
-  public readonly context: BaseAudioContext;
   public readonly buffers: AudioBuffers;
+  #config: SamplePlayerConfig;
   #disconnected = false;
   #stop: Trigger<SampleStop | undefined>;
-  velocityToGain: (velocity: number) => number;
 
   public constructor(
-    public readonly destination: AudioNode,
-    private readonly options: Partial<SamplePlayerOptions>
+    public readonly context: BaseAudioContext,
+    private readonly options: Partial<SamplePlayerConfig>
   ) {
-    this.context = destination.context;
+    this.#config = {
+      velocityToGain: options.velocityToGain ?? midiVelToGain,
+      destination: options.destination ?? context.destination,
+    };
     this.buffers = {};
     this.#stop = createTrigger();
-    this.velocityToGain = options.velocityToGain ?? midiVelToGain;
   }
 
   public start(sample: SampleStart) {
     if (this.#disconnected) {
       throw new Error("Can't start a sample on disconnected player");
     }
-    const { destination, context } = this;
+    const context = this.context;
     const buffer =
       (sample.name && this.buffers[sample.name]) || this.buffers[sample.note];
     if (!buffer) {
@@ -59,7 +65,7 @@ export class SamplePlayer implements InternalPlayer {
     // Sample volume
     const volume = context.createGain();
     const velocity = sample.velocity ?? this.options.velocity ?? 100;
-    volume.gain.value = this.velocityToGain(velocity);
+    volume.gain.value = this.#config.velocityToGain(velocity);
 
     const loop = sample.loop ?? this.options.loop;
     if (loop) {
@@ -94,7 +100,7 @@ export class SamplePlayer implements InternalPlayer {
         volume,
         decay,
         gainCompensation,
-        destination,
+        this.#config.destination,
       ]),
       sample.stop?.(stop),
       this.#stop.subscribe((event) => {
@@ -108,6 +114,7 @@ export class SamplePlayer implements InternalPlayer {
       sample.onEnded?.(sample);
     };
 
+    sample.onStart?.(sample);
     const startAt = Math.max(sample.time ?? 0, context.currentTime);
     source.start(sample.time);
 

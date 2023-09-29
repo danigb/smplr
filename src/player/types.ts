@@ -35,13 +35,10 @@ export type SampleStart = {
   name?: string;
   note: string | number;
   onEnded?: (sample: SampleStart) => void;
+  onStart?: (sample: SampleStart) => void;
   stop?: Subscribe<number>;
   stopId?: string | number;
   time?: number;
-} & SampleOptions;
-
-export type SamplePlayerOptions = {
-  velocityToGain?: (velocity: number) => number;
 } & SampleOptions;
 
 /**

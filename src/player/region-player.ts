@@ -1,7 +1,7 @@
-import { Channel, ChannelOptions, OutputChannel } from "./channel";
+import { Channel, ChannelConfig, OutputChannel } from "./channel";
 import { createEmptyRegionGroup, findSamplesInRegions } from "./layers";
 import { toMidi } from "./midi";
-import { QueuedPlayer } from "./queued-player";
+import { QueuedPlayer, QueuedPlayerConfig } from "./queued-player";
 import { SamplePlayer } from "./sample-player";
 import {
   InternalPlayer,
@@ -11,7 +11,7 @@ import {
   SampleStop,
 } from "./types";
 
-type PlayerOptions = ChannelOptions & SampleOptions;
+type PlayerOptions = ChannelConfig & SampleOptions & QueuedPlayerConfig;
 
 /**
  * A player with an channel output and a region group to read samples info from
@@ -30,7 +30,7 @@ export class RegionPlayer implements InternalPlayer {
     const channel = new Channel(context, options);
     this.group = createEmptyRegionGroup();
     this.player = new QueuedPlayer(
-      new SamplePlayer(channel.input, options),
+      new SamplePlayer(context, { ...options, destination: channel.input }),
       options
     );
     this.output = channel;

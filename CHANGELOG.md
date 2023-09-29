@@ -1,5 +1,10 @@
 # smplr
 
+## 0.11.0
+
+- Add `onStart` sample event
+- Add `onStart` and `onEnded` global events
+
 ## 0.10.3
 
 - 0.10.3 - Fix output connection

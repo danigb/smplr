@@ -1,5 +1,5 @@
-import { ChannelOptions } from "./player/channel";
-import { DefaultPlayer } from "./player/default-player";
+import { ChannelConfig } from "./player/channel";
+import { DefaultPlayer, DefaultPlayerConfig } from "./player/default-player";
 import {
   createEmptyRegionGroup,
   findFirstSampleInRegions,
@@ -69,9 +69,7 @@ export type MellotronConfig = {
   storage: Storage;
 };
 
-export type MellotronOptions = Partial<
-  SampleOptions & ChannelOptions & MellotronConfig
->;
+export type MellotronOptions = Partial<MellotronConfig & DefaultPlayerConfig>;
 
 export class Mellotron implements InternalPlayer {
   private readonly config: MellotronConfig;
@@ -122,7 +120,7 @@ export class Mellotron implements InternalPlayer {
 }
 
 function getMellotronConfig(
-  options: Partial<SampleOptions & ChannelOptions & MellotronConfig>
+  options: Partial<SampleOptions & ChannelConfig & MellotronConfig>
 ): MellotronConfig {
   return {
     instrument: options.instrument ?? "MKII VIOLINS",

@@ -1,16 +1,10 @@
-import { ChannelOptions } from "../player/channel";
-import { DefaultPlayer } from "../player/default-player";
+import { DefaultPlayer, DefaultPlayerConfig } from "../player/default-player";
 import {
   createEmptyRegionGroup,
   findFirstSampleInRegions,
 } from "../player/layers";
 import { AudioBuffers } from "../player/load-audio";
-import {
-  RegionGroup,
-  SampleOptions,
-  SampleStart,
-  SampleStop,
-} from "../player/types";
+import { RegionGroup, SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
 import {
   SOUNDFONT_INSTRUMENTS,
@@ -41,9 +35,7 @@ type SoundfontConfig = {
   loopDataUrl?: string;
 };
 
-export type SoundfontOptions = Partial<
-  SoundfontConfig & SampleOptions & ChannelOptions
->;
+export type SoundfontOptions = Partial<SoundfontConfig & DefaultPlayerConfig>;
 
 export class Soundfont {
   public readonly config: Readonly<SoundfontConfig>;

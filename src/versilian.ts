@@ -1,10 +1,9 @@
-import { ChannelOptions } from "./player/channel";
+import { DefaultPlayerConfig } from "./player/default-player";
 import { AudioBuffers } from "./player/load-audio";
 import { RegionPlayer } from "./player/region-player";
 import {
   InternalPlayer,
   RegionGroup,
-  SampleOptions,
   SampleStart,
   SampleStop,
 } from "./player/types";
@@ -49,9 +48,7 @@ export type VersilianConfig = {
   instrument: string;
   storage: Storage;
 };
-export type VersilianOptions = Partial<
-  VersilianConfig & SampleOptions & ChannelOptions
->;
+export type VersilianOptions = Partial<VersilianConfig & DefaultPlayerConfig>;
 
 /**
  * Versilian

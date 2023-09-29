@@ -1,4 +1,4 @@
-import { DefaultPlayer } from "./player/default-player";
+import { DefaultPlayer, DefaultPlayerConfig } from "./player/default-player";
 import {
   AudioBuffers,
   AudioBuffersLoader,
@@ -14,14 +14,11 @@ import { HttpStorage, Storage } from "./storage";
  */
 export type SplendidGrandPianoConfig = {
   baseUrl: string;
-  destination: AudioNode;
   storage: Storage;
   detune: number;
-  volume: number;
   velocity: number;
-  decayTime?: number;
-  lpfCutoffHz?: number;
-};
+  decayTime: number;
+} & Partial<DefaultPlayerConfig>;
 
 const BASE_URL = "https://danigb.github.io/samples/splendid-grand-piano";
 
@@ -37,7 +34,6 @@ export class SplendidGrandPiano {
     this.options = Object.assign(
       {
         baseUrl: BASE_URL,
-        destination: context.destination,
         storage: HttpStorage,
         detune: 0,
         volume: 100,

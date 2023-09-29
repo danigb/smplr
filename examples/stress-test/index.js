@@ -1,4 +1,4 @@
-import { SplendidGrandPiano } from "https://unpkg.com/smplr@0.6.1/dist/index.mjs";
+import { SplendidGrandPiano } from "https://unpkg.com/smplr/dist/index.mjs";
 
 const NUMBER_OF_NOTES = 2000;
 
@@ -73,7 +73,10 @@ function Scheduler(sampler) {
   }
   return { start, stop };
 }
-const scheduler = Scheduler(piano);
+const scheduler = Scheduler(piano, {
+  onStart: console.log,
+  onEnded: console.warn,
+});
 
 document.getElementById("btn-test").addEventListener("click", function () {
   if (stopSamples) return;
