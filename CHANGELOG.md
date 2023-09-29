@@ -1,7 +1,8 @@
 # smplr
 
-## 0.10.2
+## 0.10.3
 
+- 0.10.3 - Fix output connection
 - 0.10.2 - Remove console.log
 - 0.10.1 - Fix onEnded not working
 
