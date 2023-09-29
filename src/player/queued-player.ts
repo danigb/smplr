@@ -6,12 +6,16 @@ type SampleStartWithTime = SampleStart & { time: number };
 export type QueuedPlayerConfig = {
   scheduleLookaheadMs: number;
   scheduleIntervalMs: number;
+  onStart?: (sample: SampleStart) => void;
+  onEnded?: (sample: SampleStart) => void;
 };
 
 function getConfig(options: Partial<QueuedPlayerConfig>) {
   const config: QueuedPlayerConfig = {
     scheduleLookaheadMs: options.scheduleLookaheadMs ?? 200,
     scheduleIntervalMs: options.scheduleIntervalMs ?? 50,
+    onStart: options.onStart,
+    onEnded: options.onEnded,
   };
 
   if (config.scheduleLookaheadMs < 1) {
@@ -68,6 +72,8 @@ export class QueuedPlayer implements InternalPlayer {
     const now = context.currentTime;
     const startAt = sample.time ?? now;
     const lookAhead = this.#config.scheduleLookaheadMs / 1000;
+    sample.onStart = this.#config.onStart;
+    sample.onEnded = this.#config.onEnded;
 
     if (startAt < now + lookAhead) {
       return this.player.start(sample);
