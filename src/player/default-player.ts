@@ -24,7 +24,7 @@ export class DefaultPlayer implements InternalPlayer {
   ) {
     const channel = new Channel(context, options);
     this.player = new QueuedPlayer(
-      new SamplePlayer(context.destination, options),
+      new SamplePlayer(channel.input, options),
       options
     );
     this.output = channel;
