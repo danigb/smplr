@@ -121,6 +121,8 @@ All instruments share some configuration options that are passed as second argum
 - `volumeToGain`: a function to convert the volume to gain. It uses MIDI standard as default.
 - `scheduleLookaheadMs`: the lookahead of the scheduler. If the start time of the note is less than current time plus this lookahead time, the note will be started. It's 200ms by default.
 - `scheduleIntervalMs`: the interval of the scheduler. 50ms by default.
+- `onStart`: a function that is called when starting a note. It receives the note started as parameter. Bear in mind that the time this function is called is not precise, and it's determined by lookahead.
+- `onEnded`: a function that is called when the note ends. It receives the started note as parameter.
 
 ⚠️ In versions lower than 0.8.0 a `loaded()` function was exposed instead.
 
@@ -200,7 +202,20 @@ piano.output.setVolume(80);
 
 #### Events
 
-You can add a `onEnded` callback that will be invoked when the note ends:
+Two events are supported `onStart` and `onEnded`. Both callbacks will receive as parameter started note.
+
+Events can be configured globally:
+
+```js
+const context = new AudioContext();
+const sampler = new Sample(context, {
+  onStart: (note) => {
+    console.log(note.time, context.currentTime);
+  },
+});
+```
+
+or per note basis:
 
 ```js
 piano.start({
@@ -212,7 +227,9 @@ piano.start({
 });
 ```
 
-The callback will receive as parameter the same object you pass to the `start` function;
+Global callbacks will be invoked regardless of whether local events are defined.
+
+⚠️ The invocation time of `onStart` is not exact. It triggers slightly before the actual start time and is influenced by the `scheduleLookaheadMs` parameter.
 
 ### Effects
 
