@@ -93,6 +93,7 @@ function findSampleInRegion(
     name: region.sampleName,
     note: midi,
     onEnded: sample.onEnded,
+    onStart: sample.onStart,
     stopId: sample.name,
     time: sample.time,
     velocity: velocity == undefined ? undefined : velocity,
