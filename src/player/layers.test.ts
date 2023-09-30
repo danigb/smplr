@@ -138,15 +138,20 @@ describe("findSamplesInRegions", () => {
 
   it("applies sample properties", () => {
     const onEnded = jest.fn();
+    const onStart = jest.fn();
+
     const group = createGroup({});
-    expect(findSamplesInRegions(group, { note: 62, onEnded })).toEqual([
-      {
-        name: "a",
-        note: 62,
-        detune: 200,
-        onEnded,
-      },
-    ]);
+    expect(findSamplesInRegions(group, { note: 62, onEnded, onStart })).toEqual(
+      [
+        {
+          name: "a",
+          note: 62,
+          detune: 200,
+          onEnded,
+          onStart,
+        },
+      ]
+    );
   });
 
   it("applies sample options", () => {

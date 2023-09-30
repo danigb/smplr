@@ -1,11 +1,12 @@
 # smplr
 
-## 0.11.0
+## 0.11.x
 
+- 0.11.1 Fix onStart callback when using `start` on Soundfont
 - Add `onStart` sample event
 - Add `onStart` and `onEnded` global events
 
-## 0.10.3
+## 0.10.x
 
 - 0.10.3 - Fix output connection
 - 0.10.2 - Remove console.log
