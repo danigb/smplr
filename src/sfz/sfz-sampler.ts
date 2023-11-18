@@ -7,17 +7,14 @@ import { SfzInstrumentLoader, loadSfzBuffers } from "./sfz-load";
 import { findRegions } from "./sfz-regions";
 import { Websfz } from "./websfz";
 
-/**
- * Splendid Grand Piano options
- */
 export type SfzSamplerConfig = {
   instrument: SfzInstrument | Websfz | string;
-  storage?: Storage;
+  storage: Storage;
   destination: AudioNode;
   volume: number;
   velocity: number;
   detune: number;
-  decayTime: number;
+  decayTime?: number;
   lpfCutoffHz?: number;
 };
 
@@ -28,7 +25,7 @@ const EMPTY_WEBSFZ: Websfz = Object.freeze({
 });
 
 export class SfzSampler {
-  public readonly options: Readonly<Partial<SfzSamplerConfig>>;
+  public readonly options: Readonly<SfzSamplerConfig>;
   private readonly player: DefaultPlayer;
   #websfz: Websfz;
   public readonly load: Promise<this>;
@@ -38,19 +35,29 @@ export class SfzSampler {
     options: Partial<SfzSamplerConfig & DefaultPlayerConfig> &
       Pick<SfzSamplerConfig, "instrument">
   ) {
-    this.options = Object.freeze(Object.assign({}, options));
+    this.options = Object.freeze(
+      Object.assign(
+        {
+          volume: 100,
+          velocity: 100,
+          storage: HttpStorage,
+          detune: 0,
+          destination: context.destination,
+        },
+        options
+      )
+    );
     this.player = new DefaultPlayer(context, options);
     this.#websfz = EMPTY_WEBSFZ;
 
-    const storage = options.storage ?? HttpStorage;
-    this.load = SfzInstrumentLoader(options.instrument, storage)
+    this.load = SfzInstrumentLoader(options.instrument, this.options.storage)
       .then((result) => {
         this.#websfz = Object.freeze(result);
         return loadSfzBuffers(
           context,
           this.player.buffers,
           this.#websfz,
-          storage
+          this.options.storage
         );
       })
       .then(() => this);
@@ -95,7 +102,7 @@ export class SfzSampler {
         ...sample,
         note: region.sample,
         decayTime: sample.decayTime,
-        detune: detune + (sample.detune ?? this.options.detune ?? 0),
+        detune: detune + (sample.detune ?? this.options.detune),
         onEnded,
         stopId: midi,
       });
