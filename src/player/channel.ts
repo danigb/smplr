@@ -81,7 +81,7 @@ export class Channel {
     if (this.#disconnected) {
       throw Error("Can't add effect to disconnected channel");
     }
-    const mix = new GainNode(this.context);
+    const mix = this.context.createGain();
     mix.gain.value = mixValue;
     const input = "input" in effect ? effect.input : effect;
     const disconnect = connectSerial([this.#volume, mix, input]);

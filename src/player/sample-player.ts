@@ -95,8 +95,11 @@ export class SamplePlayer implements InternalPlayer {
 
     // Compensate gain
     const gainCompensation = sample.gainOffset
-      ? new GainNode(context, { gain: sample.gainOffset })
+      ? context.createGain()
       : undefined;
+    if (gainCompensation && sample.gainOffset) {
+      gainCompensation.gain.value = sample.gainOffset;
+    }
 
     const stopId = sample.stopId ?? sample.note;
     const cleanup = unsubscribeAll([
