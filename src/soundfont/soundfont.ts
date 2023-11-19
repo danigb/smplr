@@ -64,7 +64,8 @@ export class Soundfont {
       return this;
     });
 
-    const gain = new GainNode(context, { gain: this.config.extraGain });
+    const gain = context.createGain();
+    gain.gain.value = this.config.extraGain;
     this.player.output.addInsert(gain);
   }
 

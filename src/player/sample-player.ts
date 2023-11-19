@@ -51,16 +51,22 @@ export class SamplePlayer implements InternalPlayer {
 
     const source = context.createBufferSource();
     source.buffer = buffer;
-    source.detune.value = sample.detune ?? this.options.detune ?? 0;
+
+    // Seems that detune is not implemented in Safari (and therefore, in standardized-audio-context)
+    const cents = sample.detune ?? this.options.detune ?? 0;
+    if (source.detune) {
+      source.detune.value = cents;
+    } else if (source.playbackRate) {
+      source.playbackRate.value = Math.pow(2, cents / 1200);
+    }
 
     // Low pass filter
     const lpfCutoffHz = sample.lpfCutoffHz ?? this.options.lpfCutoffHz;
-    const lpf = lpfCutoffHz
-      ? new BiquadFilterNode(context, {
-          type: "lowpass",
-          frequency: sample.lpfCutoffHz,
-        })
-      : undefined;
+    const lpf = lpfCutoffHz ? context.createBiquadFilter() : undefined;
+    if (lpfCutoffHz && lpf) {
+      lpf.type = "lowpass";
+      lpf.frequency.value = lpfCutoffHz;
+    }
 
     // Sample volume
     const volume = context.createGain();
@@ -89,8 +95,11 @@ export class SamplePlayer implements InternalPlayer {
 
     // Compensate gain
     const gainCompensation = sample.gainOffset
-      ? new GainNode(context, { gain: sample.gainOffset })
+      ? context.createGain()
       : undefined;
+    if (gainCompensation && sample.gainOffset) {
+      gainCompensation.gain.value = sample.gainOffset;
+    }
 
     const stopId = sample.stopId ?? sample.note;
     const cleanup = unsubscribeAll([
@@ -149,7 +158,8 @@ function createDecayEnvelope(
   envelopeTime = 0.2
 ): [AudioNode, (time: number) => number] {
   let stopAt = 0;
-  const envelope = new GainNode(context, { gain: 1.0 });
+  const envelope = context.createGain();
+  envelope.gain.value = 1.0;
 
   function start(time: number): number {
     if (stopAt) return stopAt;

@@ -6,30 +6,28 @@ export function createTremolo(
   context: AudioContext,
   depth: Subscribe<number>
 ): AudioInsert {
-  const input = new GainNode(context);
-  const output = new GainNode(context);
+  const input = context.createGain();
+  const output = context.createGain();
 
   // force mono sources to be stereo
   input.channelCount = 2;
   input.channelCountMode = "explicit";
 
-  const splitter = new ChannelSplitterNode(context, { numberOfOutputs: 2 });
-  const ampL = new GainNode(context);
-  const ampR = new GainNode(context);
-  const merger = new ChannelMergerNode(context, { numberOfInputs: 2 });
+  const splitter = context.createChannelSplitter(2);
+  const ampL = context.createGain();
+  const ampR = context.createGain();
+  const merger = context.createChannelMerger(2);
 
-  const lfoL = new OscillatorNode(context, {
-    type: "sine",
-    frequency: 1,
-  });
+  const lfoL = context.createOscillator();
+  lfoL.type = "sine";
+  lfoL.frequency.value = 1;
   lfoL.start();
-  const lfoLAmp = new GainNode(context);
-  const lfoR = new OscillatorNode(context, {
-    type: "sine",
-    frequency: 1.1,
-  });
+  const lfoLAmp = context.createGain();
+  const lfoR = context.createOscillator();
+  lfoR.type = "sine";
+  lfoR.frequency.value = 1.1;
   lfoR.start();
-  const lfoRAmp = new GainNode(context);
+  const lfoRAmp = context.createGain();
 
   input.connect(splitter);
   splitter.connect(ampL, 0);

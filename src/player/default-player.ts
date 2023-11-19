@@ -1,4 +1,4 @@
-import { SamplerConfig } from "../../dist";
+import { SamplerConfig } from "../sampler";
 import { Channel, ChannelConfig, OutputChannel } from "./channel";
 import { QueuedPlayer, QueuedPlayerConfig } from "./queued-player";
 import { SamplePlayer } from "./sample-player";
