@@ -2,6 +2,7 @@
 
 ## 0.11.x
 
+- 0.11.3 Add support for standardized audio context
 - 0.11.2 Resolved an issue in the sfz sampler that prevented any sound from being played when the velocity was not specified.
 - 0.11.1 Fix onStart callback when using `start` on Soundfont
 - Add `onStart` sample event
