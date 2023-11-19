@@ -1,0 +1,18 @@
+{
+  "name": "standardized-audio-context-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite --host"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "smplr": "../../",
+    "standardized-audio-context": "^25.3.58",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0"
+  }
+}
