@@ -126,6 +126,27 @@ All instruments share some configuration options that are passed as second argum
 - `onStart`: a function that is called when starting a note. It receives the note started as parameter. Bear in mind that the time this function is called is not precise, and it's determined by lookahead.
 - `onEnded`: a function that is called when the note ends. It receives the started note as parameter.
 
+#### Usage with standardized-audio-context
+
+This package should be compatible with [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context):
+
+```js
+import { AudioContext } from "standardized-audio-context";
+
+const context = new AudioContext();
+const piano = new SplendidGrandPiano(context);
+```
+
+However, if you are using Typescript, you might need to "force cast" the types:
+
+```ts
+import { Soundfont } from "smplr";
+import { AudioContext as StandardizedAudioContext } from "standardized-audio-context";
+
+const context = new StandardizedAudioContext() as unknown as AudioContext;
+const marimba = new Soundfont(context, { instrument: "marimba" });
+```
+
 ### Play
 
 #### Start and stop notes
