@@ -1,9 +1,9 @@
-import { SplendidGrandPiano } from "smplr";
+import { Soundfont } from "smplr";
 import { AudioContext as StandardizedAudioContext } from "standardized-audio-context";
 
 function main() {
-  const context = new StandardizedAudioContext();
-  const piano = new SplendidGrandPiano(context as unknown as AudioContext);
+  const context = new StandardizedAudioContext() as unknown as AudioContext;
+  const piano = new Soundfont(context, { instrument: "marimba" });
 
   const $button = document.getElementById("btn-test") as HTMLButtonElement;
 
