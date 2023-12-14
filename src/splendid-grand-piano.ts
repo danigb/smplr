@@ -18,6 +18,10 @@ export type SplendidGrandPianoConfig = {
   detune: number;
   velocity: number;
   decayTime: number;
+  notesToLoad?: {
+    notes: number[],
+    velocityRange: [number, number]
+  }
 } & Partial<DefaultPlayerConfig>;
 
 const BASE_URL = "https://danigb.github.io/samples/splendid-grand-piano";
@@ -45,7 +49,8 @@ export class SplendidGrandPiano {
     this.player = new DefaultPlayer(context, this.options);
     const loader = splendidGrandPianoLoader(
       this.options.baseUrl,
-      this.options.storage
+      this.options.storage,
+      this.options.notesToLoad
     );
     this.load = loader(context, this.player.buffers).then(() => this);
   }
@@ -114,13 +119,29 @@ function findNearestMidiInLayer(
 
 function splendidGrandPianoLoader(
   baseUrl: string,
-  storage: Storage
+  storage: Storage,
+  notesToLoad?: {
+    notes: number[],
+    velocityRange: [number, number]
+  }
 ): AudioBuffersLoader {
   const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
+  let layers = notesToLoad 
+    ? LAYERS.filter(
+        (layer) =>
+          layer.vel_range[0] <= notesToLoad.velocityRange[1] &&
+          layer.vel_range[1] >= notesToLoad.velocityRange[0]
+      )
+    : LAYERS;
+
   return async (context, buffers) => {
-    for (const layer of LAYERS) {
+    for (const layer of layers) {
+      const samples = notesToLoad 
+        ? layer.samples.filter(sample => notesToLoad.notes.includes(sample[0] as number))
+        : layer.samples;
+
       await Promise.all(
-        layer.samples.map(async ([midi, name]) => {
+        samples.map(async ([midi, name]) => {
           const url = `${baseUrl}/${name}.${format}`;
           const buffer = await loadAudioBuffer(context, url, storage);
           if (buffer) buffers[layer.name + midi] = buffer;
