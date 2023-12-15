@@ -1,5 +1,11 @@
 # smplr
 
+## 0.12.0
+
+### Minor Changes
+
+- SplendidGrandPiano supports loading a subset of notes
+
 ## 0.11.x
 
 - 0.11.3 Add support for standardized audio context
