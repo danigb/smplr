@@ -371,6 +371,30 @@ const piano = new SplendidGrandPiano(new AudioContext());
 piano.start({ note: "C4" });
 ```
 
+#### SplendidGrandPiano constructor
+
+The second argument of the constructor accepts the following options:
+
+- `baseUrl`:
+- `detune`: global detune in cents (0 if not specified)
+- `velocity`: default velocity (100 if not specified)
+- `volume`: default volume (100 if not specified)
+- `decayTime`: default decay time (0.5 seconds)
+- `notesToLoad`: an object with the following shape: `{ notes: number[], velocityRange: [number, number]}` to specify a subset of notes to load
+
+Example:
+
+```ts
+const piano = new SplendidGrandPiano(context, {
+  detune: -20,
+  volume: 80,
+  notesToLoad: {
+    notes: [60],
+    velocityRange: [1, 127],
+  },
+});
+```
+
 ### Electric Piano
 
 A sampled electric pianos. Samples from https://github.com/sfzinstruments/GregSullivan.E-Pianos
