@@ -1,8 +1,6 @@
 # smplr
 
-## 0.12.0
-
-### Minor Changes
+## 0.12.x
 
 - SplendidGrandPiano supports loading a subset of notes
 
