@@ -3,7 +3,8 @@
 ## 0.12.x
 
 - 0.12.0 SplendidGrandPiano supports loading a subset of notes
-- 0.12.1 Fix non-integer midi in 1 note length regions (#61)
+- 0.12.1 Fix npm publish problem
+- 0.12.2 Fix non-integer midi in 1 note length regions (#61)
 
 ## 0.11.x
 
