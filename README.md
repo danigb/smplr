@@ -296,16 +296,21 @@ const piano = new SplendidGrandPiano(context, { storage });
 
 ### Sampler
 
-An audio buffer sampler.
+An audio buffer sampler. Pass a `buffers` object with the files to be load:
 
 ```js
 import { Sampler } from "smplr";
 
-const samples = {
+const buffers = {
   kick: "https://danigb.github.io/samples/drum-machines/808-mini/kick.m4a",
   snare: "https://danigb.github.io/samples/drum-machines/808-mini/snare-1.m4a",
 };
-const sampler = new Sampler(new AudioContext(), { samples });
+const sampler = new Sampler(new AudioContext(), { buffers });
+```
+
+And then use the name of the buffer as note name:
+
+```js
 sampler.start({ note: "kick" });
 ```
 

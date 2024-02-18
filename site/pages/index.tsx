@@ -1,4 +1,4 @@
-import { Inter } from "@next/font/google";
+import { Inter } from "next/font/google";
 import Head from "next/head";
 import { DrumMachineExample } from "src/DrumMachineExample";
 import { ElectricPianoExample } from "src/ElectricPianoExample";
