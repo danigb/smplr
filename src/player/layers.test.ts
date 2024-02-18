@@ -13,7 +13,7 @@ const createGroup = (region: Partial<SampleRegion>): RegionGroup => ({
 });
 
 describe("findSamplesInRegions", () => {
-  it("find by rangeMidi", () => {
+  it("finds by midi", () => {
     const group: RegionGroup = {
       regions: [
         { sampleName: "a", midiPitch: 60, midiLow: 60, midiHigh: 75 },
@@ -34,6 +34,25 @@ describe("findSamplesInRegions", () => {
     ]);
     expect(findSamplesInRegions(group, { note: 80 })).toEqual([
       { detune: 500, name: "b", note: 80 },
+    ]);
+  });
+
+  it("finds finds with non integer midi", () => {
+    const group: RegionGroup = {
+      regions: [
+        { sampleName: "a", midiPitch: 70, midiLow: 65, midiHigh: 75 },
+        { sampleName: "b", midiPitch: 80, midiLow: 80, midiHigh: 80 },
+      ],
+      sample: {},
+    };
+    expect(findSamplesInRegions(group, { note: 65.5 })).toEqual([
+      { name: "a", detune: -450, note: 65.5 },
+    ]);
+    expect(findSamplesInRegions(group, { note: 80 })).toEqual([
+      { name: "b", detune: 0, note: 80 },
+    ]);
+    expect(findSamplesInRegions(group, { note: 80.5 })).toEqual([
+      { name: "b", detune: 50, note: 80.5 },
     ]);
   });
 
@@ -232,6 +251,4 @@ describe("spreadRegions", () => {
     const regions: SampleRegion[] = [];
     expect(spreadRegions(regions)).toEqual([]);
   });
-
-  // You can add more test cases based on different scenarios.
 });
