@@ -2,7 +2,8 @@
 
 ## 0.12.x
 
-- SplendidGrandPiano supports loading a subset of notes
+- 0.12.0 SplendidGrandPiano supports loading a subset of notes
+- 0.12.1 Fix non-integer midi in 1 note length regions (#61)
 
 ## 0.11.x
 
