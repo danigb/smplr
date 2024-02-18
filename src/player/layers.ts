@@ -60,7 +60,7 @@ function findSampleInRegion(
   defaults: Partial<SampleOptions>
 ): SampleStart | undefined {
   const matchMidi =
-    midi >= (region.midiLow ?? 0) && midi <= (region.midiHigh ?? 127);
+    midi >= (region.midiLow ?? 0) && midi < (region.midiHigh ?? 127) + 1;
   if (!matchMidi) return undefined;
   const matchVelocity =
     sample.velocity === undefined ||

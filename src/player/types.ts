@@ -17,6 +17,9 @@ export type SampleStop = {
   time?: number;
 };
 
+/**
+ * Configurable options for a sample
+ */
 export type SampleOptions = {
   decayTime?: number;
   detune?: number;
@@ -31,6 +34,9 @@ export type SampleOptions = {
   gainOffset?: number;
 };
 
+/**
+ * Start a sample with a specific options
+ */
 export type SampleStart = {
   name?: string;
   note: string | number;
@@ -42,6 +48,12 @@ export type SampleStart = {
 } & SampleOptions;
 
 /**
+ * Represents a playable region for a sample.
+ *
+ * It provides constrains to limit which samples are affected,
+ * and defaults to apply to the affected samples.
+ *
+ *
  * Heavily inspired by SFZ format
  */
 export type SampleRegion = {
