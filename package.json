@@ -1,6 +1,6 @@
 {
   "name": "smplr",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "homepage": "https://github.com/danigb/smplr#readme",
   "description": "A Sampled collection of instruments",
   "main": "dist/index.js",
@@ -32,7 +32,7 @@
     "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
     "tsup": "^8.0.2",
-    "turbo": "^1.12.4",
+    "turbo": "^1.13.0",
     "typedoc": "^0.25.8"
   },
   "publishConfig": {
