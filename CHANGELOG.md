@@ -35,6 +35,7 @@ const drums = new DrumMachine(context, {
 ```
 
 - DrumMachine uses https://github.com/smpldsnds/drum-machines as source of samples
+- Fix: `detune` param on `start` method
 
 ## 0.12.x
 
