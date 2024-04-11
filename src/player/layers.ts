@@ -78,10 +78,11 @@ function findSampleInRegion(
   const velocity = sample.velocity ?? defaults.velocity;
   const regionGainOffset = region.volume ? dbToGain(region.volume) : 0;
   const sampleGainOffset = sample.gainOffset ?? defaults.gainOffset ?? 0;
+  const sampleDetune = sample.detune ?? 0;
   return {
     decayTime:
       sample?.decayTime ?? region.sample?.decayTime ?? defaults.decayTime,
-    detune: 100 * (semitones + (region.tune ?? 0)),
+    detune: 100 * (semitones + (region.tune ?? 0)) + sampleDetune,
     duration: sample?.duration ?? region.sample?.duration ?? defaults.duration,
     gainOffset: sampleGainOffset + regionGainOffset || undefined,
     loop: sample?.loop ?? region.sample?.loop ?? defaults.loop,

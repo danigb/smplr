@@ -13,21 +13,14 @@ const context = new AudioContext();
 const drums = new DrumMachine(context, {
   instrument: {
     baseUrl: "https://smpldsnds.github.io/drum-machines/roland-cr-8000/",
-    name: "roland-cr-8000",
+    name: "Roland-CR-8000",
     samples: [
-      "Cr8kbass",
-      "Cr8kchat",
-      "Cr8kclap",
-      "Cr8kclav",
-      "Cr8kcowb",
-      "Cr8kcymb",
-      "Cr8khitm",
-      "Cr8klcng",
-      "Cr8klotm",
-      "Cr8kmcng",
-      "Cr8kohat",
-      "Cr8krim",
-      "Cr8ksnar",
+      "hihat-closed",
+      "hihat-open",
+      "kick",
+      "snare",
+      "tom-high",
+      "tom-low",
     ],
     formats: ["ogg", "m4a"],
   },
@@ -35,6 +28,7 @@ const drums = new DrumMachine(context, {
 ```
 
 - DrumMachine uses https://github.com/smpldsnds/drum-machines as source of samples
+- Fix: `detune` param on `start` method
 
 ## 0.12.x
 
