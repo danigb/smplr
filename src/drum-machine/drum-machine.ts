@@ -11,6 +11,7 @@ import {
   DrumMachineInstrument,
   EMPTY_INSTRUMENT,
   fetchDrumMachineInstrument,
+  isDrumMachineInstrument,
 } from "./dm-instrument";
 
 export function getDrumMachineNames() {
@@ -28,7 +29,7 @@ const INSTRUMENTS: Record<string, string> = {
 };
 
 type DrumMachineConfig = {
-  instrument: string;
+  instrument: string | DrumMachineInstrument;
   url: string;
   storage: Storage;
 };
@@ -43,8 +44,13 @@ function getConfig(options?: DrumMachineOptions): DrumMachineConfig {
     storage: options?.storage ?? HttpStorage,
     url: options?.url ?? "",
   };
-  config.url ||= INSTRUMENTS[config.instrument];
-  if (!config.url) throw new Error("Invalid instrument: " + config.instrument);
+  if (typeof config.instrument === "string") {
+    config.url ||= INSTRUMENTS[config.instrument];
+    if (!config.url)
+      throw new Error("Invalid instrument: " + config.instrument);
+  } else if (!isDrumMachineInstrument(config.instrument)) {
+    throw new Error("Invalid instrument: " + config.instrument);
+  }
 
   return config;
 }
@@ -58,7 +64,9 @@ export class DrumMachine {
   public constructor(context: AudioContext, options?: DrumMachineOptions) {
     const config = getConfig(options);
 
-    const instrument = fetchDrumMachineInstrument(config.url, config.storage);
+    const instrument = isDrumMachineInstrument(config.instrument)
+      ? Promise.resolve(config.instrument)
+      : fetchDrumMachineInstrument(config.url, config.storage);
     this.player = new DefaultPlayer(context, options);
     this.output = this.player.output;
     this.load = drumMachineLoader(
