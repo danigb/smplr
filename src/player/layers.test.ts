@@ -37,6 +37,23 @@ describe("findSamplesInRegions", () => {
     ]);
   });
 
+  it("applies given detune", () => {
+    const group: RegionGroup = {
+      regions: [
+        { sampleName: "a", midiPitch: 60, midiLow: 60, midiHigh: 75 },
+        { sampleName: "b", midiPitch: 75, midiLow: 70, midiHigh: 80 },
+      ],
+      sample: {},
+    };
+
+    expect(findSamplesInRegions(group, { note: 60, detune: 50 })).toEqual([
+      { name: "a", detune: 50, note: 60 },
+    ]);
+    expect(findSamplesInRegions(group, { note: 62, detune: -50 })).toEqual([
+      { name: "a", detune: 150, note: 62 },
+    ]);
+  });
+
   it("finds finds with non integer midi", () => {
     const group: RegionGroup = {
       regions: [
