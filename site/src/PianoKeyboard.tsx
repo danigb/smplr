@@ -10,6 +10,7 @@ const isBlack = (midi: number) => [1, 3, 6, 8, 10].includes(midi % 12);
 type PianoKeyboardNote = {
   note: number;
   velocity: number;
+  detune: number;
   time?: number;
   duration?: number;
 };
@@ -26,6 +27,7 @@ export function PianoKeyboard({
   onRelease?: (midi: number) => void;
 }) {
   const [velocity, setVelocity] = useState(100);
+  const [detune, setDetune] = useState(0);
   const [oct, setOct] = useState(60);
   const [sustain, setSustain] = useState(false);
   const isPlaying = (midi: number) => false;
@@ -44,7 +46,7 @@ export function PianoKeyboard({
                 className={`accidental-key ${
                   isPlaying(midi) ? "accidental-key--playing" : ""
                 }`}
-                onMouseDown={() => onPress({ note: midi, velocity })}
+                onMouseDown={() => onPress({ note: midi, velocity, detune })}
                 onMouseUp={() => release(midi)}
               >
                 <div className={"text"}></div>
@@ -56,7 +58,7 @@ export function PianoKeyboard({
               className={`natural-key ${
                 isPlaying(midi) ? "natural-key--playing" : ""
               }`}
-              onMouseDown={() => onPress({ note: midi, velocity })}
+              onMouseDown={() => onPress({ note: midi, velocity, detune })}
               onMouseUp={() => release(midi)}
             >
               <div className={"text"}></div>
@@ -93,6 +95,14 @@ export function PianoKeyboard({
           value={velocity}
           onChange={(e) => setVelocity(e.target.valueAsNumber)}
         />
+        <div className="ml-3">Detune: {detune}</div>
+        <input
+          type="range"
+          min={-100}
+          max={100}
+          value={detune}
+          onChange={(e) => setDetune(e.target.valueAsNumber)}
+        />
 
         <input
           className="ml-3"
@@ -112,6 +122,7 @@ export function PianoKeyboard({
               onPress({
                 note: midi ?? 0,
                 velocity: Math.floor(60 + 40 * Math.random()),
+                detune: 0,
                 time: time * 0.25,
                 duration: 0.05,
               })
