@@ -302,8 +302,8 @@ An audio buffer sampler. Pass a `buffers` object with the files to be load:
 import { Sampler } from "smplr";
 
 const buffers = {
-  kick: "https://danigb.github.io/samples/drum-machines/808-mini/kick.m4a",
-  snare: "https://danigb.github.io/samples/drum-machines/808-mini/snare-1.m4a",
+  kick: "https://smpldsnds.github.io/drum-machines/808-mini/kick.m4a",
+  snare: "https://smpldsnds.github.io/drum-machines/808-mini/snare-1.m4a",
 };
 const sampler = new Sampler(new AudioContext(), { buffers });
 ```

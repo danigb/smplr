@@ -12,7 +12,7 @@ Now you can pass the DrumMachineInstrument object directly to the constructor:
 const context = new AudioContext();
 const drums = new DrumMachine(context, {
   instrument: {
-    baseUrl: "https://danigb.github.io/samples/drum-machines/roland-cr-8000/",
+    baseUrl: "https://smpldsnds.github.io/drum-machines/roland-cr-8000/",
     name: "roland-cr-8000",
     samples: [
       "Cr8kbass",
