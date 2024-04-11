@@ -1,5 +1,41 @@
 # smplr
 
+## 0.13.0
+
+- DrumMachines accept a DrumMachineInstrument as source
+
+Previously you could use a instrument name or a instrument url to load a DrumMachine.
+
+Now you can pass the DrumMachineInstrument object directly to the constructor:
+
+```js
+const context = new AudioContext();
+const drums = new DrumMachine(context, {
+  instrument: {
+    baseUrl: "https://danigb.github.io/samples/drum-machines/roland-cr-8000/",
+    name: "roland-cr-8000",
+    samples: [
+      "Cr8kbass",
+      "Cr8kchat",
+      "Cr8kclap",
+      "Cr8kclav",
+      "Cr8kcowb",
+      "Cr8kcymb",
+      "Cr8khitm",
+      "Cr8klcng",
+      "Cr8klotm",
+      "Cr8kmcng",
+      "Cr8kohat",
+      "Cr8krim",
+      "Cr8ksnar",
+    ],
+    formats: ["ogg", "m4a"],
+  },
+});
+```
+
+- DrumMachine uses https://github.com/smpldsnds/drum-machines as source of samples
+
 ## 0.12.x
 
 - 0.12.0 SplendidGrandPiano supports loading a subset of notes
