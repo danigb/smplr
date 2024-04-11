@@ -31,11 +31,14 @@ export function SamplerExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const buffers = samples.reduce((samples, name) => {
-      const url = `https://danigb.github.io/samples/drum-machines/808-mini/${name}.m4a`;
-      samples[name] = url;
-      return samples;
-    }, {} as Record<string, string>);
+    const buffers = samples.reduce(
+      (samples, name) => {
+        const url = `https://smpldsnds.github.io/drum-machines/808-mini/${name}.m4a`;
+        samples[name] = url;
+        return samples;
+      },
+      {} as Record<string, string>
+    );
     const sampler = new Sampler(context, { buffers });
     sampler.output.addEffect("reverb", reverb, reverbMix);
 

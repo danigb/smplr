@@ -1,5 +1,19 @@
 import { Storage } from "../storage";
 
+export function isDrumMachineInstrument(
+  instrument: any
+): instrument is DrumMachineInstrument {
+  return (
+    typeof instrument === "object" &&
+    typeof instrument.baseUrl === "string" &&
+    typeof instrument.name === "string" &&
+    Array.isArray(instrument.samples) &&
+    Array.isArray(instrument.sampleNames) &&
+    typeof instrument.nameToSample === "object" &&
+    typeof instrument.sampleNameVariations === "object"
+  );
+}
+
 export type DrumMachineInstrument = {
   baseUrl: string;
   name: string;

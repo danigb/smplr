@@ -3,7 +3,7 @@ import { DrumMachine } from "./drum-machine";
 
 function setup() {
   createFetchMock({
-    "https://danigb.github.io/samples/drum-machines/TR-808/dm.json": {
+    "https://smpldsnds.github.io/drum-machines/TR-808/dm.json": {
       baseUrl: "",
       name: "",
       samples: ["kick/low"],
@@ -11,8 +11,7 @@ function setup() {
       nameToSample: { kick: "kick/low" },
       sampleNameVariations: {},
     },
-    "https://danigb.github.io/samples/drum-machines/TR-808/kick/low.ogg":
-      "kick",
+    "https://smpldsnds.github.io/drum-machines/TR-808/kick/low.ogg": "kick",
   });
   const mock = createAudioContextMock();
   const context = mock.context;
