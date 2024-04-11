@@ -1,6 +1,6 @@
 # smplr
 
-## 0.13.0
+## 0.13.x
 
 - DrumMachines accept a DrumMachineInstrument as source
 
