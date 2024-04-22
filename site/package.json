@@ -7,7 +7,7 @@
     "devs": "next-dev-https --https  --port 3001",
     "deploy": "npm run deploy:build && npm run deploy:github",
     "deploy:github": "npm run deploy:build && gh-pages -d out/ -t true",
-    "deploy:build": "DEPLOY=true next build && DEPLOY=true next export",
+    "deploy:build": "DEPLOY=true next build",
     "start": "next start",
     "lint": "next lint"
   },
