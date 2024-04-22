@@ -2,7 +2,7 @@
 
 ## 0.13.x
 
-- DrumMachines accept a DrumMachineInstrument as source
+#### DrumMachines accept a DrumMachineInstrument as source
 
 Previously you could use a instrument name or a instrument url to load a DrumMachine.
 
@@ -27,6 +27,7 @@ const drums = new DrumMachine(context, {
 });
 ```
 
+- Fix: sample rate used to calculate soundfont loop data
 - DrumMachine uses https://github.com/smpldsnds/drum-machines as source of samples
 - Fix: `detune` param on `start` method
 
