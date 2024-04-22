@@ -13,7 +13,8 @@ export function getGoldstSoundfontLoopsUrl(instrument: string, kit: string) {
  * @see https://github.com/danigb/smplr/issues/23
  */
 export async function fetchSoundfontLoopData(
-  url?: string
+  url?: string,
+  sampleRate = 44100
 ): Promise<LoopData | undefined> {
   if (!url) return undefined;
   try {
@@ -22,7 +23,6 @@ export async function fetchSoundfontLoopData(
 
     const raw = await req.json();
     const loopData: LoopData = {};
-    const sampleRate = 41000; // this is sample rate from the repository samples
     Object.keys(raw).forEach((key) => {
       const midi = toMidi(key);
       if (midi) {
