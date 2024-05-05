@@ -15,7 +15,10 @@ export type SfzLoaderConfig = {
 export function SfzInstrumentLoader(url: string, config: SfzLoaderConfig) {
   const audioExt = getPreferredAudioExtension();
 
-  return async (context: BaseAudioContext, storage: Storage) => {
+  return async (
+    context: BaseAudioContext,
+    storage: Storage
+  ): Promise<RegionGroup> => {
     const sfz = await fetch(url).then((res) => res.text());
     const errors = sfzToLayer(sfz, config.group);
     if (errors.length) {
@@ -29,7 +32,7 @@ export function SfzInstrumentLoader(url: string, config: SfzLoaderConfig) {
         const buffer = await loadAudioBuffer(context, sampleUrl, storage);
         config.buffers[sampleName] = buffer;
       })
-    );
+    ).then(() => config.group);
   };
 }
 

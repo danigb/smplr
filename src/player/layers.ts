@@ -1,6 +1,18 @@
 import { toMidi } from "./midi";
-import { RegionGroup, SampleOptions, SampleRegion, SampleStart } from "./types";
+import {
+  RegionGroup,
+  SampleOptions,
+  SampleRegion,
+  SampleStart,
+  SamplerInstrument,
+} from "./types";
 import { dbToGain } from "./volume";
+
+export function createEmptySamplerInstrument(
+  options: Partial<SampleOptions> = {}
+): SamplerInstrument {
+  return { groups: [], options };
+}
 
 export function createEmptyRegionGroup(
   sample: Partial<SampleOptions> = {}
