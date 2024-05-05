@@ -79,11 +79,11 @@ export class Mellotron implements InternalPlayer {
 
   public constructor(
     public readonly context: BaseAudioContext,
-    options: MellotronOptions
+    private readonly options: MellotronOptions
   ) {
     this.config = getMellotronConfig(options);
     this.player = new DefaultPlayer(context, options);
-    this.group = createEmptyRegionGroup(options);
+    this.group = createEmptyRegionGroup();
 
     const loader = loadMellotronInstrument(
       this.config.instrument,
@@ -104,7 +104,9 @@ export class Mellotron implements InternalPlayer {
   start(sample: SampleStart | string | number) {
     const found = findFirstSampleInRegions(
       this.group,
-      typeof sample === "object" ? sample : { note: sample }
+      typeof sample === "object" ? sample : { note: sample },
+      undefined,
+      this.options
     );
 
     if (!found) return () => undefined;

@@ -156,7 +156,6 @@ export type SampleRegion = {
 
 export type RegionGroup = {
   regions: SampleRegion[];
-  sample: Partial<SampleOptions>;
 };
 
 export type SamplerInstrument = {

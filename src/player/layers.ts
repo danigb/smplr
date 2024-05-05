@@ -14,16 +14,15 @@ export function createEmptySamplerInstrument(
   return { groups: [], options };
 }
 
-export function createEmptyRegionGroup(
-  sample: Partial<SampleOptions> = {}
-): RegionGroup {
-  return { regions: [], sample };
+export function createEmptyRegionGroup(): RegionGroup {
+  return { regions: [] };
 }
 
 export function findSamplesInRegions(
   group: RegionGroup,
   sample: SampleStart,
-  seqNumber?: number
+  seqNumber?: number | undefined,
+  options?: Partial<SampleOptions>
 ): SampleStart[] {
   const results: SampleStart[] = [];
   const midi = toMidi(sample.note);
@@ -35,7 +34,7 @@ export function findSamplesInRegions(
       seqNumber ?? 0,
       sample,
       region,
-      group.sample
+      options
     );
     if (found) results.push(found);
   }
@@ -45,7 +44,8 @@ export function findSamplesInRegions(
 export function findFirstSampleInRegions(
   group: RegionGroup,
   sample: SampleStart,
-  seqNumber?: number
+  seqNumber?: number | undefined,
+  options?: SampleOptions
 ): SampleStart | undefined {
   const midi = toMidi(sample.note);
 
@@ -57,7 +57,7 @@ export function findFirstSampleInRegions(
       seqNumber ?? 0,
       sample,
       region,
-      group.sample
+      options
     );
     if (found) return found;
   }
@@ -69,7 +69,7 @@ function findSampleInRegion(
   seqNum: number,
   sample: SampleStart,
   region: SampleRegion,
-  defaults: Partial<SampleOptions>
+  defaults?: Partial<SampleOptions>
 ): SampleStart | undefined {
   const matchMidi =
     midi >= (region.midiLow ?? 0) && midi < (region.midiHigh ?? 127) + 1;
@@ -87,22 +87,24 @@ function findSampleInRegion(
   }
 
   const semitones = midi - region.midiPitch;
-  const velocity = sample.velocity ?? defaults.velocity;
+  const velocity = sample.velocity ?? defaults?.velocity;
   const regionGainOffset = region.volume ? dbToGain(region.volume) : 0;
-  const sampleGainOffset = sample.gainOffset ?? defaults.gainOffset ?? 0;
+  const sampleGainOffset = sample.gainOffset ?? defaults?.gainOffset ?? 0;
   const sampleDetune = sample.detune ?? 0;
   return {
     decayTime:
-      sample?.decayTime ?? region.sample?.decayTime ?? defaults.decayTime,
+      sample?.decayTime ?? region.sample?.decayTime ?? defaults?.decayTime,
     detune: 100 * (semitones + (region.tune ?? 0)) + sampleDetune,
-    duration: sample?.duration ?? region.sample?.duration ?? defaults.duration,
+    duration: sample?.duration ?? region.sample?.duration ?? defaults?.duration,
     gainOffset: sampleGainOffset + regionGainOffset || undefined,
-    loop: sample?.loop ?? region.sample?.loop ?? defaults.loop,
-    loopEnd: sample?.loopEnd ?? region.sample?.loopEnd ?? defaults.loopEnd,
+    loop: sample?.loop ?? region.sample?.loop ?? defaults?.loop,
+    loopEnd: sample?.loopEnd ?? region.sample?.loopEnd ?? defaults?.loopEnd,
     loopStart:
-      sample?.loopStart ?? region.sample?.loopStart ?? defaults.loopStart,
+      sample?.loopStart ?? region.sample?.loopStart ?? defaults?.loopStart,
     lpfCutoffHz:
-      sample?.lpfCutoffHz ?? region.sample?.lpfCutoffHz ?? defaults.lpfCutoffHz,
+      sample?.lpfCutoffHz ??
+      region.sample?.lpfCutoffHz ??
+      defaults?.lpfCutoffHz,
     name: region.sampleName,
     note: midi,
     onEnded: sample.onEnded,
