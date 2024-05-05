@@ -8,3 +8,4 @@ src/**/*.js
 .DS_Store
 tmp/
 bun.lockb
+*.sf2
