@@ -22,7 +22,7 @@ export type RegionPlayerOptions = ChannelConfig &
  */
 export class RegionPlayer implements InternalPlayer {
   public readonly output: OutputChannel;
-  public readonly instrument: SamplerInstrument;
+  public instrument: SamplerInstrument;
   private readonly player: InternalPlayer;
   private seqNum = 0;
 
