@@ -501,6 +501,31 @@ const context = new AudioContext();
 const sampler = new Versilian(context, { instrument: instrumentNAmes[0] });
 ```
 
+### Soundfont2Sampler
+
+Sampler capable of reading .sf2 files directly:
+
+```ts
+import { Soundfont2Sampler } from "smplr";
+import { SoundFont2 } from "soundfont2";
+
+const context = new AudioContext();
+const sampler = Soundfont2Sampler(context, {
+  url: "https://smpldsnds.github.io/soundfonts/soundfonts/galaxy-electric-pianos.sf2",
+  createSoundfont: (data) => new SoundFont2(data),
+});
+
+sampler.load.then(() => {
+  // list all available instruments for the soundfont
+  console.log(sampler.instrumentNames);
+
+  // load the first available instrument
+  sampler.loadInstrument(sampler.instrumentNames[0]);
+});
+```
+
+Still limited support. API may vary.
+
 ## License
 
 MIT License

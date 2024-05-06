@@ -24,7 +24,7 @@ const sampler = Soundfont2Sampler(context, {
   createSoundfont: (data) => new SoundFont2(data),
 });
 
-sampler.load(() => {
+sampler.load.then(() => {
   // list all available instruments for the soundfont
   console.log(sampler.instrumentNames);
 
