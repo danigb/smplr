@@ -1,12 +1,8 @@
 import { DefaultPlayerConfig } from "./player/default-player";
+import { createEmptyRegionGroup } from "./player/layers";
 import { AudioBuffers } from "./player/load-audio";
 import { RegionPlayer } from "./player/region-player";
-import {
-  InternalPlayer,
-  RegionGroup,
-  SampleStart,
-  SampleStop,
-} from "./player/types";
+import { InternalPlayer, SampleStart, SampleStop } from "./player/types";
 import { SfzInstrumentLoader } from "./sfz2";
 import { HttpStorage, Storage } from "./storage";
 
@@ -29,12 +25,12 @@ function getVcslInstrumentSfzUrl(instrument: string) {
 
 export function VcslInstrumentLoader(
   instrument: string,
-  buffers: AudioBuffers,
-  group: RegionGroup
+  buffers: AudioBuffers
 ) {
   const url = getVcslInstrumentSfzUrl(instrument);
   const base = instrument.slice(0, instrument.lastIndexOf("/") + 1);
   const sampleBase = `https://smpldsnds.github.io/sgossner-vcsl/${base}`;
+  const group = createEmptyRegionGroup();
   return SfzInstrumentLoader(url, {
     buffers: buffers,
     group: group,
@@ -70,10 +66,12 @@ export class Versilian implements InternalPlayer {
 
     const loader = VcslInstrumentLoader(
       this.config.instrument,
-      this.player.buffers,
-      this.player.group
+      this.player.buffers
     );
-    this.load = loader(context, this.config.storage).then(() => this);
+    this.load = loader(context, this.config.storage).then((group) => {
+      this.player.instrument.groups.push(group);
+      return this;
+    });
   }
 
   get output() {

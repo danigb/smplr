@@ -1,5 +1,5 @@
 import { findSamplesInRegions, spreadRegions } from "./layers";
-import { RegionGroup, SampleRegion } from "./types";
+import { RegionGroup, SampleOptions, SampleRegion } from "./types";
 
 const createGroup = (region: Partial<SampleRegion>): RegionGroup => ({
   regions: [
@@ -9,7 +9,6 @@ const createGroup = (region: Partial<SampleRegion>): RegionGroup => ({
       ...region,
     },
   ],
-  sample: {},
 });
 
 describe("findSamplesInRegions", () => {
@@ -19,7 +18,6 @@ describe("findSamplesInRegions", () => {
         { sampleName: "a", midiPitch: 60, midiLow: 60, midiHigh: 75 },
         { sampleName: "b", midiPitch: 75, midiLow: 70, midiHigh: 80 },
       ],
-      sample: {},
     };
 
     expect(findSamplesInRegions(group, { note: 60 })).toEqual([
@@ -43,7 +41,6 @@ describe("findSamplesInRegions", () => {
         { sampleName: "a", midiPitch: 60, midiLow: 60, midiHigh: 75 },
         { sampleName: "b", midiPitch: 75, midiLow: 70, midiHigh: 80 },
       ],
-      sample: {},
     };
 
     expect(findSamplesInRegions(group, { note: 60, detune: 50 })).toEqual([
@@ -60,7 +57,6 @@ describe("findSamplesInRegions", () => {
         { sampleName: "a", midiPitch: 70, midiLow: 65, midiHigh: 75 },
         { sampleName: "b", midiPitch: 80, midiLow: 80, midiHigh: 80 },
       ],
-      sample: {},
     };
     expect(findSamplesInRegions(group, { note: 65.5 })).toEqual([
       { name: "a", detune: -450, note: 65.5 },
@@ -79,7 +75,6 @@ describe("findSamplesInRegions", () => {
         { sampleName: "a", midiPitch: 60, velLow: 0, velHigh: 64 },
         { sampleName: "b", midiPitch: 60, velLow: 64, velHigh: 127 },
       ],
-      sample: {},
     };
 
     expect(findSamplesInRegions(group, { note: 60, velocity: 0 })).toEqual([
@@ -97,7 +92,6 @@ describe("findSamplesInRegions", () => {
   it("keeps start time", () => {
     const group: RegionGroup = {
       regions: [{ sampleName: "a", midiPitch: 60 }],
-      sample: {},
     };
 
     expect(
@@ -125,7 +119,6 @@ describe("findSamplesInRegions", () => {
           velHigh: 127,
         },
       ],
-      sample: {},
     };
 
     expect(findSamplesInRegions(group, { note: 60, velocity: 0 })).toEqual([
@@ -204,9 +197,15 @@ describe("findSamplesInRegions", () => {
           sample: { loopStart: 10, loop: false },
         },
       ],
-      sample: { loopStart: 5, loopEnd: 25, loop: true },
     };
-    expect(findSamplesInRegions(group, { note: 65 })).toEqual([
+    const options: SampleOptions = {
+      loopStart: 5,
+      loopEnd: 25,
+      loop: true,
+    };
+    expect(
+      findSamplesInRegions(group, { note: 65 }, undefined, options)
+    ).toEqual([
       {
         name: "a",
         note: 65,

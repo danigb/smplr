@@ -1,13 +1,15 @@
 import { AudioBuffers } from "./load-audio";
 import { Subscribe } from "./signals";
 
+export type StopFn = (time?: number) => void;
+
 /**
  * @private
  */
 export type InternalPlayer = {
   readonly buffers: AudioBuffers;
   readonly context: BaseAudioContext;
-  start(sample: SampleStart): (time?: number) => void;
+  start(sample: SampleStart): StopFn;
   stop(sample?: SampleStop): void;
   disconnect(): void;
 };
@@ -154,5 +156,9 @@ export type SampleRegion = {
 
 export type RegionGroup = {
   regions: SampleRegion[];
-  sample: Partial<SampleOptions>;
+};
+
+export type SamplerInstrument = {
+  groups: RegionGroup[];
+  options: Partial<SampleOptions>;
 };

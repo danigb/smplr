@@ -6,6 +6,7 @@ export * from "./reverb/reverb";
 export * from "./sampler";
 export * from "./smolken";
 export * from "./soundfont/soundfont";
+export * from "./soundfont2";
 export * from "./splendid-grand-piano";
 export * from "./storage";
 export * from "./versilian";
