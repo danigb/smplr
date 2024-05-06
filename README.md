@@ -498,7 +498,7 @@ import { Versilian, getVersilianInstruments } from "smplr";
 const instrumentNames = await getVersilianInstruments();
 
 const context = new AudioContext();
-const sampler = new Versilian(context, { instrument: instrumentNAmes[0] });
+const sampler = new Versilian(context, { instrument: instrumentNames[0] });
 ```
 
 ### Soundfont2Sampler
