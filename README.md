@@ -498,7 +498,7 @@ import { Versilian, getVersilianInstruments } from "smplr";
 const instrumentNames = await getVersilianInstruments();
 
 const context = new AudioContext();
-const sampler = new Versilian(context, { instrument: instrumentNAmes[0] });
+const sampler = new Versilian(context, { instrument: instrumentNames[0] });
 ```
 
 ### Soundfont2Sampler
@@ -510,7 +510,7 @@ import { Soundfont2Sampler } from "smplr";
 import { SoundFont2 } from "soundfont2";
 
 const context = new AudioContext();
-const sampler = Soundfont2Sampler(context, {
+const sampler = new Soundfont2Sampler(context, {
   url: "https://smpldsnds.github.io/soundfonts/soundfonts/galaxy-electric-pianos.sf2",
   createSoundfont: (data) => new SoundFont2(data),
 });
