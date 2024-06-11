@@ -1,6 +1,6 @@
 # smplr
 
-## 0.15.0
+## 0.15.x
 
 #### Disable scheduler with `disableScheduler` option
 
