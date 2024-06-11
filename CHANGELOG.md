@@ -1,5 +1,20 @@
 # smplr
 
+## 0.15.x
+
+#### Disable scheduler with `disableScheduler` option
+
+By default the smplr player has a custom scheduler that helps when playing lot of notes at the same time. This scheduler can be disabled with `disableScheduler` option:
+
+```ts
+const context = new AudioContext();
+const piano = new SplendidGrandPiano(context, {
+  disableScheduler: true,
+});
+```
+
+This is required to render things in an OfflineAudioContext.
+
 ## 0.14.x
 
 #### Load soundfont files directly via Soundfont2 (385d492)

@@ -13,6 +13,7 @@ function compose<T>(a?: (x: T) => void, b?: (x: T) => void) {
 }
 
 export type QueuedPlayerConfig = {
+  disableScheduler: boolean;
   scheduleLookaheadMs: number;
   scheduleIntervalMs: number;
   onStart?: (sample: SampleStart) => void;
@@ -21,6 +22,7 @@ export type QueuedPlayerConfig = {
 
 function getConfig(options: Partial<QueuedPlayerConfig>) {
   const config: QueuedPlayerConfig = {
+    disableScheduler: options.disableScheduler ?? false,
     scheduleLookaheadMs: options.scheduleLookaheadMs ?? 200,
     scheduleIntervalMs: options.scheduleIntervalMs ?? 50,
     onStart: options.onStart,
@@ -76,6 +78,9 @@ export class QueuedPlayer implements InternalPlayer {
   }
 
   start(sample: SampleStart) {
+    if (this.#config.disableScheduler) {
+      return this.player.start(sample);
+    }
     const context = this.player.context;
     const now = context.currentTime;
     const startAt = sample.time ?? now;
@@ -116,6 +121,10 @@ export class QueuedPlayer implements InternalPlayer {
   }
 
   stop(sample?: SampleStop) {
+    if (this.#config.disableScheduler) {
+      return this.player.stop(sample);
+    }
+
     this.player.stop(sample);
 
     if (!sample) {
