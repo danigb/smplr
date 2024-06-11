@@ -121,6 +121,7 @@ All instruments share some configuration options that are passed as second argum
 - `volume`: A number from 0 to 127 representing the instrument global volume. 100 by default
 - `destination`: An `AudioNode` that is the output of the instrument. `AudioContext.destination` is used by default
 - `volumeToGain`: a function to convert the volume to gain. It uses MIDI standard as default.
+- `disableScheduler`: disable internal scheduler. `false` by default.
 - `scheduleLookaheadMs`: the lookahead of the scheduler. If the start time of the note is less than current time plus this lookahead time, the note will be started. 200ms by default.
 - `scheduleIntervalMs`: the interval of the scheduler. 50ms by default.
 - `onStart`: a function that is called when starting a note. It receives the note started as parameter. Bear in mind that the time this function is called is not precise, and it's determined by lookahead.
