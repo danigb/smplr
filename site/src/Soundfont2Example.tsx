@@ -35,16 +35,22 @@ export function Soundfont2Example({ className }: { className?: string }) {
   const [status, setStatus] = useStatus();
   const [reverbMix, setReverbMix] = useState(0);
   const [volume, setVolume] = useState(100);
+  const [isCustomEnabled, setCustomEnabled] = useState(false);
+  const [customUrl, setCustomUrl] = useState(
+    "https://smpldsnds.github.io/soundfonts/soundfonts/yamaha-grand-lite.sf2"
+  );
 
-  function loadSampler(sf2Name: string) {
+  function loadSampler(nameOrUrl: string) {
     if (sampler) sampler.disconnect();
     setStatus("loading");
     const context = getAudioContext();
-    setSamplerName(sf2Name);
+    const isUrl = nameOrUrl.startsWith("http");
+    setSamplerName(isUrl ? "_custom" : nameOrUrl);
 
     reverb ??= new Reverb(context);
+    const url = isUrl ? nameOrUrl : SF2_INSTRUMENTS[nameOrUrl];
     const newSampler = new Soundfont2Sampler(context, {
-      url: SF2_INSTRUMENTS[sf2Name],
+      url,
       createSoundfont: (data) => new SoundFont2(data),
     });
     newSampler.output.addEffect("reverb", reverb, reverbMix);
@@ -70,17 +76,28 @@ export function Soundfont2Example({ className }: { className?: string }) {
 
         <LoadWithStatus
           status={status}
-          onClick={() => loadSampler("Supersaw")}
+          onClick={() => {
+            if (isCustomEnabled) {
+              loadSampler(customUrl);
+            } else {
+              loadSampler("Supersaw");
+            }
+          }}
         />
         <ConnectMidi instrument={sampler} />
       </div>
-      <div className="my-2">
+      <div className="my-2 flex gap-4">
         <select
           className="appearance-none bg-zinc-700 text-zinc-200 rounded border border-gray-400 py-2 px-3 leading-tight focus:outline-none focus:border-blue-500"
           value={samplerName}
           onChange={(e) => {
-            const sf2name = e.target.value;
-            loadSampler(sf2name);
+            const value = e.target.value;
+            if (value === "_custom") {
+              setCustomEnabled(true);
+              setSamplerName("_custom");
+            } else {
+              loadSampler(value);
+            }
           }}
         >
           {samplerNames.map((name) => (
@@ -88,7 +105,19 @@ export function Soundfont2Example({ className }: { className?: string }) {
               {name}
             </option>
           ))}
+          <option key="custom" value="_custom">
+            Custom URL
+          </option>
         </select>
+        <input
+          className="w-80 border p-1 bg-zinc-700 text-zinc-200 disabled:opacity-25"
+          disabled={!isCustomEnabled}
+          placeholder="https://example.com/soundfont.sf2"
+          value={customUrl}
+          onChange={(e) => {
+            setCustomUrl(e.target.value);
+          }}
+        />
       </div>
       <div className={status !== "ready" ? "opacity-30" : ""}>
         <div className="flex gap-4 mb-2 no-select">
