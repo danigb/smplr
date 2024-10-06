@@ -26,14 +26,13 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.25.2",
-    "@types/audioworklet": "^0.0.54",
+    "@types/audioworklet": "^0.0.60",
     "@types/jest": "^29.5.12",
     "jest": "^29.4.1",
     "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
     "tsup": "^8.0.2",
-    "turbo": "^1.13.2",
-    "typedoc": "^0.25.13"
+    "typedoc": "^0.26.8"
   },
   "publishConfig": {
     "access": "public"
@@ -41,7 +40,7 @@
   "scripts": {
     "build": "tsup src/index.ts  --sourcemap --dts --format esm,cjs",
     "build:worklet:reverb": "esbuild src/reverb/worklet-processor.ts --bundle --minify > src/reverb/processor.min.js",
-    "test": "yarn test:unit && yarn test:types",
+    "test": "npm run test:unit && npm run test:types",
     "test:unit": "jest",
     "test:types": "tsc --noEmit",
     "publish": "npm test && npm run build && changeset publish"
@@ -51,5 +50,6 @@
   },
   "jest": {
     "preset": "ts-jest"
-  }
+  },
+  "packageManager": "npm@10.2.3"
 }

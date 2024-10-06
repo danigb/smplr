@@ -1,4 +1,4 @@
-# smplr
+# [smplr](https://github.com/danigb/smplr)
 
 [![npm version](https://img.shields.io/npm/v/smplr)](https://www.npmjs.com/package/smplr)
 
