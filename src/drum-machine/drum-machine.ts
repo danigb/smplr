@@ -86,15 +86,19 @@ export class DrumMachine {
   }
 
   get sampleNames(): string[] {
-    return this.#instrument.sampleNames;
+    return this.#instrument.samples;
+  }
+
+  get sampleGroups(): string[] {
+    return this.#instrument.sampleGroups;
   }
 
   getVariations(name: string): string[] {
-    return this.#instrument.sampleNameVariations[name] ?? [];
+    return this.#instrument.sampleGroupVariations[name] ?? [];
   }
 
   start(sample: SampleStart) {
-    const sampleName = this.#instrument.nameToSample[sample.note];
+    const sampleName = this.#instrument.nameToSampleName[sample.note];
     return this.player.start({
       ...sample,
       note: sampleName ? sampleName : sample.note,

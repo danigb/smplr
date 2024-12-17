@@ -90,7 +90,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
           />
         </div>
         <div className="grid grid-cols-6 gap-1">
-          {drums?.sampleNames.map((sample) => (
+          {drums?.sampleGroups.map((sample) => (
             <div key={sample} className="bg-zinc-900 rounded px-2 pb-2">
               <div className="flex">
                 <button
