@@ -6,12 +6,11 @@ function setup() {
     "https://smpldsnds.github.io/drum-machines/TR-808/dm.json": {
       baseUrl: "",
       name: "",
-      samples: ["kick/low"],
-      sampleNames: [],
-      nameToSample: { kick: "kick/low" },
-      sampleNameVariations: {},
+      samples: ["kick/low", "kick/mid", "kick/high"],
     },
-    "https://smpldsnds.github.io/drum-machines/TR-808/kick/low.ogg": "kick",
+    "https://smpldsnds.github.io/drum-machines/TR-808/kick/low.ogg": "kick-l",
+    "https://smpldsnds.github.io/drum-machines/TR-808/kick/mid.ogg": "kick-m",
+    "https://smpldsnds.github.io/drum-machines/TR-808/kick/high.ogg": "kick-h",
   });
   const mock = createAudioContextMock();
   const context = mock.context;
@@ -30,6 +29,15 @@ describe("Drum machine", () => {
     (dm as any).player.start = start;
     dm.start({ note: "kick" });
     expect(start).toHaveBeenCalledWith({ note: "kick/low", stopId: "kick" });
+  });
+
+  it("returns all samples", async () => {
+    const { context } = setup();
+    const dm = await new DrumMachine(context, {
+      instrument: "TR-808",
+    }).load;
+    expect(dm.sampleNames).toEqual(["kick/low", "kick/mid", "kick/high"]);
+    expect(dm.sampleGroups).toEqual(["kick"]);
   });
 
   it("calls underlying player on stop", () => {
