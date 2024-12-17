@@ -42,18 +42,17 @@ export async function fetchDrumMachineInstrument(
   json.sampleNames = [];
   json.nameToSample = {};
   json.sampleNameVariations = {};
-  for (const sampleSrc of json.samples) {
-    const sample =
-      sampleSrc.indexOf("/") !== -1 ? sampleSrc : sampleSrc.replace("-", "/");
+  for (const sample of json.samples) {
     json.nameToSample[sample] = sample;
-    const [base, variation] = sample.split("/");
+    const separator = sample.indexOf("/") !== -1 ? "/" : "-";
+    const [base, variation] = sample.split(separator);
     if (!json.sampleNames.includes(base)) {
       json.sampleNames.push(base);
     }
     json.nameToSample[base] ??= sample;
     json.sampleNameVariations[base] ??= [];
     if (variation) {
-      json.sampleNameVariations[base].push(`${base}/${variation}`);
+      json.sampleNameVariations[base].push(`${base}${separator}${variation}`);
     }
   }
 

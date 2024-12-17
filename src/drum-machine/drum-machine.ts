@@ -116,10 +116,8 @@ function drumMachineLoader(
   const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
   return instrument.then((data) =>
     Promise.all(
-      data.samples.map(async (sample) => {
-        const url = `${data.baseUrl}/${sample}.${format}`;
-        const sampleName =
-          sample.indexOf("/") !== -1 ? sample : sample.replace("-", "/");
+      data.samples.map(async (sampleName) => {
+        const url = `${data.baseUrl}/${sampleName}.${format}`;
         const buffer = await loadAudioBuffer(context, url, storage);
         if (buffer) buffers[sampleName] = buffer;
       })
