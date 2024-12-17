@@ -467,12 +467,17 @@ const context = new AudioContext();
 const drums = new DrumMachine(context, { instrument: "TR-808" });
 drums.start({ note: "kick" });
 
-// Drum samples could have variations:
-const now = context.currentTime;
-drums.getVariations("kick").forEach((variation, index) => {
-  drums.start({ note: variation, time: now + index });
-});
+// Drum samples are grouped and can have variations:
+drum.sampleNames; // => ['kick-1', 'kick-2', 'snare-1', 'snare-2', ...]
+drum.sampleGroups; // => ['kick', 'snare']
+drum.getGroupVariations('kick') => // => ['kick-1', 'kick-2']
 ```
+
+Properties and functions:
+
+- `sampleNames: string[]`: An array with all sample names of this instrument
+- `sampleGroups: string[]`: Samples with same name are grouped (for example `tom-1.ogg` and `tom-2.ogg` are from the `tom` group). `sampleGroups` is an array with all groups of this drum machine
+- `getGroupVariations(groupName: string) => string[]`: Return all sample names of the given group
 
 ### Smolken double bass
 

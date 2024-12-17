@@ -93,8 +93,14 @@ export class DrumMachine {
     return this.#instrument.sampleGroups;
   }
 
-  getVariations(name: string): string[] {
-    return this.#instrument.sampleGroupVariations[name] ?? [];
+  getVariations(groupName: string): string[] {
+    console.warn("deprecated: use getGroupVariations");
+    return this.#instrument.sampleGroupVariations[groupName] ?? [];
+  }
+
+  getGroupVariations(groupName: string): string[] {
+    console.warn("deprecated: use getGroupVariations");
+    return this.#instrument.sampleGroupVariations[groupName] ?? [];
   }
 
   start(sample: SampleStart) {
