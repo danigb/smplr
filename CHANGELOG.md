@@ -8,14 +8,15 @@ DrumMachines group different samples with same prefix under the same group. For 
 
 ```js
 const drums = new DrumMachine(context, { instrument: "TR-808" });
-drum.sampleNames; // => ['kick-1', 'kick-2', 'snare-1', 'snare-2', ...]
-drum.sampleGroups; // => ['kick', 'snare']
-drum.getGroupVariations('kick') => // => ['kick-1', 'kick-2']
+drum.getSampleNames(); // => ['kick-1', 'kick-2', 'snare-1', 'snare-2', ...]
+drum.getGroupNames(); // => ['kick', 'snare']
+drum.getSampleNamesForGroup('kick') => // => ['kick-1', 'kick-2']
 ```
 
-⚠️ This is a breaking change: before `sampleNames` returns `sampleGroups`. Now `sampleNames` return all sample names.
+**Deprecations:**
 
-Also, before 0.16.0 `getGroupVariations` was `getVariations`. Now `getVariations` is deprecated.
+- `drum.sampleNames` is deprecated in favour of `drum.getSampleNames()` or `drum.getGroupNames()`
+- `drum.getVariations` is now called `drum.getSampleNamesForGroup`
 
 ## 0.15.x
 

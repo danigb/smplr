@@ -90,29 +90,29 @@ export function DrumMachineExample({ className }: { className?: string }) {
           />
         </div>
         <div className="grid grid-cols-6 gap-1">
-          {drums?.sampleGroups.map((sample) => (
-            <div key={sample} className="bg-zinc-900 rounded px-2 pb-2">
+          {drums?.getGroupNames().map((group) => (
+            <div key={group} className="bg-zinc-900 rounded px-2 pb-2">
               <div className="flex">
                 <button
                   className="text-left flex-grow"
                   onClick={() => {
                     drums?.start({
-                      note: sample,
+                      note: group,
                       detune: 50 * (Math.random() - 0.5),
                     });
                   }}
                 >
-                  {sample}
+                  {group}
                 </button>
               </div>
               <div className="flex flex-wrap gap-1 mt-1">
-                {drums?.getVariations(sample).map((variation) => (
+                {drums?.getSampleNamesForGroup(group).map((sample) => (
                   <button
-                    key={variation}
+                    key={sample}
                     className="bg-zinc-600 w-4 h-4 rounded"
                     onMouseDown={() => {
                       drums?.start({
-                        note: variation,
+                        note: sample,
                       });
                     }}
                   ></button>

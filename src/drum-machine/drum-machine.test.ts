@@ -36,8 +36,13 @@ describe("Drum machine", () => {
     const dm = await new DrumMachine(context, {
       instrument: "TR-808",
     }).load;
-    expect(dm.sampleNames).toEqual(["kick/low", "kick/mid", "kick/high"]);
-    expect(dm.sampleGroups).toEqual(["kick"]);
+    expect(dm.getSampleNames()).toEqual(["kick/low", "kick/mid", "kick/high"]);
+    expect(dm.getGroupNames()).toEqual(["kick"]);
+    expect(dm.getSampleNamesForGroup("kick")).toEqual([
+      "kick/low",
+      "kick/mid",
+      "kick/high",
+    ]);
   });
 
   it("calls underlying player on stop", () => {

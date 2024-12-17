@@ -80,26 +80,15 @@ export class DrumMachine {
     });
   }
 
-  async loaded() {
-    console.warn("deprecated: use load instead");
-    return this.load;
+  getSampleNames(): string[] {
+    return this.#instrument.samples.slice();
   }
 
-  get sampleNames(): string[] {
-    return this.#instrument.samples;
+  getGroupNames(): string[] {
+    return this.#instrument.groupNames.slice();
   }
 
-  get sampleGroups(): string[] {
-    return this.#instrument.sampleGroups;
-  }
-
-  getVariations(groupName: string): string[] {
-    console.warn("deprecated: use getGroupVariations");
-    return this.#instrument.sampleGroupVariations[groupName] ?? [];
-  }
-
-  getGroupVariations(groupName: string): string[] {
-    console.warn("deprecated: use getGroupVariations");
+  getSampleNamesForGroup(groupName: string): string[] {
     return this.#instrument.sampleGroupVariations[groupName] ?? [];
   }
 
@@ -114,6 +103,22 @@ export class DrumMachine {
 
   stop(sample: SampleStop) {
     return this.player.stop(sample);
+  }
+
+  /** @deprecated */
+  async loaded() {
+    console.warn("deprecated: use load instead");
+    return this.load;
+  }
+  /** @deprecated */
+  get sampleNames(): string[] {
+    console.log("deprecated: Use getGroupNames instead");
+    return this.#instrument.groupNames.slice();
+  }
+  /** @deprecated */
+  getVariations(groupName: string): string[] {
+    console.warn("deprecated: use getSampleNamesForGroup");
+    return this.#instrument.sampleGroupVariations[groupName] ?? [];
   }
 }
 
