@@ -468,20 +468,14 @@ const drums = new DrumMachine(context, { instrument: "TR-808" });
 drums.start({ note: "kick" });
 
 // Drum samples are grouped and can have variations:
-drums.sampleNames; // => ['kick-1', 'kick-2', 'snare-1', 'snare-2', ...]
-drums.groupNames; // => ['kick', 'snare']
+drums.getSampleNames(); // => ['kick-1', 'kick-2', 'snare-1', 'snare-2', ...]
+drums.getGroupNames(); // => ['kick', 'snare']
 drums.getSampleNamesForGroup("kick") => // => ['kick-1', 'kick-2']
 
 // You can trigger samples by group name or specific sample
 drums.start("kick");
 drums.start("kick-1");
 ```
-
-Properties and functions:
-
-- `sampleNames: string[]`: An array with all sample names of this instrument
-- `groupNames: string[]`: Samples with same name are grouped (for example `tom-1.ogg` and `tom-2.ogg` are from the `tom` group). `groupNames` is an array with all groups of this drum machine
-- `getSampleNamesForGroup(groupName: string) => string[]`: Return all sample names of the given group
 
 ### Smolken double bass
 
