@@ -19,9 +19,9 @@ export type SplendidGrandPianoConfig = {
   velocity: number;
   decayTime: number;
   notesToLoad?: {
-    notes: number[],
-    velocityRange: [number, number]
-  }
+    notes: number[];
+    velocityRange: [number, number];
+  };
 } & Partial<DefaultPlayerConfig>;
 
 const BASE_URL = "https://danigb.github.io/samples/splendid-grand-piano";
@@ -97,7 +97,16 @@ export class SplendidGrandPiano {
   }
 
   stop(sample?: SampleStop | number | string) {
-    return this.player.stop(sample);
+    if (typeof sample === "string") {
+      return this.player.stop(toMidi(sample) ?? sample);
+    } else if (typeof sample === "object") {
+      const midi = toMidi(sample.stopId);
+      return this.player.stop(
+        midi !== undefined ? { ...sample, stopId: midi } : sample
+      );
+    } else {
+      return this.player.stop(sample);
+    }
   }
 }
 
@@ -121,12 +130,12 @@ function splendidGrandPianoLoader(
   baseUrl: string,
   storage: Storage,
   notesToLoad?: {
-    notes: number[],
-    velocityRange: [number, number]
+    notes: number[];
+    velocityRange: [number, number];
   }
 ): AudioBuffersLoader {
   const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
-  let layers = notesToLoad 
+  let layers = notesToLoad
     ? LAYERS.filter(
         (layer) =>
           layer.vel_range[0] <= notesToLoad.velocityRange[1] &&
@@ -136,8 +145,10 @@ function splendidGrandPianoLoader(
 
   return async (context, buffers) => {
     for (const layer of layers) {
-      const samples = notesToLoad 
-        ? layer.samples.filter(sample => notesToLoad.notes.includes(sample[0] as number))
+      const samples = notesToLoad
+        ? layer.samples.filter((sample) =>
+            notesToLoad.notes.includes(sample[0] as number)
+          )
         : layer.samples;
 
       await Promise.all(
