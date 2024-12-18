@@ -1,5 +1,23 @@
 # smplr
 
+## 0.16.x
+
+#### DrumMachine sample groups
+
+DrumMachines group different samples with same prefix under the same group. For example `tom-1.ogg` and `tom-2.ogg` forms the `tom` group:
+
+```js
+const drums = new DrumMachine(context, { instrument: "TR-808" });
+drum.getSampleNames(); // => ['kick-1', 'kick-2', 'snare-1', 'snare-2', ...]
+drum.getGroupNames(); // => ['kick', 'snare']
+drum.getSampleNamesForGroup('kick') => // => ['kick-1', 'kick-2']
+```
+
+**Deprecations:**
+
+- `drum.sampleNames` is deprecated in favour of `drum.getSampleNames()` or `drum.getGroupNames()`
+- `drum.getVariations` is now called `drum.getSampleNamesForGroup`
+
 ## 0.15.x
 
 #### Disable scheduler with `disableScheduler` option

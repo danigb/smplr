@@ -80,21 +80,20 @@ export class DrumMachine {
     });
   }
 
-  async loaded() {
-    console.warn("deprecated: use load instead");
-    return this.load;
+  getSampleNames(): string[] {
+    return this.#instrument.samples.slice();
   }
 
-  get sampleNames(): string[] {
-    return this.#instrument.sampleNames;
+  getGroupNames(): string[] {
+    return this.#instrument.groupNames.slice();
   }
 
-  getVariations(name: string): string[] {
-    return this.#instrument.sampleNameVariations[name] ?? [];
+  getSampleNamesForGroup(groupName: string): string[] {
+    return this.#instrument.sampleGroupVariations[groupName] ?? [];
   }
 
   start(sample: SampleStart) {
-    const sampleName = this.#instrument.nameToSample[sample.note];
+    const sampleName = this.#instrument.nameToSampleName[sample.note];
     return this.player.start({
       ...sample,
       note: sampleName ? sampleName : sample.note,
@@ -104,6 +103,22 @@ export class DrumMachine {
 
   stop(sample: SampleStop) {
     return this.player.stop(sample);
+  }
+
+  /** @deprecated */
+  async loaded() {
+    console.warn("deprecated: use load instead");
+    return this.load;
+  }
+  /** @deprecated */
+  get sampleNames(): string[] {
+    console.log("deprecated: Use getGroupNames instead");
+    return this.#instrument.groupNames.slice();
+  }
+  /** @deprecated */
+  getVariations(groupName: string): string[] {
+    console.warn("deprecated: use getSampleNamesForGroup");
+    return this.#instrument.sampleGroupVariations[groupName] ?? [];
   }
 }
 
@@ -116,10 +131,8 @@ function drumMachineLoader(
   const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
   return instrument.then((data) =>
     Promise.all(
-      data.samples.map(async (sample) => {
-        const url = `${data.baseUrl}/${sample}.${format}`;
-        const sampleName =
-          sample.indexOf("/") !== -1 ? sample : sample.replace("-", "/");
+      data.samples.map(async (sampleName) => {
+        const url = `${data.baseUrl}/${sampleName}.${format}`;
         const buffer = await loadAudioBuffer(context, url, storage);
         if (buffer) buffers[sampleName] = buffer;
       })

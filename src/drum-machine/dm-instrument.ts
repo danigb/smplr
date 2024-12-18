@@ -8,9 +8,9 @@ export function isDrumMachineInstrument(
     typeof instrument.baseUrl === "string" &&
     typeof instrument.name === "string" &&
     Array.isArray(instrument.samples) &&
-    Array.isArray(instrument.sampleNames) &&
-    typeof instrument.nameToSample === "object" &&
-    typeof instrument.sampleNameVariations === "object"
+    Array.isArray(instrument.groupNames) &&
+    typeof instrument.nameToSampleName === "object" &&
+    typeof instrument.sampleGroupVariations === "object"
   );
 }
 
@@ -18,17 +18,17 @@ export type DrumMachineInstrument = {
   baseUrl: string;
   name: string;
   samples: string[];
-  sampleNames: string[];
-  nameToSample: Record<string, string | undefined>;
-  sampleNameVariations: Record<string, string[]>;
+  groupNames: string[];
+  nameToSampleName: Record<string, string | undefined>;
+  sampleGroupVariations: Record<string, string[]>;
 };
 export const EMPTY_INSTRUMENT: DrumMachineInstrument = {
   baseUrl: "",
   name: "",
   samples: [],
-  sampleNames: [],
-  nameToSample: {},
-  sampleNameVariations: {},
+  groupNames: [],
+  nameToSampleName: {},
+  sampleGroupVariations: {},
 };
 
 export async function fetchDrumMachineInstrument(
@@ -39,21 +39,20 @@ export async function fetchDrumMachineInstrument(
   const json = await res.json();
   // need to fix json
   json.baseUrl = url.replace("/dm.json", "");
-  json.sampleNames = [];
-  json.nameToSample = {};
-  json.sampleNameVariations = {};
-  for (const sampleSrc of json.samples) {
-    const sample =
-      sampleSrc.indexOf("/") !== -1 ? sampleSrc : sampleSrc.replace("-", "/");
-    json.nameToSample[sample] = sample;
-    const [base, variation] = sample.split("/");
-    if (!json.sampleNames.includes(base)) {
-      json.sampleNames.push(base);
+  json.groupNames = [];
+  json.nameToSampleName = {};
+  json.sampleGroupVariations = {};
+  for (const sample of json.samples) {
+    json.nameToSampleName[sample] = sample;
+    const separator = sample.indexOf("/") !== -1 ? "/" : "-";
+    const [base, variation] = sample.split(separator);
+    if (!json.groupNames.includes(base)) {
+      json.groupNames.push(base);
     }
-    json.nameToSample[base] ??= sample;
-    json.sampleNameVariations[base] ??= [];
+    json.nameToSampleName[base] ??= sample;
+    json.sampleGroupVariations[base] ??= [];
     if (variation) {
-      json.sampleNameVariations[base].push(`${base}/${variation}`);
+      json.sampleGroupVariations[base].push(`${base}${separator}${variation}`);
     }
   }
 
