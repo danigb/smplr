@@ -18,6 +18,17 @@ drum.getSampleNamesForGroup('kick') => // => ['kick-1', 'kick-2']
 - `drum.sampleNames` is deprecated in favour of `drum.getSampleNames()` or `drum.getGroupNames()`
 - `drum.getVariations` is now called `drum.getSampleNamesForGroup`
 
+#### Bug fix: SampleGrandPiano stop note
+
+Now you can pass a note name to `stop` method of grand piano:
+
+```js
+piano.start("C4");
+
+piano.stop(60); // This worked previously
+piano.stop("C4"); // This now works
+```
+
 ## 0.15.x
 
 #### Disable scheduler with `disableScheduler` option
