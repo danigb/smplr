@@ -467,14 +467,14 @@ const context = new AudioContext();
 const drums = new DrumMachine(context, { instrument: "TR-808" });
 drums.start({ note: "kick" });
 
-// Drum samples are grouped and can have variations:
+// Drum samples are grouped and can have sample variations:
 drums.getSampleNames(); // => ['kick-1', 'kick-2', 'snare-1', 'snare-2', ...]
 drums.getGroupNames(); // => ['kick', 'snare']
 drums.getSampleNamesForGroup("kick") => // => ['kick-1', 'kick-2']
 
 // You can trigger samples by group name or specific sample
-drums.start("kick");
-drums.start("kick-1");
+drums.start("kick"); // Play the first sample of the group
+drums.start("kick-1"); // Play this specific sample
 ```
 
 ### Smolken double bass
