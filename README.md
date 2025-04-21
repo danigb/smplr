@@ -148,6 +148,23 @@ const context = new StandardizedAudioContext() as unknown as AudioContext;
 const marimba = new Soundfont(context, { instrument: "marimba" });
 ```
 
+In case you need to use the `Reverb` module (or any other module that needs `AudioWorkletNode`) you need to enforce to use the one from `standardized-audio-context` package. Here is how:
+
+```ts
+import {
+  AudioWorkletNode,
+  IAudioContext,
+  AudioContext as StandardizedAudioContext,
+} from "standardized-audio-context";
+
+window.AudioWorkletNode = AudioWorkletNode as any;
+const context = new StandardizedAudioContext() as unknown AudioContext;
+
+// ... rest of the code
+```
+
+You can read more about this issue [here](https://github.com/chrisguttandin/standardized-audio-context/issues/897)
+
 ### Play
 
 #### Start and stop notes
