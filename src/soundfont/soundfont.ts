@@ -143,6 +143,7 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
     loopDataUrl: options.loopDataUrl,
     instrumentUrl: options.instrumentUrl ?? "",
   };
+
   if (config.instrument && config.instrument.startsWith("http")) {
     console.warn(
       "Use 'instrumentUrl' instead of 'instrument' to load from a URL"
@@ -150,8 +151,21 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
     config.instrumentUrl = config.instrument;
     config.instrument = undefined;
   }
-  if (config.instrument && !config.instrumentUrl) {
-    config.instrumentUrl = gleitzKitUrl(config.instrument, config.kit);
+
+  if (options.instrumentUrl === "") {
+    if (config.instrument) {
+      config.instrumentUrl = gleitzKitUrl(config.instrument, config.kit);
+    } else {
+      throw Error(
+        "Soundfont: 'instrument' or 'instrumentUrl' configuration parameter is required"
+      );
+    }
+  } else {
+    if (config.kit || config.instrument) {
+      console.warn(
+        "Soundfont: 'kit' and 'instrument' config parameters are ignored because 'instrumentUrl' is explicitly set."
+      );
+    }
   }
 
   if (config.loadLoopData && config.instrument && !config.loopDataUrl) {
