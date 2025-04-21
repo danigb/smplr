@@ -1,6 +1,6 @@
 {
-  "name": "standardized-audio-context-test",
-  "version": "1.0.0",
+  "name": "smplr-standardized-audio-context-test",
+  "version": "0.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -8,11 +8,11 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "smplr": "../../",
     "standardized-audio-context": "^25.3.58",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.0"
+    "typescript": "^5.8.2",
+    "vite": "^6.3.0"
   }
 }
