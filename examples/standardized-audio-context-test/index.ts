@@ -1,9 +1,14 @@
-import { Soundfont } from "smplr";
-import { AudioContext as StandardizedAudioContext } from "standardized-audio-context";
+import { Reverb, Soundfont } from "smplr";
+import {
+  AudioWorkletNode,
+  AudioContext as StandardizedAudioContext,
+} from "standardized-audio-context";
 
 function main() {
+  window.AudioWorkletNode = AudioWorkletNode as any;
   const context = new StandardizedAudioContext() as unknown as AudioContext;
   const instrument = new Soundfont(context, { instrument: "marimba" });
+  instrument.output.addEffect("reverb", new Reverb(context), 0.9);
 
   const $button = document.getElementById("btn-test") as HTMLButtonElement;
 
