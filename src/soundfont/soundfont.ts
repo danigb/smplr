@@ -152,7 +152,7 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
     config.instrument = undefined;
   }
 
-  if (options.instrumentUrl === "") {
+  if (!config.instrumentUrl) {
     if (config.instrument) {
       config.instrumentUrl = gleitzKitUrl(config.instrument, config.kit);
     } else {
