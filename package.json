@@ -1,6 +1,6 @@
 {
   "name": "smplr",
-  "version": "0.16.1",
+  "version": "0.16.3",
   "homepage": "https://github.com/danigb/smplr#readme",
   "description": "A Sampled collection of instruments",
   "main": "dist/index.js",
@@ -43,7 +43,7 @@
     "test": "npm run test:unit && npm run test:types",
     "test:unit": "jest",
     "test:types": "tsc --noEmit",
-    "publish": "npm test && npm run build && changeset publish"
+    "publish": "npm run build && npm run test"
   },
   "engines": {
     "node": ">=14.0.0"

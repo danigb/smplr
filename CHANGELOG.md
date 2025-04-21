@@ -29,6 +29,10 @@ piano.stop(60); // This worked previously
 piano.stop("C4"); // This now works
 ```
 
+#### Bug fix: Soundfont configuration
+
+Previously `kit` config parameter was silently ignored unless `instrumentUrl` was provided. This is now fixed. See https://github.com/danigb/smplr/issues/103
+
 ## 0.15.x
 
 #### Disable scheduler with `disableScheduler` option
