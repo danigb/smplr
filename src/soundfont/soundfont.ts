@@ -9,6 +9,7 @@ import { HttpStorage, Storage } from "../storage";
 import {
   SOUNDFONT_INSTRUMENTS,
   SOUNDFONT_KITS,
+  DEFAULT_SOUNDFONT_KIT,
   gleitzKitUrl,
   soundfontInstrumentLoader,
 } from "./soundfont-instrument";
@@ -134,7 +135,7 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
     throw Error("Soundfont: instrument or instrumentUrl is required");
   }
   const config = {
-    kit: "MusyngKite",
+    kit: options.kit ?? DEFAULT_SOUNDFONT_KIT,
     instrument: options.instrument,
     storage: options.storage ?? HttpStorage,
     // This is to compensate the low volume of the original samples
@@ -161,7 +162,7 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
       );
     }
   } else {
-    if (config.kit || config.instrument) {
+    if (config.kit !== DEFAULT_SOUNDFONT_KIT || config.instrument) {
       console.warn(
         "Soundfont: 'kit' and 'instrument' config parameters are ignored because 'instrumentUrl' is explicitly set."
       );
