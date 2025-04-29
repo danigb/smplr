@@ -62,6 +62,7 @@ function base64ToArrayBuffer(base64: string) {
 }
 
 export const SOUNDFONT_KITS = ["MusyngKite", "FluidR3_GM"];
+export const DEFAULT_SOUNDFONT_KIT = SOUNDFONT_KITS[0];
 
 export const SOUNDFONT_INSTRUMENTS = [
   "accordion",
