@@ -2,6 +2,11 @@
 
 ## 0.16.x
 
+#### Safari bug fixes
+
+- Fix Safari audio decoding by skipping OGG format and using MP3/M4A fallback.
+- Add error handling for individual note decoding failures in Soundfont.
+
 #### DrumMachine sample groups
 
 DrumMachines group different samples with same prefix under the same group. For example `tom-1.ogg` and `tom-2.ogg` forms the `tom` group:
