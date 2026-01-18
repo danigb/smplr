@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { DrumMachine, getDrumMachineNames, Reverb } from "smplr";
+import { getAudioContext } from "./audio-context";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
-let context: AudioContext | undefined;
 let reverb: Reverb | undefined;
 
 export function DrumMachineExample({ className }: { className?: string }) {
@@ -14,7 +14,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
 
   function loadDrumMachine(instrument: string) {
     setStatus("loading");
-    context ??= new window.AudioContext();
+    const context = getAudioContext();
     reverb ??= new Reverb(context);
     const drums = new DrumMachine(context, { instrument });
     drums.output.addEffect("reverb", reverb, reverbMix);
@@ -110,7 +110,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
                   <button
                     key={sample}
                     className="bg-zinc-600 w-4 h-4 rounded"
-                    onMouseDown={() => {
+                    onPointerDown={() => {
                       drums?.start({
                         note: sample,
                       });

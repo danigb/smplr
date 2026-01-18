@@ -6,6 +6,7 @@ import { Storage } from "../storage";
 
 export function gleitzKitUrl(name: string, kit: string) {
   const format = findFirstSupportedFormat(["ogg", "mp3"]) ?? "mp3";
+  console.debug(`Soundfont: using ${format} format for ${name}`);
   return `https://gleitz.github.io/midi-js-soundfonts/${kit}/${name}-${format}.js`;
 }
 
@@ -23,15 +24,22 @@ export function soundfontInstrumentLoader(
       noteNames.map(async (noteName) => {
         const midi = toMidi(noteName);
         if (!midi) return;
-        const audioData = base64ToArrayBuffer(
-          removeBase64Prefix(json[noteName])
-        );
-        const buffer = await context.decodeAudioData(audioData);
-        buffers[noteName] = buffer;
-        group.regions.push({
-          sampleName: noteName,
-          midiPitch: midi,
-        });
+        try {
+          const audioData = base64ToArrayBuffer(
+            removeBase64Prefix(json[noteName])
+          );
+          const buffer = await context.decodeAudioData(audioData);
+          buffers[noteName] = buffer;
+          group.regions.push({
+            sampleName: noteName,
+            midiPitch: midi,
+          });
+        } catch (error) {
+          console.warn(
+            `Soundfont: failed to decode note ${noteName}`,
+            error instanceof Error ? error.message : error
+          );
+        }
       })
     );
     spreadRegions(group.regions);

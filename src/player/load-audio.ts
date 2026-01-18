@@ -34,12 +34,26 @@ export async function loadAudioBuffer(
   }
 }
 
+// Safari reports it can play OGG but decodeAudioData fails on many samples
+function isSafari(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return ua.includes("Safari") && !ua.includes("Chrome") && !ua.includes("Chromium");
+}
+
 export function findFirstSupportedFormat(formats: string[]): string | null {
   if (typeof document === "undefined") return null;
+
+  // Safari's decodeAudioData fails on OGG even though canPlayType returns "maybe"
+  // Skip OGG entirely on Safari and use the fallback format (mp3/m4a)
+  const skipOgg = isSafari();
 
   const audio = document.createElement("audio");
   for (let i = 0; i < formats.length; i++) {
     const format = formats[i];
+    if (skipOgg && format === "ogg") {
+      continue;
+    }
     const canPlay = audio.canPlayType(`audio/${format}`);
     if (canPlay === "probably" || canPlay === "maybe") {
       return format;

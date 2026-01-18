@@ -46,8 +46,9 @@ export function PianoKeyboard({
                 className={`accidental-key ${
                   isPlaying(midi) ? "accidental-key--playing" : ""
                 }`}
-                onMouseDown={() => onPress({ note: midi, velocity, detune })}
-                onMouseUp={() => release(midi)}
+                onPointerDown={() => onPress({ note: midi, velocity, detune })}
+                onPointerUp={() => release(midi)}
+                onPointerLeave={() => release(midi)}
               >
                 <div className={"text"}></div>
               </button>
@@ -58,8 +59,9 @@ export function PianoKeyboard({
               className={`natural-key ${
                 isPlaying(midi) ? "natural-key--playing" : ""
               }`}
-              onMouseDown={() => onPress({ note: midi, velocity, detune })}
-              onMouseUp={() => release(midi)}
+              onPointerDown={() => onPress({ note: midi, velocity, detune })}
+              onPointerUp={() => release(midi)}
+              onPointerLeave={() => release(midi)}
             >
               <div className={"text"}></div>
             </button>
