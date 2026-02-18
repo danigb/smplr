@@ -33,7 +33,7 @@ export function PianoExample({ className }: { className?: string }) {
   return (
     <div className={className}>
       <div className="flex gap-2 items-end mb-2">
-        <h1 className="text-3xl">Piano</h1>
+        <h1 className="text-3xl">SplendidGrandPiano</h1>
         <LoadWithStatus status={status} onClick={loadPiano} />
         <ConnectMidi instrument={piano} />
       </div>
