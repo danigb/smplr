@@ -90,6 +90,8 @@ export type NoteEvent =
       loop?: boolean; // per-note loop override
       ampRelease?: number; // per-note release override
       stopId?: string | number; // key for targeted stop; defaults to note
+      onStart?: (event: NoteEvent) => void; // called when the note is dispatched
+      onEnded?: (event: NoteEvent) => void; // called when each voice's audio ends
     }
   | string
   | number;

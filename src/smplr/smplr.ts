@@ -33,6 +33,10 @@ export type SmplrOptions = {
   scheduler?: Scheduler;
   /** Called after each buffer is loaded (or served from cache). */
   onLoadProgress?: (progress: LoadProgress) => void;
+  /** Called when a note is dispatched to the audio engine (slightly before playback). */
+  onStart?: (event: NoteEvent) => void;
+  /** Called when each voice's audio node ends. */
+  onEnded?: (event: NoteEvent) => void;
 };
 
 /**
@@ -50,7 +54,17 @@ type NormalizedNoteEvent = {
   loop?: boolean;
   ampRelease?: number;
   stopId: string | number;
+  onStart?: (event: NoteEvent) => void;
+  onEnded?: (event: NoteEvent) => void;
 };
+
+function compose<T>(
+  a: ((e: T) => void) | undefined,
+  b: ((e: T) => void) | undefined
+): ((e: T) => void) | undefined {
+  if (a && b) return (e) => { a(e); b(e); };
+  return a ?? b;
+}
 
 /** Empty RegionMatcher used before loadInstrument() is called. */
 const EMPTY_JSON: SmplrJson = {
@@ -101,6 +115,8 @@ export class Smplr {
   #channel: Channel;
   #loader: SampleLoader;
   #onLoadProgress: ((progress: LoadProgress) => void) | undefined;
+  #onStart: ((event: NoteEvent) => void) | undefined;
+  #onEnded: ((event: NoteEvent) => void) | undefined;
   #ccState: Map<number, number> = new Map();
 
   constructor(context: AudioContext, json: SmplrJson, options?: SmplrOptions);
@@ -119,6 +135,8 @@ export class Smplr {
     this.#defaults = json?.defaults;
     this.#defaultVelocity = options?.velocity ?? 100;
     this.#onLoadProgress = options?.onLoadProgress;
+    this.#onStart = options?.onStart;
+    this.#onEnded = options?.onEnded;
 
     if (json?.aliases) {
       this.#aliases = new Map(Object.entries(json.aliases));
@@ -260,7 +278,7 @@ export class Smplr {
   }
 
   #playNote(event: NormalizedNoteEvent): void {
-    const { midi, velocity, time, stopId, duration, detune, lpfCutoffHz, loop, ampRelease } =
+    const { midi, velocity, time, stopId, duration, detune, lpfCutoffHz, loop, ampRelease, onStart, onEnded } =
       event;
 
     const matches = this.#matcher.match(midi, velocity, this.#ccState);
@@ -273,6 +291,7 @@ export class Smplr {
     }
 
     // Create a voice for each matched region
+    let voiceStarted = false;
     for (const match of matches) {
       const buffer = this.#buffers.get(match.sample);
       if (!buffer) continue;
@@ -298,6 +317,17 @@ export class Smplr {
 
       this.#voices.add(voice);
 
+      // onStart fires once on the first matched voice
+      if (!voiceStarted) {
+        onStart?.(event);
+        voiceStarted = true;
+      }
+
+      // onEnded fires once per voice when its audio node ends
+      if (onEnded) {
+        voice.onEnded(() => onEnded(event));
+      }
+
       // Auto-stop for duration
       if (duration != null) {
         const startT = time ?? this.context.currentTime;
@@ -317,6 +347,8 @@ export class Smplr {
         midi,
         velocity: this.#defaultVelocity,
         stopId: event,
+        onStart: this.#onStart,
+        onEnded: this.#onEnded,
       };
     }
     const midi =
@@ -326,6 +358,8 @@ export class Smplr {
       midi,
       velocity: event.velocity ?? this.#defaultVelocity,
       stopId: event.stopId ?? event.note,
+      onStart: compose(this.#onStart, event.onStart),
+      onEnded: compose(this.#onEnded, event.onEnded),
     };
   }
 }

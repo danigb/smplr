@@ -445,3 +445,169 @@ describe("duration", () => {
     expect(ctx._sources[0].stop).toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// onStart / onEnded callbacks
+// ---------------------------------------------------------------------------
+
+describe("onStart", () => {
+  it("global onStart is called when a note is dispatched", async () => {
+    const ctx = makeContext();
+    const onStart = jest.fn();
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), { onStart });
+    await smplr.load;
+
+    smplr.start({ note: "C4" });
+
+    expect(onStart).toHaveBeenCalledTimes(1);
+  });
+
+  it("per-note onStart is called", async () => {
+    const ctx = makeContext();
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    await smplr.load;
+
+    const onStart = jest.fn();
+    smplr.start({ note: "C4", onStart });
+
+    expect(onStart).toHaveBeenCalledTimes(1);
+  });
+
+  it("global and per-note onStart are both called", async () => {
+    const ctx = makeContext();
+    const globalOnStart = jest.fn();
+    const perNoteOnStart = jest.fn();
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+      onStart: globalOnStart,
+    });
+    await smplr.load;
+
+    smplr.start({ note: "C4", onStart: perNoteOnStart });
+
+    expect(globalOnStart).toHaveBeenCalledTimes(1);
+    expect(perNoteOnStart).toHaveBeenCalledTimes(1);
+  });
+
+  it("onStart fires once even when multiple regions match", async () => {
+    const ctx = makeContext();
+    const json = makeJson({
+      groups: [
+        {
+          regions: [
+            { sample: "C4", key: 60 },
+            { sample: "C4", key: 60 }, // second region — same note, two voices
+          ],
+        },
+      ],
+    });
+    mockLoadBuffer.mockResolvedValue(makeBuffer());
+    const onStart = jest.fn();
+    const smplr = new Smplr(ctx as unknown as AudioContext, json, { onStart });
+    await smplr.load;
+
+    smplr.start({ note: "C4" });
+
+    expect(onStart).toHaveBeenCalledTimes(1);
+  });
+
+  it("onStart receives the note event", async () => {
+    const ctx = makeContext();
+    const onStart = jest.fn();
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), { onStart });
+    await smplr.load;
+
+    smplr.start({ note: "C4", velocity: 80 });
+
+    const received = onStart.mock.calls[0][0];
+    expect(received.note).toBe("C4");
+    expect(received.velocity).toBe(80);
+  });
+
+  it("onStart is not called when no region matches", async () => {
+    const ctx = makeContext();
+    const onStart = jest.fn();
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), { onStart });
+    await smplr.load;
+
+    smplr.start({ note: "D4" }); // no region for D4
+
+    expect(onStart).not.toHaveBeenCalled();
+  });
+});
+
+describe("onEnded", () => {
+  it("global onEnded is called when a voice ends", async () => {
+    const ctx = makeContext();
+    const onEnded = jest.fn();
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), { onEnded });
+    await smplr.load;
+
+    smplr.start({ note: "C4" });
+    ctx._sources[0].onended?.(); // simulate audio node ending
+
+    expect(onEnded).toHaveBeenCalledTimes(1);
+  });
+
+  it("per-note onEnded is called when the voice ends", async () => {
+    const ctx = makeContext();
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    await smplr.load;
+
+    const onEnded = jest.fn();
+    smplr.start({ note: "C4", onEnded });
+    ctx._sources[0].onended?.();
+
+    expect(onEnded).toHaveBeenCalledTimes(1);
+  });
+
+  it("global and per-note onEnded are both called", async () => {
+    const ctx = makeContext();
+    const globalOnEnded = jest.fn();
+    const perNoteOnEnded = jest.fn();
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+      onEnded: globalOnEnded,
+    });
+    await smplr.load;
+
+    smplr.start({ note: "C4", onEnded: perNoteOnEnded });
+    ctx._sources[0].onended?.();
+
+    expect(globalOnEnded).toHaveBeenCalledTimes(1);
+    expect(perNoteOnEnded).toHaveBeenCalledTimes(1);
+  });
+
+  it("onEnded fires once per matched voice", async () => {
+    const ctx = makeContext();
+    const json = makeJson({
+      groups: [
+        {
+          regions: [
+            { sample: "C4", key: 60 },
+            { sample: "C4", key: 60 }, // two matching regions → two voices
+          ],
+        },
+      ],
+    });
+    mockLoadBuffer.mockResolvedValue(makeBuffer());
+    const onEnded = jest.fn();
+    const smplr = new Smplr(ctx as unknown as AudioContext, json, { onEnded });
+    await smplr.load;
+
+    smplr.start({ note: "C4" });
+    ctx._sources[0].onended?.();
+    ctx._sources[1].onended?.();
+
+    expect(onEnded).toHaveBeenCalledTimes(2);
+  });
+
+  it("onEnded is not called before the voice ends", async () => {
+    const ctx = makeContext();
+    const onEnded = jest.fn();
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), { onEnded });
+    await smplr.load;
+
+    smplr.start({ note: "C4" });
+
+    expect(onEnded).not.toHaveBeenCalled();
+  });
+});
