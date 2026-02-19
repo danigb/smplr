@@ -8,6 +8,7 @@
     "deploy": "npm run deploy:build && npm run deploy:github",
     "deploy:github": "npm run deploy:build && gh-pages -d out/ -t",
     "deploy:build": "DEPLOY=true next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
