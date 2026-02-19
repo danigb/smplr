@@ -1,4 +1,4 @@
-import { toMidi } from "../player/midi";
+import { toMidi } from "./midi";
 import { SmplrGroup, SmplrJson, SmplrRegion } from "./types";
 
 export type SfzConvertOptions = {

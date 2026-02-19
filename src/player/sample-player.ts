@@ -1,13 +1,13 @@
-import { connectSerial } from "./connect";
-import { AudioBuffers } from "./load-audio";
-import { Trigger, createTrigger, unsubscribeAll } from "./signals";
+import { connectSerial } from "../smplr/connect";
+import { AudioBuffers } from "../smplr/load-audio";
+import { Trigger, createTrigger, unsubscribeAll } from "../smplr/signals";
 import {
   InternalPlayer,
   SampleOptions,
   SampleStart,
   SampleStop,
 } from "./types";
-import { midiVelToGain } from "./volume";
+import { midiVelToGain } from "../smplr/volume";
 
 export type SamplePlayerConfig = {
   velocityToGain: (velocity: number) => number;

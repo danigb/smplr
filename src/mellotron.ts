@@ -1,4 +1,4 @@
-import { toMidi } from "./player/midi";
+import { toMidi } from "./smplr/midi";
 import { HttpStorage, Storage } from "./storage";
 import { Smplr, SmplrOptions } from "./smplr";
 import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "./smplr/types";

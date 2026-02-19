@@ -1,4 +1,4 @@
-import { OutputChannel } from "../player/channel";
+import { OutputChannel } from "../smplr/channel";
 import { HttpStorage, Storage } from "../storage";
 import { Smplr, SmplrOptions } from "../smplr";
 import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "../smplr/types";

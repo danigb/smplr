@@ -10,7 +10,7 @@ jest.mock("../player/load-audio", () => ({
   loadAudioBuffer: jest.fn(),
 }));
 
-import { loadAudioBuffer } from "../player/load-audio";
+import { loadAudioBuffer } from "./load-audio";
 const mockLoadBuffer = loadAudioBuffer as jest.Mock;
 
 // ---------------------------------------------------------------------------

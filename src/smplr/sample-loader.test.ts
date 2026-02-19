@@ -13,7 +13,7 @@ jest.mock("../player/load-audio", () => ({
 import {
   findFirstSupportedFormat,
   loadAudioBuffer,
-} from "../player/load-audio";
+} from "./load-audio";
 
 const mockFindFormat = findFirstSupportedFormat as jest.Mock;
 const mockLoadBuffer = loadAudioBuffer as jest.Mock;

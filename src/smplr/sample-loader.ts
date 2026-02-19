@@ -1,7 +1,7 @@
 import {
   findFirstSupportedFormat,
   loadAudioBuffer,
-} from "../player/load-audio";
+} from "./load-audio";
 import { HttpStorage, Storage } from "../storage";
 import { SmplrJson } from "./types";
 

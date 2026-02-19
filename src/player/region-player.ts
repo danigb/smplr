@@ -1,6 +1,6 @@
 import { Channel, ChannelConfig, OutputChannel } from "./channel";
 import { createEmptySamplerInstrument, findSamplesInRegions } from "./layers";
-import { toMidi } from "./midi";
+import { toMidi } from "../smplr/midi";
 import { QueuedPlayer, QueuedPlayerConfig } from "./queued-player";
 import { SamplePlayer } from "./sample-player";
 import {

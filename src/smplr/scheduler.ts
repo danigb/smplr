@@ -1,4 +1,4 @@
-import { SortedQueue } from "../player/sorted-queue";
+import { SortedQueue } from "./sorted-queue";
 import { NoteEvent, StopFn } from "./types";
 
 const LOOKAHEAD_MS_DEFAULT = 200;

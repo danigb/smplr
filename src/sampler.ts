@@ -1,5 +1,5 @@
-import { AudioBuffers, AudioBuffersLoader, loadAudioBuffer } from "./player/load-audio";
-import { toMidi } from "./player/midi";
+import { AudioBuffers, AudioBuffersLoader, loadAudioBuffer } from "./smplr/load-audio";
+import { toMidi } from "./smplr/midi";
 import { HttpStorage, Storage } from "./storage";
 import { Smplr, SmplrOptions } from "./smplr";
 import { LoadProgress, NoteEvent, SmplrJson, StopTarget } from "./smplr/types";

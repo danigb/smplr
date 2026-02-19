@@ -2,8 +2,8 @@ import { HttpStorage, Storage } from "../storage";
 import { Smplr, SmplrOptions } from "../smplr";
 import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "../smplr/types";
 import { spreadKeyRanges } from "../smplr/utils";
-import { toMidi } from "../player/midi";
-import { findFirstSupportedFormat } from "../player/load-audio";
+import { toMidi } from "../smplr/midi";
+import { findFirstSupportedFormat } from "../smplr/load-audio";
 import {
   SOUNDFONT_INSTRUMENTS,
   SOUNDFONT_KITS,

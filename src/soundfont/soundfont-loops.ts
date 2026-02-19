@@ -1,4 +1,4 @@
-import { toMidi } from "../player/midi";
+import { toMidi } from "../smplr/midi";
 
 export type LoopData = Record<number, [number, number]>;
 

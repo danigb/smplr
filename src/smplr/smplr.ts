@@ -1,5 +1,5 @@
-import { Channel, OutputChannel } from "../player/channel";
-import { toMidi } from "../player/midi";
+import { Channel, OutputChannel } from "./channel";
+import { toMidi } from "./midi";
 import { Storage } from "../storage";
 import { resolveParams } from "./params";
 import { RegionMatcher } from "./region-matcher";

@@ -2,7 +2,7 @@ import {
   AudioBuffers,
   getPreferredAudioExtension,
   loadAudioBuffer,
-} from "./player/load-audio";
+} from "./smplr/load-audio";
 import { RegionGroup, SampleRegion } from "./player/types";
 import { Storage } from "./storage";
 

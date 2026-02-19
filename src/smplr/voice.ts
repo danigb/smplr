@@ -1,4 +1,4 @@
-import { dbToGain, midiVelToGain } from "../player/volume";
+import { dbToGain, midiVelToGain } from "./volume";
 import { VoiceParams } from "./types";
 
 export class Voice {
