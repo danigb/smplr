@@ -57,7 +57,13 @@ function makeProgressHandler(log: LogApi) {
 // ── melody / drum players ────────────────────────────────────────────────────
 
 type PlayableInstrument = {
-  start: (event: { note: number; duration?: number; velocity?: number }) => unknown;
+  start: (event: {
+    note: number;
+    duration?: number;
+    velocity?: number;
+    onStart?: () => void;
+    onEnded?: () => void;
+  }) => unknown;
   disconnect: () => void;
 };
 
@@ -68,12 +74,39 @@ async function playMelody(
   log: LogApi,
   signal: AbortSignal
 ): Promise<void> {
-  log.append("  ♪ …");
+  // Phase 1: chromatic scale at fixed velocity
+  log.append("  scale vel:100");
+  log.append("  ▶ …");
   for (const midi of notes) {
     if (signal.aborted) return;
-    const velocity = Math.floor(Math.random() * 127) + 1;
-    log.replaceLast(`  ♪ ${Note.fromMidi(midi)} vel:${velocity}`);
-    instrument.start({ note: midi, duration: (msPerNote - 30) / 1000, velocity });
+    const name = Note.fromMidi(midi);
+    instrument.start({
+      note: midi,
+      duration: (msPerNote - 30) / 1000,
+      velocity: 100,
+      onStart: () => log.replaceLast(`  ▶ ${name} vel:100`),
+      onEnded: () => log.replaceLast(`  ■ ${name} vel:100`),
+    });
+    await sleep(msPerNote, signal);
+  }
+
+  if (signal.aborted) return;
+
+  // Phase 2: same note (lowest in range) 20 times, velocity 127 → 0
+  const testMidi = notes[0];
+  const testName = Note.fromMidi(testMidi);
+  log.append(`  velocity test: ${testName}`);
+  log.append("  ▶ …");
+  for (let i = 0; i < 20; i++) {
+    if (signal.aborted) return;
+    const velocity = Math.round(127 * (1 - i / 19));
+    instrument.start({
+      note: testMidi,
+      duration: (msPerNote - 30) / 1000,
+      velocity,
+      onStart: () => log.replaceLast(`  ▶ ${testName} vel:${velocity}`),
+      onEnded: () => log.replaceLast(`  ■ ${testName} vel:${velocity}`),
+    });
     await sleep(msPerNote, signal);
   }
 }
@@ -85,12 +118,16 @@ async function playDrums(
 ): Promise<void> {
   const groups = dm.getGroupNames();
   log.append(`  Groups: ${groups.join("  ")}`);
-  log.append("  ♪ …");
+  log.append("  ▶ …");
   for (const group of groups) {
     if (signal.aborted) return;
     const velocity = Math.floor(Math.random() * 127) + 1;
-    log.replaceLast(`  ♪ ${group} vel:${velocity}`);
-    dm.start({ note: group, velocity });
+    dm.start({
+      note: group,
+      velocity,
+      onStart: () => log.replaceLast(`  ▶ ${group} vel:${velocity}`),
+      onEnded: () => log.replaceLast(`  ■ ${group} vel:${velocity}`),
+    });
     await sleep(400, signal);
   }
 }
@@ -355,7 +392,9 @@ export default function TestPage() {
                   ? "text-green-400"
                   : line.startsWith("  ✗")
                   ? "text-red-400"
-                  : line.startsWith("  ♪")
+                  : line.startsWith("  ▶")
+                  ? "text-yellow-300"
+                  : line.startsWith("  ■")
                   ? "text-green-200"
                   : "text-green-600"
               }
