@@ -4,7 +4,7 @@ import { spreadKeyRanges, pianoToSmplrJson, LAYERS, SplendidGrandPiano } from ".
 // Mock load-audio
 // ---------------------------------------------------------------------------
 
-jest.mock("./player/load-audio", () => ({
+jest.mock("./smplr/load-audio", () => ({
   findFirstSupportedFormat: jest.fn().mockReturnValue("ogg"),
   loadAudioBuffer: jest.fn(),
 }));

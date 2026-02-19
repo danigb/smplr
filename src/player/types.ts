@@ -1,5 +1,5 @@
-import { AudioBuffers } from "./load-audio";
-import { Subscribe } from "./signals";
+import { AudioBuffers } from "../smplr/load-audio";
+import { Subscribe } from "../smplr/signals";
 
 export type StopFn = (time?: number) => void;
 

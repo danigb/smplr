@@ -1,5 +1,5 @@
 import { SamplerConfig } from "../sampler";
-import { Channel, ChannelConfig, OutputChannel } from "./channel";
+import { Channel, ChannelConfig, OutputChannel } from "../smplr/channel";
 import { QueuedPlayer, QueuedPlayerConfig } from "./queued-player";
 import { SamplePlayer } from "./sample-player";
 import { InternalPlayer, SampleStart, SampleStop } from "./types";

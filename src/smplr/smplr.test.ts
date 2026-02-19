@@ -5,7 +5,7 @@ import { SmplrJson } from "./types";
 // Mock load-audio (no real HTTP or Web Audio decoding)
 // ---------------------------------------------------------------------------
 
-jest.mock("../player/load-audio", () => ({
+jest.mock("./load-audio", () => ({
   findFirstSupportedFormat: jest.fn().mockReturnValue("ogg"),
   loadAudioBuffer: jest.fn(),
 }));

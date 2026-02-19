@@ -57,7 +57,7 @@ export class Soundfont2Sampler {
       .then((soundfont) => {
         this.soundfont = soundfont;
         this.#instrumentNames = soundfont.instruments.map(
-          (instrument) => instrument.header.name
+          (instrument: Sf2Instrument) => instrument.header.name
         );
       })
       .then(() => this);

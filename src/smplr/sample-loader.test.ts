@@ -5,7 +5,7 @@ import { SmplrJson } from "./types";
 // Mock load-audio so tests run without real HTTP or Web Audio
 // ---------------------------------------------------------------------------
 
-jest.mock("../player/load-audio", () => ({
+jest.mock("./load-audio", () => ({
   findFirstSupportedFormat: jest.fn(),
   loadAudioBuffer: jest.fn(),
 }));
