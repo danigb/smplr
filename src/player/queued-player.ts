@@ -1,4 +1,4 @@
-import { SortedQueue } from "./sorted-queue";
+import { SortedQueue } from "../smplr/sorted-queue";
 import { InternalPlayer, SampleStart, SampleStop } from "./types";
 
 type SampleStartWithTime = SampleStart & { time: number };

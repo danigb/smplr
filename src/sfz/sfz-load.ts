@@ -2,7 +2,7 @@ import {
   AudioBuffers,
   findFirstSupportedFormat,
   loadAudioBuffer,
-} from "../player/load-audio";
+} from "../smplr/load-audio";
 import { Storage } from "../storage";
 import { SfzInstrument } from "./sfz-kits";
 import { Websfz, WebsfzGroup } from "./websfz";

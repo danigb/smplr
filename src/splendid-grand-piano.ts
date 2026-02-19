@@ -1,141 +1,117 @@
-import { DefaultPlayer, DefaultPlayerConfig } from "./player/default-player";
-import {
-  AudioBuffers,
-  AudioBuffersLoader,
-  findFirstSupportedFormat,
-  loadAudioBuffer,
-} from "./player/load-audio";
-import { toMidi } from "./player/midi";
-import { SampleStart, SampleStop } from "./player/types";
 import { HttpStorage, Storage } from "./storage";
+import { Smplr } from "./smplr";
+import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "./smplr/types";
+import { spreadKeyRanges } from "./smplr/utils";
 
 /**
- * Splendid Grand Piano options
+ * Configuration options for SplendidGrandPiano.
  */
 export type SplendidGrandPianoConfig = {
   baseUrl: string;
   storage: Storage;
+  /** Global detune in cents, applied to all notes. */
   detune: number;
+  /** Default velocity (0–127) when not specified per note. */
   velocity: number;
+  /** Release time in seconds. Maps to SmplrJson defaults.ampRelease. */
   decayTime: number;
+  /** Destination audio node. Defaults to context.destination. */
+  destination?: AudioNode;
+  /** Master volume (0–127 MIDI scale). */
+  volume?: number;
+  /** Called after each buffer is loaded or served from cache. */
+  onLoadProgress?: (progress: LoadProgress) => void;
+  /** Limit which notes are fetched. Useful for reducing initial load time. */
   notesToLoad?: {
     notes: number[];
     velocityRange: [number, number];
   };
-} & Partial<DefaultPlayerConfig>;
+};
 
 const BASE_URL = "https://danigb.github.io/samples/splendid-grand-piano";
 
 export class SplendidGrandPiano {
-  options: Readonly<SplendidGrandPianoConfig>;
-  private readonly player: DefaultPlayer;
-  public readonly load: Promise<this>;
+  #smplr: Smplr;
+  readonly load: Promise<this>;
 
   constructor(
     public readonly context: AudioContext,
     options?: Partial<SplendidGrandPianoConfig>
   ) {
-    this.options = Object.assign(
-      {
-        baseUrl: BASE_URL,
-        storage: HttpStorage,
-        detune: 0,
-        volume: 100,
-        velocity: 100,
-        decayTime: 0.5,
-      },
-      options
-    );
-    this.player = new DefaultPlayer(context, this.options);
-    const loader = splendidGrandPianoLoader(
-      this.options.baseUrl,
-      this.options.storage,
-      this.options.notesToLoad
-    );
-    this.load = loader(context, this.player.buffers).then(() => this);
+    const opts: SplendidGrandPianoConfig = {
+      baseUrl: BASE_URL,
+      storage: HttpStorage,
+      detune: 0,
+      volume: 100,
+      velocity: 100,
+      decayTime: 0.5,
+      ...options,
+    };
+
+    const json = pianoToSmplrJson(opts);
+
+    this.#smplr = new Smplr(context, json, {
+      storage: opts.storage,
+      destination: opts.destination,
+      volume: opts.volume,
+      velocity: opts.velocity,
+      onLoadProgress: opts.onLoadProgress,
+    });
+
+    this.load = this.#smplr.load.then(() => this);
   }
 
   get output() {
-    return this.player.output;
+    return this.#smplr.output;
   }
 
-  get buffers() {
-    return this.player.buffers;
+  get loadProgress() {
+    return this.#smplr.loadProgress;
   }
 
+  /** @deprecated Use `load` instead. */
   async loaded() {
     console.warn("deprecated: use load instead");
     return this.load;
   }
 
-  start(sampleOrNote: SampleStart | number | string) {
-    const sample =
-      typeof sampleOrNote === "object"
-        ? { ...sampleOrNote }
-        : { note: sampleOrNote };
-
-    const found = this.#sampleToMidi(sample);
-    if (!found) return () => undefined;
-    sample.note = found[0];
-    sample.stopId = sample.stopId ?? found[1];
-    sample.detune = found[2] + (sample.detune ?? this.options.detune);
-    return this.player.start(sample);
+  start(event: NoteEvent) {
+    return this.#smplr.start(event);
   }
 
-  #sampleToMidi(sample: SampleStart): [string, number, number] | undefined {
-    const midi = toMidi(sample.note);
-    if (!midi) return;
-
-    const vel = sample.velocity ?? this.options.velocity;
-    const layerIdx = LAYERS.findIndex(
-      (layer) => vel >= layer.vel_range[0] && vel <= layer.vel_range[1]
-    );
-    const layer = LAYERS[layerIdx];
-    if (!layer) return;
-
-    return findNearestMidiInLayer(layer.name, midi, this.player.buffers);
+  stop(target?: StopTarget) {
+    return this.#smplr.stop(target);
   }
 
-  stop(sample?: SampleStop | number | string) {
-    if (typeof sample === "string") {
-      return this.player.stop(toMidi(sample) ?? sample);
-    } else if (typeof sample === "object") {
-      const midi = toMidi(sample.stopId);
-      return this.player.stop(
-        midi !== undefined ? { ...sample, stopId: midi } : sample
-      );
-    } else {
-      return this.player.stop(sample);
-    }
+  disconnect() {
+    return this.#smplr.disconnect();
   }
 }
 
-function findNearestMidiInLayer(
-  prefix: string,
-  midi: number,
-  buffers: AudioBuffers
-): [string, number, number] {
-  let i = 0;
-  while (buffers[prefix + (midi + i)] === undefined && i < 128) {
-    if (i > 0) i = -i;
-    else i = -i + 1;
-  }
+// ---------------------------------------------------------------------------
+// pianoToSmplrJson — pure function, independently testable
+// ---------------------------------------------------------------------------
 
-  return i === 127
-    ? [prefix + midi, midi, 0]
-    : [prefix + (midi + i), midi, -i * 100];
-}
+type PianoJsonOptions = Pick<
+  SplendidGrandPianoConfig,
+  "baseUrl" | "detune" | "decayTime" | "notesToLoad"
+>;
 
-function splendidGrandPianoLoader(
-  baseUrl: string,
-  storage: Storage,
-  notesToLoad?: {
-    notes: number[];
-    velocityRange: [number, number];
-  }
-): AudioBuffersLoader {
-  const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
-  let layers = notesToLoad
+/**
+ * Convert the LAYERS array and user options into a SmplrJson descriptor.
+ *
+ * Each layer becomes a SmplrGroup with its velRange. If `notesToLoad` is
+ * specified, layers and samples are filtered accordingly. The PPP layer
+ * includes a low-pass filter cutoff.
+ *
+ * `spreadKeyRanges` is used to pre-compute which key range each sample
+ * covers, replacing the old on-the-fly `findNearestMidiInLayer` logic.
+ */
+export function pianoToSmplrJson(options: PianoJsonOptions): SmplrJson {
+  const { notesToLoad } = options;
+
+  // Filter layers by requested velocity range
+  const layers = notesToLoad
     ? LAYERS.filter(
         (layer) =>
           layer.vel_range[0] <= notesToLoad.velocityRange[1] &&
@@ -143,24 +119,56 @@ function splendidGrandPianoLoader(
       )
     : LAYERS;
 
-  return async (context, buffers) => {
-    for (const layer of layers) {
-      const samples = notesToLoad
-        ? layer.samples.filter((sample) =>
-            notesToLoad.notes.includes(sample[0] as number)
+  const groups: SmplrGroup[] = layers.map((layer) => {
+    // Filter samples by requested MIDI notes
+    const samples = (
+      notesToLoad
+        ? layer.samples.filter(([midi]) =>
+            notesToLoad.notes.includes(midi as number)
           )
-        : layer.samples;
+        : layer.samples
+    ) as [number, string][];
 
-      await Promise.all(
-        samples.map(async ([midi, name]) => {
-          const url = `${baseUrl}/${name}.${format}`;
-          const buffer = await loadAudioBuffer(context, url, storage);
-          if (buffer) buffers[layer.name + midi] = buffer;
-        })
-      );
+    const regions = spreadKeyRanges(samples).map(({ keyRange, pitch, sample }) => ({
+      keyRange,
+      pitch,
+      sample,
+    }));
+
+    const group: SmplrGroup = {
+      velRange: layer.vel_range as [number, number],
+      regions,
+    };
+
+    if ("cutoff" in layer && layer.cutoff !== undefined) {
+      group.lpfCutoffHz = layer.cutoff as number;
     }
+
+    return group;
+  });
+
+  return {
+    samples: {
+      baseUrl: options.baseUrl,
+      formats: ["ogg", "m4a"],
+    },
+    defaults: {
+      ampRelease: options.decayTime,
+      detune: options.detune,
+    },
+    groups,
   };
 }
+
+// ---------------------------------------------------------------------------
+// spreadKeyRanges — re-exported from utils for backward compatibility
+// ---------------------------------------------------------------------------
+
+export { spreadKeyRanges } from "./smplr/utils";
+
+// ---------------------------------------------------------------------------
+// LAYERS — piano sample data
+// ---------------------------------------------------------------------------
 
 export const LAYERS = [
   {
@@ -482,19 +490,19 @@ export const LAYERS = [
       [89, "FF-F5"],
       [91, "FF-G5"],
       [93, "FF-A5"],
-      [95, "Mf-B5"],
-      [96, "Mf-C6"],
-      [97, "Mf-C#6"],
-      [98, "Mf-D6"],
-      [99, "Mf-D#6"],
-      [100, "Mf-E6"],
-      [102, "Mf-F#6"],
-      [103, "Mf-G6"],
-      [104, "Mf-G#6"],
-      [105, "Mf-A6"],
-      [106, "Mf-A#6"],
-      [107, "Mf-B6"],
-      [108, "Mf-C7"],
+      [95, "MF-B5"],
+      [96, "MF-C6"],
+      [97, "MF-C#6"],
+      [98, "MF-D6"],
+      [99, "MF-D#6"],
+      [100, "MF-E6"],
+      [102, "MF-F#6"],
+      [103, "MF-G6"],
+      [104, "MF-G#6"],
+      [105, "MF-A6"],
+      [106, "MF-A#6"],
+      [107, "MF-B6"],
+      [108, "MF-C7"],
     ],
   },
 ];

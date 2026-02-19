@@ -1,4 +1,4 @@
-import { AudioBuffers } from "../player/load-audio";
+import { AudioBuffers } from "../smplr/load-audio";
 import { InternalPlayer, SampleStart, SampleStop } from "../player/types";
 import { AudioContextMock, createAudioContextMock } from "./audio-context-mock";
 

@@ -1,6 +1,6 @@
 import { spreadRegions } from "../player/layers";
-import { AudioBuffers, findFirstSupportedFormat } from "../player/load-audio";
-import { toMidi } from "../player/midi";
+import { AudioBuffers, findFirstSupportedFormat } from "../smplr/load-audio";
+import { toMidi } from "../smplr/midi";
 import { RegionGroup } from "../player/types";
 import { Storage } from "../storage";
 

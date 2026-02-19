@@ -1,5 +1,5 @@
-import { createControl } from "./player/signals";
-import { midiVelToGain } from "./player/volume";
+import { createControl } from "./smplr/signals";
+import { midiVelToGain } from "./smplr/volume";
 import { SfzSampler, SfzSamplerConfig } from "./sfz/sfz-sampler";
 import { createTremolo } from "./tremolo";
 
@@ -19,6 +19,7 @@ const INSTRUMENTS: Record<string, string> = {
 
 export class ElectricPiano extends SfzSampler {
   public readonly tremolo: Readonly<{ level: (value: number) => void }>;
+
   constructor(
     context: AudioContext,
     options: Partial<SfzSamplerConfig> & { instrument: string }

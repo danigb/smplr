@@ -1,100 +1,102 @@
-import { DefaultPlayerConfig } from "./player/default-player";
-import { createEmptyRegionGroup } from "./player/layers";
-import { AudioBuffers } from "./player/load-audio";
-import { RegionPlayer } from "./player/region-player";
-import { InternalPlayer, SampleStart, SampleStop } from "./player/types";
-import { SfzInstrumentLoader } from "./sfz2";
 import { HttpStorage, Storage } from "./storage";
+import { Smplr, SmplrOptions } from "./smplr";
+import { LoadProgress, NoteEvent, StopTarget } from "./smplr/types";
+import { sfzToSmplrJson } from "./smplr/sfz-convert";
+
+const VCSL_BASE_URL = "https://smpldsnds.github.io/sgossner-vcsl";
 
 let instruments: string[] = [];
 
-const BASE_URL = "https://smpldsnds.github.io/sgossner-vcsl/";
-
 export async function getVersilianInstruments(): Promise<string[]> {
   if (instruments.length) return instruments;
-
-  instruments = await fetch(BASE_URL + "sfz_files.json").then((res) =>
+  instruments = await fetch(VCSL_BASE_URL + "/sfz_files.json").then((res) =>
     res.json()
   );
   return instruments;
-}
-
-function getVcslInstrumentSfzUrl(instrument: string) {
-  return BASE_URL + instrument + ".sfz";
-}
-
-export function VcslInstrumentLoader(
-  instrument: string,
-  buffers: AudioBuffers
-) {
-  const url = getVcslInstrumentSfzUrl(instrument);
-  const base = instrument.slice(0, instrument.lastIndexOf("/") + 1);
-  const sampleBase = `https://smpldsnds.github.io/sgossner-vcsl/${base}`;
-  const group = createEmptyRegionGroup();
-  return SfzInstrumentLoader(url, {
-    buffers: buffers,
-    group: group,
-    urlFromSampleName: (sampleName, audioExt) => {
-      return sampleBase + "/" + sampleName.replace(".wav", audioExt);
-    },
-  });
 }
 
 export type VersilianConfig = {
   instrument: string;
   storage: Storage;
 };
-export type VersilianOptions = Partial<VersilianConfig & DefaultPlayerConfig>;
+
+export type VersilianOptions = Partial<
+  VersilianConfig & {
+    destination?: AudioNode;
+    volume?: number;
+    velocity?: number;
+    onLoadProgress?: (progress: LoadProgress) => void;
+  }
+>;
 
 /**
  * Versilian
  *
- * The Versilian Community Sample Library is an open CC0 general-purpose sample library created by Versilian Studios LLC
- * for the purpose of introducing a set of quality, publicly available samples suitable for use in software and media of all kinds.
+ * The Versilian Community Sample Library is an open CC0 general-purpose sample
+ * library created by Versilian Studios LLC.
  */
-export class Versilian implements InternalPlayer {
-  private readonly player: RegionPlayer;
-  public readonly load: Promise<this>;
-  private config: VersilianConfig;
+export class Versilian {
+  #smplr: Smplr;
+  readonly load: Promise<this>;
 
-  constructor(context: BaseAudioContext, options: VersilianOptions = {}) {
-    this.config = {
-      instrument: options.instrument ?? "Arco",
+  constructor(
+    public readonly context: BaseAudioContext,
+    options: VersilianOptions = {}
+  ) {
+    const config: VersilianConfig = {
+      instrument: options.instrument ?? "Strings/Violin/Violin - Arco",
       storage: options.storage ?? HttpStorage,
     };
-    this.player = new RegionPlayer(context, options);
 
-    const loader = VcslInstrumentLoader(
-      this.config.instrument,
-      this.player.buffers
+    const smplrOptions: SmplrOptions = {
+      destination: options.destination,
+      volume: options.volume,
+      velocity: options.velocity,
+      storage: config.storage,
+      onLoadProgress: options.onLoadProgress,
+    };
+    this.#smplr = new Smplr(context as AudioContext, smplrOptions);
+
+    const sfzUrl = `${VCSL_BASE_URL}/${config.instrument}.sfz`;
+    const base = config.instrument.slice(
+      0,
+      config.instrument.lastIndexOf("/") + 1
     );
-    this.load = loader(context, this.config.storage).then((group) => {
-      this.player.instrument.groups.push(group);
-      return this;
-    });
+    const sampleBaseUrl = `${VCSL_BASE_URL}/${base}`;
+
+    this.load = fetch(sfzUrl)
+      .then((r) => r.text())
+      .then((sfzText) =>
+        this.#smplr.loadInstrument(
+          sfzToSmplrJson(sfzText, {
+            baseUrl: sampleBaseUrl,
+            pathFromSampleName: (name) => name.replace(/\.wav$/i, ""),
+            formats: ["ogg", "m4a"],
+          })
+        )
+      )
+      .then(() => this);
   }
 
   get output() {
-    return this.player.output;
+    return this.#smplr.output;
   }
 
-  get buffers(): AudioBuffers {
-    return this.player.buffers;
+  get loadProgress() {
+    return this.#smplr.loadProgress;
   }
 
-  get context(): BaseAudioContext {
-    return this.player.context;
+  start(sample: NoteEvent | string | number) {
+    return this.#smplr.start(
+      typeof sample === "object" ? sample : { note: sample }
+    );
   }
 
-  start(sample: SampleStart | string | number) {
-    return this.player.start(sample);
+  stop(target?: StopTarget) {
+    return this.#smplr.stop(target);
   }
 
-  stop(sample?: SampleStop | string | number) {
-    return this.player.stop(sample);
-  }
-
-  disconnect(): void {
-    this.player.disconnect();
+  disconnect() {
+    return this.#smplr.disconnect();
   }
 }
