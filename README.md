@@ -114,6 +114,23 @@ const piano = await new SplendidGrandPiano(context).load;
 
 ⚠️ In versions lower than 0.8.0 a `loaded()` function was exposed instead.
 
+#### Load progress
+
+Track how many samples have loaded via the `onLoadProgress` option or the `loadProgress` getter:
+
+```js
+const piano = new SplendidGrandPiano(context, {
+  onLoadProgress: ({ loaded, total }) => {
+    console.log(`${loaded} / ${total} samples loaded`);
+  },
+});
+
+// Or poll at any time:
+console.log(piano.loadProgress); // { loaded: 12, total: 48 }
+```
+
+`total` is known before loading starts, so you can display a determinate progress bar.
+
 #### Shared configuration options
 
 All instruments share some configuration options that are passed as second argument of the constructor. As it name implies, all fields are optional:
@@ -124,6 +141,7 @@ All instruments share some configuration options that are passed as second argum
 - `disableScheduler`: disable internal scheduler. `false` by default.
 - `scheduleLookaheadMs`: the lookahead of the scheduler. If the start time of the note is less than current time plus this lookahead time, the note will be started. 200ms by default.
 - `scheduleIntervalMs`: the interval of the scheduler. 50ms by default.
+- `onLoadProgress`: a function called after each sample buffer is decoded. Receives `{ loaded, total }` where `total` is the full count known before loading starts.
 - `onStart`: a function that is called when starting a note. It receives the note started as parameter. Bear in mind that the time this function is called is not precise, and it's determined by lookahead.
 - `onEnded`: a function that is called when the note ends. It receives the started note as parameter.
 
