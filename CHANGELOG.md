@@ -1,5 +1,87 @@
 # smplr
 
+## 0.17.0
+
+#### New audio player (`src/smplr/`)
+
+Complete rewrite of the audio playback layer with full unit test coverage. All nine instruments
+are migrated to the new player. The public `start` / `stop` / `disconnect` / `output` / `load`
+interface is unchanged.
+
+#### Per-note `onStart` / `onEnded` callbacks
+
+Callbacks can now be set globally on instrument options and/or per-note on the event object.
+Both levels are composed when set together:
+
+```ts
+const piano = new SplendidGrandPiano(context, {
+  onStart: (event) => console.log("started", event.note),
+  onEnded: (event) => console.log("ended", event.note),
+});
+
+// or per note
+piano.start({
+  note: "C4",
+  onStart: (e) => console.log("note on", e.note),
+  onEnded: (e) => console.log("note off", e.note),
+});
+```
+
+#### Load progress
+
+`onLoadProgress` callback and `loadProgress` getter are now available on every instrument.
+The total sample count is known before loading starts, enabling determinate progress bars:
+
+```ts
+const piano = new SplendidGrandPiano(context, {
+  onLoadProgress: ({ loaded, total }) => {
+    console.log(`Loading… ${loaded} / ${total}`);
+  },
+});
+
+await piano.load;
+console.log(piano.loadProgress); // { loaded: N, total: N }
+```
+
+#### Sampler accepts pre-decoded `AudioBuffer` values
+
+```ts
+const sampler = new Sampler(context, {
+  buffers: {
+    C4: myAudioBuffer, // AudioBuffer
+    D4: "https://…/D4.mp3", // URL string still works
+  },
+});
+```
+
+#### Shared `Scheduler` and `SampleLoader`
+
+Multiple instruments can share a `Scheduler` for coordinated timing and a `SampleLoader` for
+buffer cache reuse:
+
+```ts
+import { Scheduler, SampleLoader } from "smplr";
+
+const scheduler = new Scheduler(context);
+const loader = new SampleLoader(context);
+
+const piano = new SplendidGrandPiano(context, { scheduler, loader });
+const bass = new Smolken(context, { scheduler, loader });
+```
+
+#### Advanced region features (SFZ-based instruments)
+
+- **MIDI CC range matching** (`ccRange`) — gates regions on sustain-pedal or other CC values
+- **Velocity curve** (`ampVelCurve`) — per-region amplitude scaling
+- **Exclusive groups / off-by** — voice stealing between groups
+- **Round-robin sequencing** (`seqPosition` / `seqLength`) — cycle through sample variations
+- **Trigger modes** (`trigger: "first" | "legato"`) — region-level note trigger filtering
+
+#### Breaking changes
+
+- `Soundfont2Sampler`: the public `player` property (a `RegionPlayer` instance) is removed.
+  Use `output`, `start`, and `stop` instead.
+
 ## 0.16.x
 
 #### Safari bug fixes

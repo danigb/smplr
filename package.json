@@ -1,6 +1,6 @@
 {
   "name": "smplr",
-  "version": "0.16.4",
+  "version": "0.17.0",
   "homepage": "https://github.com/danigb/smplr#readme",
   "description": "A Sampled collection of instruments",
   "main": "dist/index.js",
@@ -50,7 +50,10 @@
   },
   "jest": {
     "preset": "ts-jest",
-    "testPathIgnorePatterns": ["/node_modules/", "/site/"]
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/site/"
+    ]
   },
   "packageManager": "npm@10.2.3"
 }
