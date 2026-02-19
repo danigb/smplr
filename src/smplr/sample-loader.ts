@@ -24,17 +24,31 @@ export class SampleLoader {
 
   /**
    * Load all samples referenced in `json`. Returns a Map of sample name →
-   * AudioBuffer. `onProgress` is called once per sample after it resolves
-   * (whether fetched or served from cache).
+   * AudioBuffer. Progress is reported via `onProgress` callback or via
+   * options object.
    *
-   * All samples load in parallel. The returned Map only contains entries for
-   * samples that loaded successfully; missing/failed samples are silently
-   * omitted.
+   * - `buffers` in options: pre-loaded buffers — skips fetch for these names.
+   * - All samples load in parallel. Failed samples are silently omitted.
    */
   async load(
     json: SmplrJson,
-    onProgress?: (loaded: number, total: number) => void
+    onProgressOrOptions?:
+      | ((loaded: number, total: number) => void)
+      | {
+          buffers?: Map<string, AudioBuffer>;
+          onProgress?: (loaded: number, total: number) => void;
+        }
   ): Promise<Map<string, AudioBuffer>> {
+    // Normalise the second argument: support legacy callback or new options object
+    const preloaded =
+      typeof onProgressOrOptions === "object"
+        ? onProgressOrOptions.buffers
+        : undefined;
+    const onProgress =
+      typeof onProgressOrOptions === "function"
+        ? onProgressOrOptions
+        : onProgressOrOptions?.onProgress;
+
     const format =
       findFirstSupportedFormat(json.samples.formats) ??
       json.samples.formats[0] ??
@@ -49,6 +63,16 @@ export class SampleLoader {
 
     await Promise.all(
       names.map(async (name) => {
+        // 1. Check pre-loaded buffers first — no fetch needed
+        const pre = preloaded?.get(name);
+        if (pre) {
+          result.set(name, pre);
+          loaded++;
+          onProgress?.(loaded, total);
+          return;
+        }
+
+        // 2. Build URL and check internal cache
         const path = json.samples.map?.[name] ?? name;
         const url = `${base}/${path}.${format}`;
 

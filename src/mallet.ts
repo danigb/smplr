@@ -13,15 +13,15 @@ export class Mallet extends Versilian {
   }
 }
 
-const BASE_URL = "https://danigb.github.io/samples/vcsl/";
-const EXT = ".websfz.json";
-
 type MalletName = keyof typeof NAME_TO_PATH;
 
 export const NAME_TO_PATH: Record<string, string | undefined> = {
-  "Balafon - Hard Mallet": "Idiophones/Struck Idiophones/Balafon - Hard Mallet",
-  "Balafon - Keyswitch": "Idiophones/Struck Idiophones/Balafon - Keyswitch",
-  "Balafon - Soft Mallet": "Idiophones/Struck Idiophones/Balafon - Soft Mallet",
+  "Balafon - Hard Mallet":
+    "Idiophones/Struck Idiophones/Balafon - Hard Mallet",
+  "Balafon - Keyswitch":
+    "Idiophones/Struck Idiophones/Balafon - Keyswitch",
+  "Balafon - Soft Mallet":
+    "Idiophones/Struck Idiophones/Balafon - Soft Mallet",
   "Balafon - Traditional Mallet":
     "Idiophones/Struck Idiophones/Balafon - Traditional Mallet",
 
@@ -38,7 +38,8 @@ export const NAME_TO_PATH: Record<string, string | undefined> = {
 
   "Xylophone - Hard Mallets":
     "Idiophones/Struck Idiophones/Xylophone - Hard Mallets",
-  "Xylophone - Keyswitch": "Idiophones/Struck Idiophones/Xylophone - Keyswitch",
+  "Xylophone - Keyswitch":
+    "Idiophones/Struck Idiophones/Xylophone - Keyswitch",
   "Xylophone - Medium Mallets":
     "Idiophones/Struck Idiophones/Xylophone - Medium Mallets",
   "Xylophone - Soft Mallets":

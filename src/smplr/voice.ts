@@ -41,7 +41,11 @@ export class Voice {
     }
 
     // Looping
-    if (params.loop) {
+    if (params.loopAuto) {
+      source.loop = true;
+      source.loopStart = buffer.duration * params.loopAuto.startRatio;
+      source.loopEnd = buffer.duration * params.loopAuto.endRatio;
+    } else if (params.loop) {
       source.loop = true;
       source.loopStart = params.loopStart;
       source.loopEnd = params.loopEnd || buffer.duration;

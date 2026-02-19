@@ -97,5 +97,6 @@ export function resolveParams(
     loopStart: merged.loopStart,
     loopEnd: merged.loopEnd,
     ampVelCurve: region.ampVelCurve,
+    loopAuto: region.loopAuto,
   };
 }

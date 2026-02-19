@@ -30,6 +30,8 @@ export type SmplrRegion = PlaybackParams & {
   offBy?: number; // triggering this stops voices in this group number
   trigger?: "first" | "legato";
   ampVelCurve?: [number, number]; // [velocity, gain] — single-point velocity curve
+  /** Auto-compute loop points from buffer duration ratios (0–1). */
+  loopAuto?: { startRatio: number; endRatio: number };
 };
 
 /**
@@ -70,6 +72,8 @@ export type SmplrJson = {
   samples: SmplrSamples;
   defaults?: PlaybackParams;
   groups: SmplrGroup[];
+  /** Maps arbitrary string keys to MIDI numbers, resolved before toMidi(). */
+  aliases?: Record<string, number>;
 };
 
 /**
@@ -116,7 +120,7 @@ export type LoadProgress = {
 
 /**
  * Fully resolved playback parameters for a single Voice.
- * Output of resolveParams() — all fields are required, no optionals except ampVelCurve.
+ * Output of resolveParams() — all fields are required, no optionals except ampVelCurve/loopAuto.
  */
 export type VoiceParams = {
   detune: number; // cents (pitch transpose + tune + detune + note override)
@@ -130,4 +134,6 @@ export type VoiceParams = {
   loopStart: number; // sample frames
   loopEnd: number; // sample frames (0 = end of buffer)
   ampVelCurve?: [number, number]; // [velocity, gain] single-point velocity curve
+  /** If set, loop points are computed from buffer.duration at play time. */
+  loopAuto?: { startRatio: number; endRatio: number };
 };

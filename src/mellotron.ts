@@ -1,24 +1,8 @@
-import { ChannelConfig } from "./player/channel";
-import { DefaultPlayer, DefaultPlayerConfig } from "./player/default-player";
-import {
-  createEmptyRegionGroup,
-  findFirstSampleInRegions,
-  spreadRegions,
-} from "./player/layers";
-import {
-  AudioBuffers,
-  getPreferredAudioExtension,
-  loadAudioBuffer,
-} from "./player/load-audio";
 import { toMidi } from "./player/midi";
-import {
-  InternalPlayer,
-  RegionGroup,
-  SampleOptions,
-  SampleStart,
-  SampleStop,
-} from "./player/types";
 import { HttpStorage, Storage } from "./storage";
+import { Smplr, SmplrOptions } from "./smplr";
+import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "./smplr/types";
+import { spreadKeyRanges } from "./smplr/utils";
 
 const INSTRUMENT_VARIATIONS: Record<string, [string, string]> = {
   "300 STRINGS CELLO": ["300 STRINGS", "CELL"],
@@ -69,106 +53,132 @@ export type MellotronConfig = {
   storage: Storage;
 };
 
-export type MellotronOptions = Partial<MellotronConfig & DefaultPlayerConfig>;
+export type MellotronOptions = Partial<
+  MellotronConfig & {
+    destination?: AudioNode;
+    volume?: number;
+    velocity?: number;
+    decayTime?: number;
+    onLoadProgress?: (progress: LoadProgress) => void;
+  }
+>;
 
-export class Mellotron implements InternalPlayer {
-  private readonly config: MellotronConfig;
-  private readonly player: DefaultPlayer;
-  private readonly group: RegionGroup;
+export class Mellotron {
+  #smplr: Smplr;
   readonly load: Promise<this>;
 
-  public constructor(
+  constructor(
     public readonly context: BaseAudioContext,
-    private readonly options: MellotronOptions
+    options: MellotronOptions = {}
   ) {
-    this.config = getMellotronConfig(options);
-    this.player = new DefaultPlayer(context, options);
-    this.group = createEmptyRegionGroup();
+    const config = getMellotronConfig(options);
 
-    const loader = loadMellotronInstrument(
-      this.config.instrument,
-      this.player.buffers,
-      this.group
-    );
-    this.load = loader(context, this.config.storage).then(() => this);
-  }
+    const smplrOptions: SmplrOptions = {
+      destination: options.destination,
+      volume: options.volume,
+      velocity: options.velocity,
+      storage: config.storage,
+      onLoadProgress: options.onLoadProgress,
+    };
+    this.#smplr = new Smplr(context as AudioContext, smplrOptions);
 
-  get buffers() {
-    return this.player.buffers;
+    const variation = INSTRUMENT_VARIATIONS[config.instrument];
+    const instrumentName = variation ? variation[0] : config.instrument;
+    const baseUrl = `https://smpldsnds.github.io/archiveorg-mellotron/${instrumentName}/`;
+
+    this.load = fetch(baseUrl + "files.json")
+      .then((r) => r.json() as Promise<string[]>)
+      .then((names) =>
+        this.#smplr.loadInstrument(
+          mellotronToSmplrJson(names, {
+            instrument: instrumentName,
+            variation: variation?.[1],
+          })
+        )
+      )
+      .then(() => this);
   }
 
   get output() {
-    return this.player.output;
+    return this.#smplr.output;
   }
 
-  start(sample: SampleStart | string | number) {
-    const found = findFirstSampleInRegions(
-      this.group,
-      typeof sample === "object" ? sample : { note: sample },
-      undefined,
-      this.options
+  get loadProgress() {
+    return this.#smplr.loadProgress;
+  }
+
+  start(sample: NoteEvent | string | number) {
+    return this.#smplr.start(
+      typeof sample === "object" ? sample : { note: sample }
     );
-
-    if (!found) return () => undefined;
-
-    return this.player.start(found);
   }
-  stop(sample?: SampleStop | string | number) {
-    this.player.stop(sample);
+
+  stop(target?: StopTarget) {
+    return this.#smplr.stop(target);
   }
+
   disconnect() {
-    this.player.disconnect();
+    return this.#smplr.disconnect();
   }
 }
 
-function getMellotronConfig(
-  options: Partial<SampleOptions & ChannelConfig & MellotronConfig>
-): MellotronConfig {
+function getMellotronConfig(options: MellotronOptions): MellotronConfig {
   return {
     instrument: options.instrument ?? "MKII VIOLINS",
     storage: options.storage ?? HttpStorage,
   };
 }
-function loadMellotronInstrument(
-  instrument: string,
-  buffers: AudioBuffers,
-  group: RegionGroup
-) {
-  let variation = INSTRUMENT_VARIATIONS[instrument];
-  if (variation) instrument = variation[0];
 
-  return (context: BaseAudioContext, storage: Storage) => {
-    const baseUrl = `https://smpldsnds.github.io/archiveorg-mellotron/${instrument}/`;
-    const audioExt = getPreferredAudioExtension();
-    return fetch(baseUrl + "files.json")
-      .then((res) => res.json() as Promise<string[]>)
-      .then((sampleNames) =>
-        Promise.all(
-          sampleNames.map((sampleName) => {
-            if (variation && !sampleName.includes(variation[1])) return;
+// ---------------------------------------------------------------------------
+// mellotronToSmplrJson — pure converter function
+// ---------------------------------------------------------------------------
 
-            const midi = toMidi(sampleName.split(" ")[0] ?? "");
-            if (!midi) return;
+type MellotronJsonConfig = {
+  instrument: string;
+  variation?: string;
+};
 
-            const sampleUrl = baseUrl + sampleName + audioExt;
-            loadAudioBuffer(context, sampleUrl, storage).then((audioBuffer) => {
-              buffers[sampleName] = audioBuffer;
-              const duration = audioBuffer?.duration ?? 0;
-              group.regions.push({
-                sampleName: sampleName,
-                midiPitch: midi,
-                sample: {
-                  loop: true,
-                  loopStart: duration / 10,
-                  loopEnd: duration - duration / 10,
-                },
-              });
-            });
-          })
-        )
-      )
-      .then(() => {
-        spreadRegions(group.regions);
-      });
+/**
+ * Convert a Mellotron files.json sample list to SmplrJson.
+ *
+ * - Filters by variation string if provided.
+ * - Extracts MIDI from the first word of each sample name.
+ * - Uses spreadKeyRanges so nearby notes pitch-shift to the nearest sample.
+ * - All regions get loopAuto to produce tape-loop playback.
+ */
+export function mellotronToSmplrJson(
+  sampleNames: string[],
+  config: MellotronJsonConfig
+): SmplrJson {
+  const entries: [number, string][] = [];
+
+  for (const sampleName of sampleNames) {
+    // Filter by variation (e.g., only "CELL" samples for CELLO variation)
+    if (config.variation && !sampleName.includes(config.variation)) continue;
+
+    const midi = toMidi(sampleName.split(" ")[0] ?? "");
+    if (!midi) continue;
+
+    entries.push([midi, sampleName]);
+  }
+
+  const spread = spreadKeyRanges(entries);
+  const baseUrl = `https://smpldsnds.github.io/archiveorg-mellotron/${config.instrument}/`;
+
+  const regions: SmplrGroup["regions"] = spread.map(
+    ({ keyRange, pitch, sample }) => ({
+      sample,
+      keyRange,
+      pitch,
+      loopAuto: { startRatio: 0.1, endRatio: 0.9 },
+    })
+  );
+
+  return {
+    samples: {
+      baseUrl,
+      formats: ["ogg", "m4a"],
+    },
+    groups: [{ regions }],
   };
 }

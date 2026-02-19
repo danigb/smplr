@@ -1,12 +1,7 @@
 import { OutputChannel } from "../player/channel";
-import { DefaultPlayer, DefaultPlayerConfig } from "../player/default-player";
-import {
-  AudioBuffers,
-  findFirstSupportedFormat,
-  loadAudioBuffer,
-} from "../player/load-audio";
-import { SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
+import { Smplr, SmplrOptions } from "../smplr";
+import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "../smplr/types";
 import {
   DrumMachineInstrument,
   EMPTY_INSTRUMENT,
@@ -34,7 +29,12 @@ type DrumMachineConfig = {
 };
 
 export type DrumMachineOptions = Partial<
-  DrumMachineConfig & DefaultPlayerConfig
+  DrumMachineConfig & {
+    destination?: AudioNode;
+    volume?: number;
+    velocity?: number;
+    onLoadProgress?: (progress: LoadProgress) => void;
+  }
 >;
 
 function getConfig(options?: DrumMachineOptions): DrumMachineConfig {
@@ -55,29 +55,34 @@ function getConfig(options?: DrumMachineOptions): DrumMachineConfig {
 }
 
 export class DrumMachine {
+  #smplr: Smplr;
   #instrument = EMPTY_INSTRUMENT;
-  private readonly player: DefaultPlayer;
-  public readonly load: Promise<this>;
-  public readonly output: OutputChannel;
+  readonly load: Promise<this>;
+  readonly output: OutputChannel;
 
-  public constructor(context: AudioContext, options?: DrumMachineOptions) {
+  constructor(context: AudioContext, options?: DrumMachineOptions) {
     const config = getConfig(options);
 
-    const instrument = isDrumMachineInstrument(config.instrument)
+    const smplrOptions: SmplrOptions = {
+      destination: options?.destination,
+      volume: options?.volume,
+      velocity: options?.velocity,
+      storage: config.storage,
+      onLoadProgress: options?.onLoadProgress,
+    };
+    this.#smplr = new Smplr(context, smplrOptions);
+    this.output = this.#smplr.output;
+
+    const instrumentPromise = isDrumMachineInstrument(config.instrument)
       ? Promise.resolve(config.instrument)
       : fetchDrumMachineInstrument(config.url, config.storage);
-    this.player = new DefaultPlayer(context, options);
-    this.output = this.player.output;
-    this.load = drumMachineLoader(
-      context,
-      this.player.buffers,
-      instrument,
-      config.storage
-    ).then(() => this);
 
-    instrument.then((instrument) => {
-      this.#instrument = instrument;
-    });
+    this.load = instrumentPromise
+      .then((inst) => {
+        this.#instrument = inst;
+        return this.#smplr.loadInstrument(drumMachineToSmplrJson(inst));
+      })
+      .then(() => this);
   }
 
   getSampleNames(): string[] {
@@ -92,17 +97,20 @@ export class DrumMachine {
     return this.#instrument.sampleGroupVariations[groupName] ?? [];
   }
 
-  start(sample: SampleStart) {
-    const sampleName = this.#instrument.nameToSampleName[sample.note];
-    return this.player.start({
-      ...sample,
-      note: sampleName ? sampleName : sample.note,
-      stopId: sample.stopId ?? sample.note,
+  start(sample: NoteEvent) {
+    const s = typeof sample === "object" ? sample : { note: sample };
+    return this.#smplr.start({
+      ...s,
+      stopId: (s as { stopId?: string | number; note: string | number }).stopId ?? s.note,
     });
   }
 
-  stop(sample: SampleStop) {
-    return this.player.stop(sample);
+  stop(sample?: StopTarget) {
+    return this.#smplr.stop(sample);
+  }
+
+  disconnect() {
+    return this.#smplr.disconnect();
   }
 
   /** @deprecated */
@@ -110,11 +118,13 @@ export class DrumMachine {
     console.warn("deprecated: use load instead");
     return this.load;
   }
+
   /** @deprecated */
   get sampleNames(): string[] {
     console.log("deprecated: Use getGroupNames instead");
     return this.#instrument.groupNames.slice();
   }
+
   /** @deprecated */
   getVariations(groupName: string): string[] {
     console.warn("deprecated: use getSampleNamesForGroup");
@@ -122,20 +132,56 @@ export class DrumMachine {
   }
 }
 
-function drumMachineLoader(
-  context: BaseAudioContext,
-  buffers: AudioBuffers,
-  instrument: Promise<DrumMachineInstrument>,
-  storage: Storage
-) {
-  const format = findFirstSupportedFormat(["ogg", "m4a"]) ?? "ogg";
-  return instrument.then((data) =>
-    Promise.all(
-      data.samples.map(async (sampleName) => {
-        const url = `${data.baseUrl}/${sampleName}.${format}`;
-        const buffer = await loadAudioBuffer(context, url, storage);
-        if (buffer) buffers[sampleName] = buffer;
-      })
-    )
-  );
+// ---------------------------------------------------------------------------
+// drumMachineToSmplrJson — pure converter function
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a DrumMachineInstrument to a SmplrJson descriptor.
+ *
+ * Each sample gets a sequential MIDI number starting at 36 (GM drum map base).
+ * Aliases are created for both the full sample name ("kick/1") and the group
+ * name ("kick") so both forms work with Smplr.start({ note: "kick" }).
+ */
+export function drumMachineToSmplrJson(
+  instrument: DrumMachineInstrument
+): SmplrJson {
+  const aliases: Record<string, number> = {};
+  const regions: SmplrGroup["regions"] = [];
+
+  const BASE_MIDI = 36;
+
+  instrument.samples.forEach((sampleName, i) => {
+    const midi = BASE_MIDI + i;
+
+    // Full sample name alias: "kick/1" → midi
+    aliases[sampleName] = midi;
+
+    regions.push({
+      sample: sampleName,
+      keyRange: [midi, midi],
+      pitch: midi,
+    });
+  });
+
+  // Group name aliases: "kick" → first sample MIDI
+  for (const [groupName, firstSample] of Object.entries(
+    instrument.nameToSampleName
+  )) {
+    if (firstSample) {
+      const idx = instrument.samples.indexOf(firstSample);
+      if (idx >= 0) {
+        aliases[groupName] = BASE_MIDI + idx;
+      }
+    }
+  }
+
+  return {
+    samples: {
+      baseUrl: instrument.baseUrl,
+      formats: ["ogg", "m4a"],
+    },
+    groups: [{ regions }],
+    aliases,
+  };
 }

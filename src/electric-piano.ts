@@ -19,6 +19,7 @@ const INSTRUMENTS: Record<string, string> = {
 
 export class ElectricPiano extends SfzSampler {
   public readonly tremolo: Readonly<{ level: (value: number) => void }>;
+
   constructor(
     context: AudioContext,
     options: Partial<SfzSamplerConfig> & { instrument: string }

@@ -52,12 +52,37 @@ type NormalizedNoteEvent = {
   stopId: string | number;
 };
 
+/** Empty RegionMatcher used before loadInstrument() is called. */
+const EMPTY_JSON: SmplrJson = {
+  samples: { baseUrl: "", formats: [] },
+  groups: [],
+};
+
+/**
+ * Detect whether an argument is a SmplrJson descriptor.
+ * SmplrJson always has a `groups` array; SmplrOptions does not.
+ */
+function isSmplrJson(x: unknown): x is SmplrJson {
+  return (
+    typeof x === "object" &&
+    x !== null &&
+    "groups" in x &&
+    Array.isArray((x as SmplrJson).groups)
+  );
+}
+
 /**
  * The main sampler class. Loads samples described by a SmplrJson descriptor,
  * matches notes to regions, and plays them through a Channel.
  *
  * Multiple Smplr instances can share a SampleLoader (shared cache) and/or a
  * Scheduler (coordinated timing) by passing them via SmplrOptions.
+ *
+ * Pattern A — json provided at construction:
+ *   `new Smplr(context, json, options?)`
+ *
+ * Pattern B — json loaded later via loadInstrument():
+ *   `new Smplr(context, options?)`  then  `smplr.loadInstrument(json)`
  */
 export class Smplr {
   /** Resolves with `this` once all sample buffers are loaded. */
@@ -69,16 +94,35 @@ export class Smplr {
   #buffers: Map<string, AudioBuffer> = new Map();
   #defaults: PlaybackParams | undefined;
   #defaultVelocity: number;
+  #aliases: Map<string, number> | undefined;
   #matcher: RegionMatcher;
   #voices: VoiceManager;
   #scheduler: Scheduler;
   #channel: Channel;
+  #loader: SampleLoader;
+  #onLoadProgress: ((progress: LoadProgress) => void) | undefined;
   #ccState: Map<number, number> = new Map();
 
-  constructor(context: AudioContext, json: SmplrJson, options?: SmplrOptions) {
+  constructor(context: AudioContext, json: SmplrJson, options?: SmplrOptions);
+  constructor(context: AudioContext, options?: SmplrOptions);
+  constructor(
+    context: AudioContext,
+    jsonOrOptions?: SmplrJson | SmplrOptions,
+    maybeOptions?: SmplrOptions
+  ) {
+    const json = isSmplrJson(jsonOrOptions) ? jsonOrOptions : undefined;
+    const options = isSmplrJson(jsonOrOptions)
+      ? maybeOptions
+      : (jsonOrOptions as SmplrOptions | undefined);
+
     this.context = context;
-    this.#defaults = json.defaults;
+    this.#defaults = json?.defaults;
     this.#defaultVelocity = options?.velocity ?? 100;
+    this.#onLoadProgress = options?.onLoadProgress;
+
+    if (json?.aliases) {
+      this.#aliases = new Map(Object.entries(json.aliases));
+    }
 
     // 1. Output channel — volume, routing, effects
     this.#channel = new Channel(context, {
@@ -91,23 +135,59 @@ export class Smplr {
     this.#scheduler = options?.scheduler ?? new Scheduler(context);
 
     // 3. Region matcher — pre-processes groups/regions once
-    this.#matcher = new RegionMatcher(json);
+    this.#matcher = new RegionMatcher(json ?? EMPTY_JSON);
 
     // 4. Voice manager — tracks active voices for stop operations
     this.#voices = new VoiceManager();
 
-    // 5. Load samples — shared or private loader
-    const loader =
+    // 5. Sample loader — shared or private
+    this.#loader =
       options?.loader ?? new SampleLoader(context, { storage: options?.storage });
 
-    this.load = loader
-      .load(json, (loaded, total) => {
-        this.#loadProgress = { loaded, total };
-        options?.onLoadProgress?.({ loaded, total });
+    if (json) {
+      // Pattern A: load immediately
+      this.load = this.#loader
+        .load(json, (loaded, total) => {
+          this.#loadProgress = { loaded, total };
+          this.#onLoadProgress?.({ loaded, total });
+        })
+        .then((buffers) => {
+          this.#buffers = buffers;
+          return this;
+        });
+    } else {
+      // Pattern B: resolve immediately; caller will call loadInstrument()
+      this.load = Promise.resolve(this);
+    }
+  }
+
+  /**
+   * Load (or replace) the instrument descriptor. Creates a new RegionMatcher
+   * and fetches all sample buffers. Pre-loaded buffers (e.g. base64-decoded)
+   * can be passed via the `buffers` parameter — those skip the fetch step.
+   *
+   * Returns a Promise that resolves when all samples are ready.
+   */
+  loadInstrument(
+    json: SmplrJson,
+    buffers?: Map<string, AudioBuffer>
+  ): Promise<void> {
+    this.#defaults = json.defaults;
+    this.#aliases = json.aliases
+      ? new Map(Object.entries(json.aliases))
+      : undefined;
+    this.#matcher = new RegionMatcher(json);
+
+    return this.#loader
+      .load(json, {
+        buffers,
+        onProgress: (loaded, total) => {
+          this.#loadProgress = { loaded, total };
+          this.#onLoadProgress?.({ loaded, total });
+        },
       })
-      .then((buffers) => {
-        this.#buffers = buffers;
-        return this;
+      .then((newBuffers) => {
+        this.#buffers = newBuffers;
       });
   }
 
@@ -122,11 +202,19 @@ export class Smplr {
   }
 
   /**
+   * Set a MIDI CC value. Affects region matching for groups/regions that have
+   * ccRange constraints (e.g. CC64 sustain pedal).
+   */
+  setCC(cc: number, value: number): void {
+    this.#ccState.set(cc, value);
+  }
+
+  /**
    * Start playing a note. Returns a StopFn that cancels the note if it hasn't
    * played yet, or stops the resulting voices if it has.
    */
   start(event: NoteEvent): StopFn {
-    const normalized = normalizeNoteEvent(event, this.#defaultVelocity);
+    const normalized = this.#normalizeNoteEvent(event);
 
     const schedulerStop = this.#scheduler.schedule(
       normalized as NoteEvent,
@@ -219,28 +307,25 @@ export class Smplr {
       }
     }
   }
-}
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function normalizeNoteEvent(
-  event: NoteEvent,
-  defaultVelocity: number
-): NormalizedNoteEvent {
-  if (typeof event === "string" || typeof event === "number") {
+  #normalizeNoteEvent(event: NoteEvent): NormalizedNoteEvent {
+    if (typeof event === "string" || typeof event === "number") {
+      const midi =
+        toMidi(event) ?? this.#aliases?.get(String(event)) ?? 0;
+      return {
+        note: event,
+        midi,
+        velocity: this.#defaultVelocity,
+        stopId: event,
+      };
+    }
+    const midi =
+      toMidi(event.note) ?? this.#aliases?.get(String(event.note)) ?? 0;
     return {
-      note: event,
-      midi: toMidi(event) ?? 0,
-      velocity: defaultVelocity,
-      stopId: event,
+      ...event,
+      midi,
+      velocity: event.velocity ?? this.#defaultVelocity,
+      stopId: event.stopId ?? event.note,
     };
   }
-  return {
-    ...event,
-    midi: toMidi(event.note) ?? 0,
-    velocity: event.velocity ?? defaultVelocity,
-    stopId: event.stopId ?? event.note,
-  };
 }

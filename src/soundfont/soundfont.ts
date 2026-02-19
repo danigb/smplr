@@ -1,19 +1,17 @@
-import { DefaultPlayer, DefaultPlayerConfig } from "../player/default-player";
-import {
-  createEmptyRegionGroup,
-  findFirstSampleInRegions,
-} from "../player/layers";
-import { AudioBuffers } from "../player/load-audio";
-import { RegionGroup, SampleStart, SampleStop } from "../player/types";
 import { HttpStorage, Storage } from "../storage";
+import { Smplr, SmplrOptions } from "../smplr";
+import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "../smplr/types";
+import { spreadKeyRanges } from "../smplr/utils";
+import { toMidi } from "../player/midi";
+import { findFirstSupportedFormat } from "../player/load-audio";
 import {
   SOUNDFONT_INSTRUMENTS,
   SOUNDFONT_KITS,
   DEFAULT_SOUNDFONT_KIT,
   gleitzKitUrl,
-  soundfontInstrumentLoader,
 } from "./soundfont-instrument";
 import {
+  LoopData,
   fetchSoundfontLoopData,
   getGoldstSoundfontLoopsUrl,
 } from "./soundfont-loops";
@@ -36,46 +34,58 @@ type SoundfontConfig = {
   loopDataUrl?: string;
 };
 
-export type SoundfontOptions = Partial<SoundfontConfig & DefaultPlayerConfig>;
+export type SoundfontOptions = Partial<
+  SoundfontConfig & {
+    destination?: AudioNode;
+    volume?: number;
+    velocity?: number;
+    onLoadProgress?: (progress: LoadProgress) => void;
+  }
+>;
 
 export class Soundfont {
   public readonly config: Readonly<SoundfontConfig>;
-  private readonly player: DefaultPlayer;
-  public readonly load: Promise<this>;
-  public readonly group: RegionGroup;
-  #hasLoops: boolean;
+  #smplr: Smplr;
+  #hasLoops = false;
+  readonly load: Promise<this>;
 
   constructor(
     public readonly context: AudioContext,
     options: SoundfontOptions
   ) {
     this.config = getSoundfontConfig(options);
-    this.player = new DefaultPlayer(context, options);
-    this.group = createEmptyRegionGroup();
 
-    this.#hasLoops = false;
-    const loader = soundfontLoader(
-      this.config.instrumentUrl,
-      this.config.loopDataUrl,
-      this.player.buffers,
-      this.group
-    );
-    this.load = loader(context, this.config.storage).then((hasLoops) => {
-      this.#hasLoops = hasLoops;
-      return this;
-    });
+    const smplrOptions: SmplrOptions = {
+      destination: options.destination,
+      volume: options.volume,
+      velocity: options.velocity,
+      storage: this.config.storage,
+      onLoadProgress: options.onLoadProgress,
+    };
+    this.#smplr = new Smplr(context, smplrOptions);
 
+    // Apply extra gain insert immediately (output is available before load)
     const gain = context.createGain();
     gain.gain.value = this.config.extraGain;
-    this.player.output.addInsert(gain);
-  }
+    this.#smplr.output.addInsert(gain);
 
-  get output() {
-    return this.player.output;
+    this.load = loadSoundfontData(context, this.config)
+      .then(({ buffers, noteNames, loopData }) => {
+        this.#hasLoops = !!loopData;
+        return this.#smplr.loadInstrument(
+          soundfontToSmplrJson(noteNames, loopData),
+          buffers
+        );
+      })
+      .then(() => this);
   }
 
   get hasLoops() {
     return this.#hasLoops;
+  }
+
+  get output() {
+    return this.#smplr.output;
   }
 
   async loaded() {
@@ -84,51 +94,122 @@ export class Soundfont {
   }
 
   public disconnect() {
-    this.player.disconnect();
+    return this.#smplr.disconnect();
   }
 
-  start(sample: SampleStart | string | number) {
-    const found = findFirstSampleInRegions(
-      this.group,
+  start(sample: NoteEvent | string | number) {
+    return this.#smplr.start(
       typeof sample === "object" ? sample : { note: sample }
     );
-    if (!found) return () => undefined;
-
-    return this.player.start(found);
   }
 
-  stop(sample?: SampleStop | string | number) {
-    return this.player.stop(sample);
+  stop(sample?: StopTarget | string | number) {
+    return this.#smplr.stop(
+      sample === undefined ? undefined : sample
+    );
   }
 }
 
-function soundfontLoader(
-  url: string,
-  loopsUrl: string | undefined,
-  buffers: AudioBuffers,
-  group: RegionGroup
-) {
-  const loadInstrument = soundfontInstrumentLoader(url, buffers, group);
-  return async (context: BaseAudioContext, storage: Storage) => {
-    const [_, loops] = await Promise.all([
-      loadInstrument(context, storage),
-      fetchSoundfontLoopData(loopsUrl),
-    ]);
+// ---------------------------------------------------------------------------
+// loadSoundfontData — async loader for base64-encoded MIDI.js files
+// ---------------------------------------------------------------------------
 
-    if (loops) {
-      group.regions.forEach((region) => {
-        const loop = loops[region.midiPitch];
-        if (loop) {
-          region.sample ??= {};
-          region.sample.loop = true;
-          region.sample.loopStart = loop[0];
-          region.sample.loopEnd = loop[1];
-        }
-      });
+type SoundfontData = {
+  buffers: Map<string, AudioBuffer>;
+  noteNames: string[];
+  loopData?: LoopData;
+};
+
+async function loadSoundfontData(
+  context: AudioContext,
+  config: SoundfontConfig
+): Promise<SoundfontData> {
+  const [{ buffers, noteNames }, loopData] = await Promise.all([
+    decodeSoundfontFile(context, config),
+    fetchSoundfontLoopData(config.loopDataUrl),
+  ]);
+
+  return { buffers, noteNames, loopData };
+}
+
+async function decodeSoundfontFile(
+  context: AudioContext,
+  config: SoundfontConfig
+): Promise<{ buffers: Map<string, AudioBuffer>; noteNames: string[] }> {
+  const sourceFile = await (await config.storage.fetch(config.instrumentUrl)).text();
+  const json = midiJsToJson(sourceFile);
+
+  const noteNames = Object.keys(json);
+  const buffers = new Map<string, AudioBuffer>();
+
+  await Promise.all(
+    noteNames.map(async (noteName) => {
+      const midi = toMidi(noteName);
+      if (!midi) return;
+      try {
+        const audioData = base64ToArrayBuffer(removeBase64Prefix(json[noteName]));
+        const buffer = await context.decodeAudioData(audioData);
+        buffers.set(noteName, buffer);
+      } catch (error) {
+        console.warn(
+          `Soundfont: failed to decode note ${noteName}`,
+          error instanceof Error ? error.message : error
+        );
+      }
+    })
+  );
+
+  return { buffers, noteNames: [...buffers.keys()] };
+}
+
+// ---------------------------------------------------------------------------
+// soundfontToSmplrJson — pure converter function
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a list of note names (with optional loop data) to SmplrJson.
+ * Uses spreadKeyRanges so notes between recorded pitches pitch-shift correctly.
+ */
+export function soundfontToSmplrJson(
+  noteNames: string[],
+  loopData?: LoopData
+): SmplrJson {
+  const entries: [number, string][] = [];
+
+  for (const noteName of noteNames) {
+    const midi = toMidi(noteName);
+    if (midi === undefined) continue;
+    entries.push([midi, noteName]);
+  }
+
+  const spread = spreadKeyRanges(entries);
+
+  const regions: SmplrGroup["regions"] = spread.map(({ keyRange, pitch, sample }) => {
+    const region: SmplrGroup["regions"][number] = { sample, keyRange, pitch };
+
+    // Apply loop data if available
+    if (loopData) {
+      const loop = loopData[pitch];
+      if (loop) {
+        region.loop = true;
+        region.loopStart = loop[0];
+        region.loopEnd = loop[1];
+      }
     }
-    return !!loops;
+
+    return region;
+  });
+
+  return {
+    // baseUrl doesn't matter — all buffers are pre-loaded
+    samples: { baseUrl: "", formats: ["ogg"] },
+    groups: [{ regions }],
   };
 }
+
+// ---------------------------------------------------------------------------
+// getSoundfontConfig
+// ---------------------------------------------------------------------------
 
 function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
   if (!options.instrument && !options.instrumentUrl) {
@@ -138,7 +219,6 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
     kit: options.kit ?? DEFAULT_SOUNDFONT_KIT,
     instrument: options.instrument,
     storage: options.storage ?? HttpStorage,
-    // This is to compensate the low volume of the original samples
     extraGain: options.extraGain ?? 5,
     loadLoopData: options.loadLoopData ?? false,
     loopDataUrl: options.loopDataUrl,
@@ -177,4 +257,30 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
   }
 
   return config;
+}
+
+// ---------------------------------------------------------------------------
+// Base64 / MIDI.js helpers
+// ---------------------------------------------------------------------------
+
+function midiJsToJson(source: string): Record<string, string> {
+  const header = source.indexOf("MIDI.Soundfont.");
+  if (header < 0) throw Error("Invalid MIDI.js Soundfont format");
+  const start = source.indexOf("=", header) + 2;
+  const end = source.lastIndexOf(",");
+  return JSON.parse(source.slice(start, end) + "}");
+}
+
+function removeBase64Prefix(audioBase64: string) {
+  return audioBase64.slice(audioBase64.indexOf(",") + 1);
+}
+
+function base64ToArrayBuffer(base64: string) {
+  const decoded = window.atob(base64);
+  const len = decoded.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = decoded.charCodeAt(i);
+  }
+  return bytes.buffer;
 }

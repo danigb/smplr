@@ -1,15 +1,7 @@
-import { DefaultPlayer, DefaultPlayerConfig } from "./player/default-player";
-import { createEmptyRegionGroup, findSamplesInRegions } from "./player/layers";
-import { AudioBuffers } from "./player/load-audio";
-import { toMidi } from "./player/midi";
-import {
-  InternalPlayer,
-  RegionGroup,
-  SampleStart,
-  SampleStop,
-} from "./player/types";
-import { SfzInstrumentLoader } from "./sfz2";
 import { HttpStorage, Storage } from "./storage";
+import { Smplr, SmplrOptions } from "./smplr";
+import { LoadProgress, NoteEvent, StopTarget } from "./smplr/types";
+import { sfzToSmplrJson } from "./smplr/sfz-convert";
 
 export function getSmolkenNames() {
   return ["Pizzicato", "Arco", "Switched"];
@@ -28,74 +20,77 @@ export type SmolkenConfig = {
   instrument: string;
   storage: Storage;
 };
-export type SmolkenOptions = Partial<SmolkenConfig & DefaultPlayerConfig>;
 
-export class Smolken implements InternalPlayer {
-  private readonly player: DefaultPlayer;
-  private readonly group: RegionGroup;
-  public readonly load: Promise<this>;
-  private config: SmolkenConfig;
-  private seqNum = 0;
+export type SmolkenOptions = Partial<
+  SmolkenConfig & {
+    destination?: AudioNode;
+    volume?: number;
+    velocity?: number;
+    onLoadProgress?: (progress: LoadProgress) => void;
+  }
+>;
 
-  constructor(context: BaseAudioContext, options: SmolkenOptions = {}) {
-    this.config = {
+const SMOLKEN_BASE_URL =
+  "https://smpldsnds.github.io/sfzinstruments-dsmolken-double-bass";
+
+export class Smolken {
+  #smplr: Smplr;
+  readonly load: Promise<this>;
+
+  constructor(
+    public readonly context: BaseAudioContext,
+    options: SmolkenOptions = {}
+  ) {
+    const config: SmolkenConfig = {
       instrument: options.instrument ?? "Arco",
       storage: options.storage ?? HttpStorage,
     };
-    this.player = new DefaultPlayer(context, options);
-    this.group = createEmptyRegionGroup();
-    const url = getSmolkenUrl(this.config.instrument);
 
-    const loader = SfzInstrumentLoader(url, {
-      buffers: this.player.buffers,
-      group: this.group,
-      urlFromSampleName: (sampleName, audioExt) => {
-        const samplePath = sampleName
-          .replace("\\", "/")
-          .replace(".wav", audioExt);
-        return `https://smpldsnds.github.io/sfzinstruments-dsmolken-double-bass/${samplePath}`;
-      },
-    });
-    this.load = loader(context, this.config.storage).then(() => this);
+    const smplrOptions: SmplrOptions = {
+      destination: options.destination,
+      volume: options.volume,
+      velocity: options.velocity,
+      storage: config.storage,
+      onLoadProgress: options.onLoadProgress,
+    };
+    this.#smplr = new Smplr(context as AudioContext, smplrOptions);
+
+    const sfzUrl = getSmolkenUrl(config.instrument);
+
+    this.load = fetch(sfzUrl)
+      .then((r) => r.text())
+      .then((sfzText) =>
+        this.#smplr.loadInstrument(
+          sfzToSmplrJson(sfzText, {
+            baseUrl: SMOLKEN_BASE_URL,
+            pathFromSampleName: (name) =>
+              name.replace(/\\/g, "/").replace(/\.wav$/i, ""),
+            formats: ["ogg", "m4a"],
+          })
+        )
+      )
+      .then(() => this);
   }
 
   get output() {
-    return this.player.output;
+    return this.#smplr.output;
   }
 
-  get buffers(): AudioBuffers {
-    return this.player.buffers;
+  get loadProgress() {
+    return this.#smplr.loadProgress;
   }
 
-  get context(): BaseAudioContext {
-    return this.player.context;
-  }
-
-  start(sample: SampleStart | string | number) {
-    const found = findSamplesInRegions(
-      this.group,
-      typeof sample === "object" ? sample : { note: sample },
-      this.seqNum
+  start(sample: NoteEvent | string | number) {
+    return this.#smplr.start(
+      typeof sample === "object" ? sample : { note: sample }
     );
-    this.seqNum++;
-    const stopAll = found.map((sample) => this.player.start(sample));
-    return (time?: number) => stopAll.forEach((stop) => stop(time));
   }
 
-  stop(sample?: SampleStop | string | number) {
-    if (sample == undefined) {
-      this.player.stop();
-      return;
-    }
-
-    const toStop = typeof sample === "object" ? sample : { stopId: sample };
-    const midi = toMidi(toStop.stopId);
-    if (!midi) return;
-    toStop.stopId = midi;
-    this.player.stop(toStop);
+  stop(target?: StopTarget) {
+    return this.#smplr.stop(target);
   }
 
-  disconnect(): void {
-    this.player.disconnect();
+  disconnect() {
+    return this.#smplr.disconnect();
   }
 }
