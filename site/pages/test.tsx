@@ -57,7 +57,7 @@ function makeProgressHandler(log: LogApi) {
 // ── melody / drum players ────────────────────────────────────────────────────
 
 type PlayableInstrument = {
-  start: (event: { note: number; duration?: number }) => unknown;
+  start: (event: { note: number; duration?: number; velocity?: number }) => unknown;
   disconnect: () => void;
 };
 
@@ -68,10 +68,12 @@ async function playMelody(
   log: LogApi,
   signal: AbortSignal
 ): Promise<void> {
+  log.append("  ♪ …");
   for (const midi of notes) {
     if (signal.aborted) return;
-    log.append(`  ♪ ${Note.fromMidi(midi)}`);
-    instrument.start({ note: midi, duration: (msPerNote - 30) / 1000 });
+    const velocity = Math.floor(Math.random() * 127) + 1;
+    log.replaceLast(`  ♪ ${Note.fromMidi(midi)} vel:${velocity}`);
+    instrument.start({ note: midi, duration: (msPerNote - 30) / 1000, velocity });
     await sleep(msPerNote, signal);
   }
 }
@@ -83,10 +85,12 @@ async function playDrums(
 ): Promise<void> {
   const groups = dm.getGroupNames();
   log.append(`  Groups: ${groups.join("  ")}`);
+  log.append("  ♪ …");
   for (const group of groups) {
     if (signal.aborted) return;
-    log.append(`  ♪ ${group}`);
-    dm.start({ note: group });
+    const velocity = Math.floor(Math.random() * 127) + 1;
+    log.replaceLast(`  ♪ ${group} vel:${velocity}`);
+    dm.start({ note: group, velocity });
     await sleep(400, signal);
   }
 }
