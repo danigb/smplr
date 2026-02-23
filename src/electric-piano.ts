@@ -58,6 +58,8 @@ export type ElectricPianoOptions = Partial<{
   volume: number;
   velocity: number;
   onLoadProgress: (progress: LoadProgress) => void;
+  /** Audio formats to try, in order of preference. Defaults to ["ogg", "m4a"]. */
+  formats: string[];
 }>;
 
 export class ElectricPiano {
@@ -102,7 +104,7 @@ export class ElectricPiano {
           sfzToSmplrJson(sfzText, {
             baseUrl: config.baseUrl,
             pathFromSampleName: config.pathFromSampleName,
-            formats: ["ogg", "m4a"],
+            formats: options.formats ?? ["ogg", "m4a"],
           })
         )
       )

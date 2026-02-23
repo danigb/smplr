@@ -21,6 +21,8 @@ export type SplendidGrandPianoConfig = {
   volume?: number;
   /** Called after each buffer is loaded or served from cache. */
   onLoadProgress?: (progress: LoadProgress) => void;
+  /** Audio formats to try, in order of preference. Defaults to ["ogg", "m4a"]. */
+  formats?: string[];
   /** Limit which notes are fetched. Useful for reducing initial load time. */
   notesToLoad?: {
     notes: number[];
@@ -94,7 +96,7 @@ export class SplendidGrandPiano {
 
 type PianoJsonOptions = Pick<
   SplendidGrandPianoConfig,
-  "baseUrl" | "detune" | "decayTime" | "notesToLoad"
+  "baseUrl" | "detune" | "decayTime" | "notesToLoad" | "formats"
 >;
 
 /**
@@ -150,7 +152,7 @@ export function pianoToSmplrJson(options: PianoJsonOptions): SmplrJson {
   return {
     samples: {
       baseUrl: options.baseUrl,
-      formats: ["ogg", "m4a"],
+      formats: options.formats ?? ["ogg", "m4a"],
     },
     defaults: {
       ampRelease: options.decayTime,

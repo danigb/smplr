@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import Head from "next/head";
+import { version } from "smplr/package.json";
 import { DrumMachineExample } from "src/DrumMachineExample";
 import { ElectricPianoExample } from "src/ElectricPianoExample";
 import { MalletExample } from "src/MalletExample";
@@ -23,6 +24,7 @@ export default function Home() {
       <main className={"max-w-4xl mx-auto my-20 p-4" + inter.className}>
         <div className="flex items-end mb-16">
           <h1 className="text-6xl font-bold">smplr</h1>
+          <span className="text-zinc-500 ml-3 text-lg">{version}</span>
         </div>
 
         <div className="flex flex-col gap-8">

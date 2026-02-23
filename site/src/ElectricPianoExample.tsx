@@ -5,7 +5,7 @@ import { ElectricPiano, getElectricPianoNames, Reverb } from "smplr";
 import { getAudioContext } from "./audio-context";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
-import { LoadWithStatus, useStatus } from "./useStatus";
+import { LoadWithStatus, SampleFormat, useStatus } from "./useStatus";
 
 let reverb: Reverb | undefined;
 let instrumentNames = getElectricPianoNames();
@@ -14,6 +14,7 @@ export function ElectricPianoExample({ className }: { className?: string }) {
   const [piano, setPiano] = useState<ElectricPiano | undefined>(undefined);
   const [instrumentName, setInstrumentName] = useState("CP80");
   const { status, setStatus, progress, onLoadProgress } = useStatus();
+  const [format, setFormat] = useState<SampleFormat>("ogg");
   const [reverbMix, setReverbMix] = useState(0);
   const [tremolo, setTremolo] = useState(0);
   const [volume, setVolume] = useState(100);
@@ -23,7 +24,7 @@ export function ElectricPianoExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const newPiano = new ElectricPiano(context, { instrument, volume, onLoadProgress });
+    const newPiano = new ElectricPiano(context, { instrument, volume, onLoadProgress, formats: [format] });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
     newPiano.load.then(() => {
@@ -39,6 +40,8 @@ export function ElectricPianoExample({ className }: { className?: string }) {
           status={status}
           progress={progress}
           onClick={() => loadPiano(instrumentName)}
+          format={format}
+          onFormatChange={setFormat}
         />
         <ConnectMidi instrument={piano} />
       </div>
