@@ -32,7 +32,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
   );
   const [samplerName, setSamplerName] = useState<string>(samplerNames[0]);
   const [instrumentName, setInstrumentName] = useState<string>("");
-  const [status, setStatus] = useStatus();
+  const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [reverbMix, setReverbMix] = useState(0);
   const [volume, setVolume] = useState(100);
   const [isCustomEnabled, setCustomEnabled] = useState(false);
@@ -76,6 +76,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
 
         <LoadWithStatus
           status={status}
+          progress={progress}
           onClick={() => {
             if (isCustomEnabled) {
               loadSampler(customUrl);

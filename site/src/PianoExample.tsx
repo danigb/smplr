@@ -12,7 +12,7 @@ let storage: CacheStorage | undefined;
 
 export function PianoExample({ className }: { className?: string }) {
   const [piano, setPiano] = useState<SplendidGrandPiano | undefined>(undefined);
-  const [status, setStatus] = useStatus();
+  const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [reverbMix, setReverbMix] = useState(0.0);
   const [volume, setVolume] = useState(100);
 
@@ -22,7 +22,7 @@ export function PianoExample({ className }: { className?: string }) {
     const context = getAudioContext();
     reverb ??= new Reverb(context);
     storage ??= new CacheStorage();
-    const newPiano = new SplendidGrandPiano(context, { volume, storage });
+    const newPiano = new SplendidGrandPiano(context, { volume, storage, onLoadProgress });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
     newPiano.load.then(() => {
@@ -34,7 +34,7 @@ export function PianoExample({ className }: { className?: string }) {
     <div className={className}>
       <div className="flex gap-2 items-end mb-2">
         <h1 className="text-3xl">SplendidGrandPiano</h1>
-        <LoadWithStatus status={status} onClick={loadPiano} />
+        <LoadWithStatus status={status} progress={progress} onClick={loadPiano} />
         <ConnectMidi instrument={piano} />
       </div>
       <div></div>

@@ -8,7 +8,7 @@ import { LoadWithStatus, useStatus } from "./useStatus";
 let reverb: Reverb | undefined;
 
 export function SoundfontExample({ className }: { className?: string }) {
-  const [status, setStatus] = useStatus();
+  const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [loopStatus, setLoopStatus] = useState<"disabled" | "loop" | "no-loop">(
     "disabled"
   );
@@ -27,6 +27,7 @@ export function SoundfontExample({ className }: { className?: string }) {
       kit,
       instrument,
       loadLoopData: true,
+      onLoadProgress,
     });
     soundfont.output.addEffect("reverb", reverb, 0.0);
     soundfont.load
@@ -54,6 +55,7 @@ export function SoundfontExample({ className }: { className?: string }) {
         <h1 className="text-3xl">Soundfont</h1>
         <LoadWithStatus
           status={status}
+          progress={progress}
           onClick={() => {
             loadSoundfont(libraryName, instrumentName);
           }}

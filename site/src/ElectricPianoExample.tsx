@@ -13,7 +13,7 @@ let instrumentNames = getElectricPianoNames();
 export function ElectricPianoExample({ className }: { className?: string }) {
   const [piano, setPiano] = useState<ElectricPiano | undefined>(undefined);
   const [instrumentName, setInstrumentName] = useState("CP80");
-  const [status, setStatus] = useStatus();
+  const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [reverbMix, setReverbMix] = useState(0);
   const [tremolo, setTremolo] = useState(0);
   const [volume, setVolume] = useState(100);
@@ -23,7 +23,7 @@ export function ElectricPianoExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const newPiano = new ElectricPiano(context, { instrument, volume });
+    const newPiano = new ElectricPiano(context, { instrument, volume, onLoadProgress });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
     newPiano.load.then(() => {
@@ -37,6 +37,7 @@ export function ElectricPianoExample({ className }: { className?: string }) {
         <h1 className="text-3xl">Electric Piano</h1>
         <LoadWithStatus
           status={status}
+          progress={progress}
           onClick={() => loadPiano(instrumentName)}
         />
         <ConnectMidi instrument={piano} />

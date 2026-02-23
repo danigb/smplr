@@ -22,7 +22,7 @@ const samples = [
 ];
 
 export function SamplerExample({ className }: { className?: string }) {
-  const [status, setStatus] = useStatus();
+  const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [sampler, setSampler] = useState<Sampler | undefined>();
   const [reverbMix, setReverbMix] = useState(0.0);
   const [volume, setVolume] = useState(100);
@@ -39,7 +39,7 @@ export function SamplerExample({ className }: { className?: string }) {
       },
       {} as Record<string, string>
     );
-    const sampler = new Sampler(context, { buffers });
+    const sampler = new Sampler(context, { buffers, onLoadProgress });
     sampler.output.addEffect("reverb", reverb, reverbMix);
 
     sampler.load
@@ -59,6 +59,7 @@ export function SamplerExample({ className }: { className?: string }) {
         <h1 className="text-3xl">Sampler</h1>
         <LoadWithStatus
           status={status}
+          progress={progress}
           onClick={() => {
             loadDrumMachine();
           }}
