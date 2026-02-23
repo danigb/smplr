@@ -1,4 +1,6 @@
 export * from "./drum-machine/drum-machine";
+export { Sequencer } from "./sequencer/sequencer";
+export type { SequencerOptions, SequencerNote, SequencerInstrument } from "./sequencer/sequencer";
 export * from "./electric-piano";
 export * from "./mallet";
 export * from "./mellotron";
