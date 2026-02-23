@@ -6,7 +6,7 @@ import { LoadWithStatus, useStatus } from "./useStatus";
 let reverb: Reverb | undefined;
 
 export function DrumMachineExample({ className }: { className?: string }) {
-  const [status, setStatus] = useStatus();
+  const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [dmName, setDmName] = useState(getDrumMachineNames()[0]);
   const [drums, setDrumMachine] = useState<DrumMachine | undefined>(undefined);
   const [reverbMix, setReverbMix] = useState(0.0);
@@ -16,7 +16,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const drums = new DrumMachine(context, { instrument });
+    const drums = new DrumMachine(context, { instrument, onLoadProgress });
     drums.output.addEffect("reverb", reverb, reverbMix);
 
     drums.load
@@ -36,6 +36,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
         <h1 className="text-3xl">DrumMachine</h1>
         <LoadWithStatus
           status={status}
+          progress={progress}
           onClick={() => {
             loadDrumMachine(dmName);
           }}

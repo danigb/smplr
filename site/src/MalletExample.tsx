@@ -15,7 +15,7 @@ export function MalletExample({ className }: { className?: string }) {
   const [instrumentName, setInstrumentName] = useState<string>(
     instrumentNames[0]
   );
-  const [status, setStatus] = useStatus();
+  const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [reverbMix, setReverbMix] = useState(0);
   const [volume, setVolume] = useState(100);
 
@@ -27,6 +27,7 @@ export function MalletExample({ className }: { className?: string }) {
     const newPiano = new Mallet(context, {
       instrument: instrumentName,
       volume,
+      onLoadProgress,
     });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setInstrument(newPiano);
@@ -42,6 +43,7 @@ export function MalletExample({ className }: { className?: string }) {
 
         <LoadWithStatus
           status={status}
+          progress={progress}
           onClick={() => loadMallet(instrumentName)}
         />
         <ConnectMidi instrument={instrument} />

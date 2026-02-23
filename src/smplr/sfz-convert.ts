@@ -29,8 +29,8 @@ export function sfzToSmplrJson(
 ): SmplrJson {
   const formats = options.formats ?? ["ogg", "m4a"];
 
-  // Parse all tokens from the SFZ text
-  const tokens = tokenize(sfzText);
+  // Resolve #define preprocessor directives before tokenizing
+  const tokens = tokenize(resolveDefines(sfzText));
 
   // State machine
   type Mode = "global" | "group" | "region";
@@ -204,6 +204,37 @@ function buildRegion(
   if (ampVelcurve) region.ampVelCurve = ampVelcurve;
 
   return region;
+}
+
+// ---------------------------------------------------------------------------
+// Preprocessor — resolve #define directives
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve `#define $VAR value` directives by replacing all `$VAR` occurrences
+ * in the text and stripping the directive lines.
+ */
+function resolveDefines(sfz: string): string {
+  const defines: Record<string, string> = {};
+  const lines = sfz.split("\n");
+  const output: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const match = trimmed.match(/^#define\s+(\$\w+)\s+(.+)$/);
+    if (match) {
+      defines[match[1]] = match[2].trim();
+    } else {
+      output.push(line);
+    }
+  }
+
+  let result = output.join("\n");
+  for (const [key, value] of Object.entries(defines)) {
+    // Escape $ for regex and replace all occurrences
+    result = result.split(key).join(value);
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------

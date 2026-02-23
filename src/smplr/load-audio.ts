@@ -15,7 +15,10 @@ export async function loadAudioBuffer(
   url: string,
   storage: Storage
 ): Promise<AudioBuffer | undefined> {
-  url = url.replace(/#/g, "%23").replace(/([^:]\/)\/+/g, "$1");
+  url = url
+    .replace(/#/g, "%23")
+    .replace(/ /g, "%20")
+    .replace(/([^:]\/)\/+/g, "$1");
   const response = await storage.fetch(url);
   if (response.status !== 200) {
     console.warn(

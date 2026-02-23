@@ -17,7 +17,7 @@ export function MellotronExample({ className }: { className?: string }) {
   const [instrumentName, setInstrumentName] = useState<string>(
     instrumentNames[0]
   );
-  const [status, setStatus] = useStatus();
+  const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [reverbMix, setReverbMix] = useState(0);
   const [volume, setVolume] = useState(100);
 
@@ -29,6 +29,7 @@ export function MellotronExample({ className }: { className?: string }) {
     const newInstrument = new Mellotron(context, {
       instrument: instrumentName,
       volume,
+      onLoadProgress,
     });
     newInstrument.output.addEffect("reverb", reverb, reverbMix);
     setInstrument(newInstrument);
@@ -44,6 +45,7 @@ export function MellotronExample({ className }: { className?: string }) {
 
         <LoadWithStatus
           status={status}
+          progress={progress}
           onClick={() => loadMellotron(instrumentName)}
         />
         <ConnectMidi instrument={instrument} />
