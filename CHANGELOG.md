@@ -1,5 +1,56 @@
 # smplr
 
+## 0.18.x
+
+#### New Sequencer
+
+A timing-correct, multi-track `Sequencer` that delegates audio scheduling to instruments
+via `instrument.start({ note, time })`.
+
+```ts
+import { Sequencer, SplendidGrandPiano } from "smplr";
+
+const seq = new Sequencer(context, { bpm: 120, loop: true });
+seq.addTrack(piano, [
+  { note: "C4", at: "1:1", duration: "4n" },
+  { note: "E4", at: "1:2", duration: "4n" },
+]);
+seq.loopEnd = "2:1";
+seq.start();
+```
+
+Features:
+
+- **Multi-track**: `addTrack(instrument, notes)` / `removeTrack` / `clearTracks`
+- **Musical time notation**: `"4n"`, `"8n"`, `"1m"`, `"2:1"`, `"1:1:48"`, dotted (`"4n."`)
+- **Playback**: `start` / `pause` / `stop` with seamless resume
+- **Live BPM changes**: set `bpm` mid-playback with no rescheduling needed
+- **Seek**: set `position` to jump to any bar/beat/tick while playing
+- **Loop**: configurable `loopStart` / `loopEnd` / `progress`
+- **Pattern API**: `scheduleRepeat(callback, interval)` for programmatic patterns
+- **Events**: `beat`, `bar`, `loop`, `end`, `start`, `stop`, `pause`
+- **Humanize**: optional random timing/velocity offsets
+
+#### Sequencer `noteOn` / `noteOff` events
+
+The Sequencer emits `noteOn` and `noteOff` events driven by the instrument's own
+`onStart` / `onEnded` callbacks — they fire at actual playback time, not at scheduling time:
+
+```ts
+seq.on("noteOn", (event) => highlight(event.noteId));
+seq.on("noteOff", (event) => unhighlight(event.noteId));
+```
+
+The event (`NoteEvent`) contains `noteId`, `trackIndex`, `noteIndex`, and the original
+`SequencerNote`. Notes can have a custom `id` field; otherwise `noteId` defaults to the
+array index.
+
+#### AudioWorklet graceful degradation
+
+`Reverb` now checks for `context.audioWorklet` before calling `addModule()`. On iPad Safari
+over HTTP (non-secure context), `audioWorklet` is `undefined` — the reverb now degrades
+gracefully (no effect, no crash) instead of throwing.
+
 ## 0.17.x
 
 - Migrate Piano sample sources to smpldsnds (fix a iOS loading problem)
