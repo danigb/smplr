@@ -378,7 +378,7 @@ Note positions and durations accept several formats:
 ```js
 const seq = new Sequencer(context, {
   bpm: 120,            // default 120
-  ppq: 96,             // pulses per quarter note, default 96
+  ppq: 480,            // pulses per quarter note, default 480
   timeSignature: 4,    // beats per bar, default 4
   loop: false,         // default false
   loopStart: 0,        // loop start position (ticks or string)
@@ -453,6 +453,38 @@ seq.on("stop",  ()          => { });
 seq.on("pause", ()          => { });
 
 seq.off("beat", handler);  // remove a listener
+```
+
+#### Note events
+
+`noteOn` and `noteOff` events fire when the instrument's `onStart` / `onEnded` callbacks are called, so they are driven by the actual audio playback — not by the scheduling lookahead.
+
+```js
+seq.on("noteOn", (event) => {
+  console.log(event.noteId, event.trackIndex, event.noteIndex);
+  highlight(event.noteId);
+});
+seq.on("noteOff", (event) => {
+  unhighlight(event.noteId);
+});
+```
+
+The `event` object (`NoteEvent`) contains:
+
+| Field        | Type               | Description                                      |
+|--------------|--------------------|--------------------------------------------------|
+| `noteId`     | `string \| number` | The note's `id` if provided, otherwise its array index |
+| `trackIndex` | `number`           | Index of the track in the order it was added      |
+| `noteIndex`  | `number`           | Index of the note within its track's notes array  |
+| `note`       | `SequencerNote`    | The original note object                          |
+
+You can set a custom `id` on any `SequencerNote` to use as `noteId`:
+
+```js
+seq.addTrack(piano, [
+  { id: "intro-c", note: "C4", at: "1:1", duration: "4n" },
+  { id: "intro-e", note: "E4", at: "1:2", duration: "4n" },
+]);
 ```
 
 #### Humanize
