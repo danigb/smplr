@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { CacheStorage, Reverb, SplendidGrandPiano } from "smplr";
+import { useEffect, useRef, useState } from "react";
+import { CacheStorage, Reverb, Sequencer, SplendidGrandPiano } from "smplr";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { getAudioContext } from "./audio-context";
@@ -16,6 +16,43 @@ export function PianoExample({ className }: { className?: string }) {
   const [format, setFormat] = useState<SampleFormat>("ogg");
   const [reverbMix, setReverbMix] = useState(0.0);
   const [volume, setVolume] = useState(100);
+  const seqRef = useRef<Sequencer | null>(null);
+  const [seqState, setSeqState] = useState<"stopped" | "playing" | "paused">(
+    "stopped",
+  );
+
+  async function toggleSequence() {
+    if (!piano) return;
+    const seq = seqRef.current;
+    if (seq && seq.state === "playing") {
+      seq.pause();
+      setSeqState("paused");
+      return;
+    }
+    if (seq && seq.state === "paused") {
+      seq.start();
+      setSeqState("playing");
+      return;
+    }
+    // Create a new sequencer and load the sequence
+    const notes = await fetch("/arabesque.json").then((r) => r.json());
+    const newSeq = new Sequencer(piano.context, {
+      bpm: 80,
+      humanize: { timing: 5, velocity: 20 },
+    });
+    // Type mismatch on onStart/onEnded callback params — safe at runtime
+    newSeq.addTrack(piano as any, notes);
+    newSeq.on("end", () => setSeqState("stopped"));
+    seqRef.current = newSeq;
+    newSeq.start();
+    setSeqState("playing");
+  }
+
+  useEffect(() => {
+    return () => {
+      seqRef.current?.stop();
+    };
+  }, []);
 
   function loadPiano() {
     if (piano) return;
@@ -23,7 +60,12 @@ export function PianoExample({ className }: { className?: string }) {
     const context = getAudioContext();
     reverb ??= new Reverb(context);
     storage ??= new CacheStorage();
-    const newPiano = new SplendidGrandPiano(context, { volume, storage, onLoadProgress, formats: [format] });
+    const newPiano = new SplendidGrandPiano(context, {
+      volume,
+      storage,
+      onLoadProgress,
+      formats: [format],
+    });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
     newPiano.load.then(() => {
@@ -35,7 +77,13 @@ export function PianoExample({ className }: { className?: string }) {
     <div className={className}>
       <div className="flex gap-2 items-end mb-2">
         <h1 className="text-3xl">SplendidGrandPiano</h1>
-        <LoadWithStatus status={status} progress={progress} onClick={loadPiano} format={format} onFormatChange={status === "init" ? setFormat : undefined} />
+        <LoadWithStatus
+          status={status}
+          progress={progress}
+          onClick={loadPiano}
+          format={format}
+          onFormatChange={status === "init" ? setFormat : undefined}
+        />
         <ConnectMidi instrument={piano} />
       </div>
       <div></div>
@@ -48,6 +96,12 @@ export function PianoExample({ className }: { className?: string }) {
             }}
           >
             Stop all
+          </button>
+          <button
+            className="bg-zinc-700 rounded px-3 py-0.5 shadow"
+            onClick={toggleSequence}
+          >
+            {seqState === "playing" ? "Pause sequence" : "Play sequence"}
           </button>
         </div>
         <div className="flex gap-4 mb-2 no-select">
