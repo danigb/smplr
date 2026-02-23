@@ -1,5 +1,5 @@
-import { findSamplesInRegions, spreadRegions } from "./layers";
-import { RegionGroup, SampleOptions, SampleRegion } from "./types";
+import { findSamplesInRegions, spreadRegions } from "./sfz-layers";
+import { RegionGroup, SampleOptions, SampleRegion } from "./sfz-types";
 
 const createGroup = (region: Partial<SampleRegion>): RegionGroup => ({
   regions: [

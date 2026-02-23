@@ -1,5 +1,5 @@
 import { AudioBuffers } from "../smplr/load-audio";
-import { InternalPlayer, SampleStart, SampleStop } from "../player/types";
+import { InternalPlayer, SampleStart, SampleStop } from "../sfz-types";
 import { AudioContextMock, createAudioContextMock } from "./audio-context-mock";
 
 export class InternalPlayerMock implements InternalPlayer {

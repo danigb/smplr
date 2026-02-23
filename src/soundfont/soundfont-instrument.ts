@@ -1,7 +1,7 @@
-import { spreadRegions } from "../player/layers";
+import { spreadRegions } from "../sfz-layers";
 import { AudioBuffers, findFirstSupportedFormat } from "../smplr/load-audio";
 import { toMidi } from "../smplr/midi";
-import { RegionGroup } from "../player/types";
+import { RegionGroup } from "../sfz-types";
 import { Storage } from "../storage";
 
 export function gleitzKitUrl(name: string, kit: string) {

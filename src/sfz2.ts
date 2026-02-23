@@ -3,7 +3,7 @@ import {
   getPreferredAudioExtension,
   loadAudioBuffer,
 } from "./smplr/load-audio";
-import { RegionGroup, SampleRegion } from "./player/types";
+import { RegionGroup, SampleRegion } from "./sfz-types";
 import { Storage } from "./storage";
 
 export type SfzLoaderConfig = {

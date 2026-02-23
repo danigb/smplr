@@ -1,12 +1,12 @@
-import { toMidi } from "../smplr/midi";
+import { toMidi } from "./smplr/midi";
 import {
   RegionGroup,
   SampleOptions,
   SampleRegion,
   SampleStart,
   SamplerInstrument,
-} from "./types";
-import { dbToGain } from "../smplr/volume";
+} from "./sfz-types";
+import { dbToGain } from "./smplr/volume";
 
 export function createEmptySamplerInstrument(
   options: Partial<SampleOptions> = {}
