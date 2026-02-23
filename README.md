@@ -328,6 +328,178 @@ const piano = new SplendidGrandPiano(context, { storage });
 
 ⚠️ `CacheStorage` is based on [Cache API](https://developer.mozilla.org/en-US/docs/Web/API/Cache) and only works in secure environments that runs with `https`. Read your framework documentation for setup instructions. For example, in nextjs you can use https://www.npmjs.com/package/next-dev-https. For vite there's https://github.com/liuweiGL/vite-plugin-mkcert. Find the appropriate solution for your environment.
 
+## Sequencer
+
+`Sequencer` schedules notes from one or more tracks against any smplr instrument with sample-accurate timing.
+
+```js
+import { Sequencer, SplendidGrandPiano, DrumMachine } from "smplr";
+
+const context = new AudioContext();
+const piano = new SplendidGrandPiano(context);
+const drums = new DrumMachine(context, { instrument: "TR-808" });
+
+const seq = new Sequencer(context, { bpm: 120, loop: true });
+
+seq.addTrack(piano, [
+  { note: "C4", at: "1:1", duration: "4n" },
+  { note: "E4", at: "1:2", duration: "4n" },
+  { note: "G4", at: "1:3", duration: "4n" },
+  { note: "C5", at: "1:4", duration: "2n" },
+]);
+
+seq.addTrack(drums, [
+  { note: "kick",  at: "1:1" },
+  { note: "snare", at: "1:2" },
+  { note: "kick",  at: "1:3" },
+  { note: "snare", at: "1:4" },
+]);
+
+seq.loopEnd = "2:1"; // 1 bar
+seq.start();
+```
+
+#### Time notation
+
+Note positions and durations accept several formats:
+
+| Format      | Meaning                              |
+|-------------|--------------------------------------|
+| `"4n"`      | quarter note                         |
+| `"8n"`      | eighth note                          |
+| `"4n."`     | dotted quarter (1.5×)                |
+| `"1m"`      | one measure                          |
+| `"2:1"`     | bar 2, beat 1 (1-indexed)            |
+| `"2:3:48"`  | bar 2, beat 3, +48 ticks             |
+| `96`        | raw ticks (number passthrough)       |
+
+#### Constructor options
+
+```js
+const seq = new Sequencer(context, {
+  bpm: 120,            // default 120
+  ppq: 480,            // pulses per quarter note, default 480
+  timeSignature: 4,    // beats per bar, default 4
+  loop: false,         // default false
+  loopStart: 0,        // loop start position (ticks or string)
+  loopEnd: "2:1",      // loop end position; defaults to end of longest track
+  lookaheadMs: 200,    // scheduling lookahead, default 200
+  intervalMs: 50,      // flush interval, default 50
+  humanize: { timing: 0.01, velocity: 8 }, // optional randomisation
+});
+```
+
+#### Playback
+
+```js
+seq.start();   // start from beginning (or resume from pause if no offset given)
+seq.pause();   // freeze position
+seq.stop();    // stop and reset to 0
+
+seq.state;     // "stopped" | "playing" | "paused"
+```
+
+#### Tempo and position
+
+```js
+seq.bpm = 140;            // change BPM live, no glitch
+seq.timeSignature = 3;    // change time signature
+
+seq.position;             // current position as "bar:beat:tick" string
+seq.position = "3:1";     // seek while playing or stopped
+```
+
+#### Loop
+
+```js
+seq.loop = true;
+seq.loopStart = "1:1";  // ticks or string notation
+seq.loopEnd   = "3:1";  // ticks or string notation
+
+seq.progress;            // 0..1 within the loop range
+```
+
+#### Pattern API
+
+`scheduleRepeat` fires a callback at a regular musical interval, passing the exact AudioContext time:
+
+```js
+const cancel = seq.scheduleRepeat((time) => {
+  piano.start({ note: "C4", time, duration: 0.1 });
+}, "8n"); // every eighth note
+
+cancel(); // stop repeating
+```
+
+An optional third argument sets the start position:
+
+```js
+seq.scheduleRepeat(callback, "4n", "2:1"); // start at bar 2
+```
+
+#### Events
+
+```js
+seq.on("beat", (beat, time) => {
+  const delay = (time - context.currentTime) * 1000;
+  setTimeout(() => metronome.flash(), delay);
+});
+
+seq.on("bar",  (bar, time)  => { ui.updateBar(bar); });
+seq.on("loop", ()           => { console.log("looped"); });
+seq.on("end",  ()           => { console.log("done"); });
+seq.on("start", ()          => { });
+seq.on("stop",  ()          => { });
+seq.on("pause", ()          => { });
+
+seq.off("beat", handler);  // remove a listener
+```
+
+#### Note events
+
+`noteOn` and `noteOff` events fire when the instrument's `onStart` / `onEnded` callbacks are called, so they are driven by the actual audio playback — not by the scheduling lookahead.
+
+```js
+seq.on("noteOn", (event) => {
+  console.log(event.noteId, event.trackIndex, event.noteIndex);
+  highlight(event.noteId);
+});
+seq.on("noteOff", (event) => {
+  unhighlight(event.noteId);
+});
+```
+
+The `event` object (`NoteEvent`) contains:
+
+| Field        | Type               | Description                                      |
+|--------------|--------------------|--------------------------------------------------|
+| `noteId`     | `string \| number` | The note's `id` if provided, otherwise its array index |
+| `trackIndex` | `number`           | Index of the track in the order it was added      |
+| `noteIndex`  | `number`           | Index of the note within its track's notes array  |
+| `note`       | `SequencerNote`    | The original note object                          |
+
+You can set a custom `id` on any `SequencerNote` to use as `noteId`:
+
+```js
+seq.addTrack(piano, [
+  { id: "intro-c", note: "C4", at: "1:1", duration: "4n" },
+  { id: "intro-e", note: "E4", at: "1:2", duration: "4n" },
+]);
+```
+
+#### Humanize
+
+Add subtle randomisation to timing (seconds) and velocity for a more natural feel:
+
+```js
+const seq = new Sequencer(context, {
+  bpm: 90,
+  humanize: { timing: 0.012, velocity: 8 },
+});
+```
+
+---
+
 ## Instruments
 
 ### Sampler

@@ -72,7 +72,7 @@ async function playMelody(
   notes: number[],
   msPerNote: number,
   log: LogApi,
-  signal: AbortSignal
+  signal: AbortSignal,
 ): Promise<void> {
   // Phase 1: chromatic scale at fixed velocity
   log.append("  scale vel:100");
@@ -114,7 +114,7 @@ async function playMelody(
 async function playDrums(
   dm: DrumMachine,
   log: LogApi,
-  signal: AbortSignal
+  signal: AbortSignal,
 ): Promise<void> {
   const groups = dm.getGroupNames();
   log.append(`  Groups: ${groups.join("  ")}`);
@@ -308,7 +308,7 @@ const INSTRUMENT_TESTS: InstrumentTest[] = [
 async function runAll(
   ctx: AudioContext,
   log: LogApi,
-  signal: AbortSignal
+  signal: AbortSignal,
 ): Promise<void> {
   for (const test of INSTRUMENT_TESTS) {
     if (signal.aborted) break;
@@ -334,8 +334,11 @@ async function runAll(
 
 export default function TestPage() {
   const [isRunning, setIsRunning] = useState(false);
+  const [toneActive, setToneActive] = useState(false);
+  const [ctxInfo, setCtxInfo] = useState("");
   const [lines, setLines] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const oscRef = useRef<OscillatorNode | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
   const append = (line: string) => setLines((prev) => [...prev, line]);
@@ -368,16 +371,52 @@ export default function TestPage() {
   return (
     <>
       <Head>
-        <title>smplr — instrument test</title>
+        <title>smplr — test page</title>
       </Head>
       <div className="min-h-screen bg-gray-950 text-green-300 p-8 font-mono text-sm">
-        <h1 className="text-base mb-4 text-green-400">smplr instrument test</h1>
-        <button
-          onClick={toggle}
-          className="px-4 py-2 rounded bg-green-900 hover:bg-green-800 text-green-100 font-bold mb-6"
-        >
-          {isRunning ? "⏸ Pause" : "▶ Play"}
-        </button>
+        <h1 className="text-base mb-4 text-green-400">smplr test page</h1>
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={toggle}
+            className="px-4 py-2 rounded bg-green-900 hover:bg-green-800 text-green-100 font-bold"
+          >
+            {isRunning ? "⏸ Pause" : "▶ Play"}
+          </button>
+          <button
+            onClick={async () => {
+              if (oscRef.current) {
+                oscRef.current.stop();
+                oscRef.current = null;
+                setToneActive(false);
+              } else {
+                const ctx = getAudioContext();
+                if (ctx.state === "suspended") {
+                  await ctx.resume();
+                }
+                setCtxInfo(
+                  `state: ${ctx.state}, sampleRate: ${ctx.sampleRate}, baseLatency: ${ctx.baseLatency}`,
+                );
+                const osc = ctx.createOscillator();
+                osc.type = "sine";
+                osc.frequency.value = 440;
+                osc.connect(ctx.destination);
+                osc.start();
+                osc.onended = () => {
+                  oscRef.current = null;
+                  setToneActive(false);
+                };
+                oscRef.current = osc;
+                setToneActive(true);
+              }
+            }}
+            className="px-4 py-2 rounded bg-yellow-900 hover:bg-yellow-800 text-yellow-100 font-bold"
+          >
+            {toneActive ? "Stop tone" : "Test tone"}
+          </button>
+        </div>
+        {ctxInfo && (
+          <div className="mb-4 text-xs text-zinc-400">{ctxInfo}</div>
+        )}
         <div
           ref={logRef}
           className="overflow-y-auto h-[72vh] leading-relaxed space-y-px"
@@ -389,14 +428,14 @@ export default function TestPage() {
                 line.startsWith("━")
                   ? "text-green-500 pt-2"
                   : line.startsWith("  ✓")
-                  ? "text-green-400"
-                  : line.startsWith("  ✗")
-                  ? "text-red-400"
-                  : line.startsWith("  ▶")
-                  ? "text-yellow-300"
-                  : line.startsWith("  ■")
-                  ? "text-green-200"
-                  : "text-green-600"
+                    ? "text-green-400"
+                    : line.startsWith("  ✗")
+                      ? "text-red-400"
+                      : line.startsWith("  ▶")
+                        ? "text-yellow-300"
+                        : line.startsWith("  ■")
+                          ? "text-green-200"
+                          : "text-green-600"
               }
             >
               {line}

@@ -17,7 +17,15 @@ const PARAMS = [
 
 const init = new WeakMap<AudioContext, Promise<void>>();
 
-async function createDattorroReverbEffect(context: AudioContext) {
+async function createDattorroReverbEffect(
+  context: AudioContext,
+): Promise<AudioWorkletNode | undefined> {
+  if (!context.audioWorklet) {
+    console.warn(
+      "AudioWorklet not supported in this context. Reverb not available.",
+    );
+    return undefined;
+  }
   let ready = init.get(context);
   if (!ready) {
     const blob = new Blob([PROCESSOR], { type: "application/javascript" });
@@ -43,9 +51,11 @@ export class Reverb {
     this.input = context.createGain();
     this.#output = context.destination;
     this.#ready = createDattorroReverbEffect(context).then((reverb) => {
-      this.input.connect(reverb);
-      reverb.connect(this.#output);
-      this.#effect = reverb;
+      if (reverb) {
+        this.input.connect(reverb);
+        reverb.connect(this.#output);
+        this.#effect = reverb;
+      }
       return this;
     });
   }
