@@ -1,6 +1,8 @@
 # smplr
 
-## 0.17.0
+## 0.17.x
+
+- Migrate Piano sample sources to smpldsnds (fix a iOS loading problem)
 
 #### New audio player (`src/smplr/`)
 
