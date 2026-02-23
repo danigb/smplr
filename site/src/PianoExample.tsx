@@ -23,29 +23,19 @@ export function PianoExample({ className }: { className?: string }) {
 
   async function toggleSequence() {
     if (!piano) return;
-    const seq = seqRef.current;
-    if (seq && seq.state === "playing") {
-      seq.pause();
-      setSeqState("paused");
+    if (seqRef.current) {
+      seqRef.current.togglePlayPause();
       return;
     }
-    if (seq && seq.state === "paused") {
-      seq.start();
-      setSeqState("playing");
-      return;
-    }
-    // Create a new sequencer and load the sequence
     const notes = await fetch("/arabesque.json").then((r) => r.json());
-    const newSeq = new Sequencer(piano.context, {
+    const seq = new Sequencer(piano.context, {
       bpm: 80,
-      humanize: { timing: 5, velocity: 20 },
+      humanize: { timingMs: 5, velocity: 20 },
     });
-    // Type mismatch on onStart/onEnded callback params — safe at runtime
-    newSeq.addTrack(piano as any, notes);
-    newSeq.on("end", () => setSeqState("stopped"));
-    seqRef.current = newSeq;
-    newSeq.start();
-    setSeqState("playing");
+    seq.addTrack(piano, notes);
+    seq.on("statechange", setSeqState);
+    seqRef.current = seq;
+    seq.start();
   }
 
   useEffect(() => {

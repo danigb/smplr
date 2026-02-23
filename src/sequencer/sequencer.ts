@@ -28,8 +28,8 @@ export type SequencerInstrument = {
     duration?: number;
     velocity?: number;
     noteId?: string | number;
-    onStart?: (event: { noteId?: string | number }) => void;
-    onEnded?: (event: { noteId?: string | number }) => void;
+    onStart?: (event: unknown) => void;
+    onEnded?: (event: unknown) => void;
   }): unknown;
 };
 
@@ -52,13 +52,15 @@ export type SequencerOptions = {
   lookaheadMs?: number;
   /** How often (ms) the flush loop runs. Default 50. */
   intervalMs?: number;
-  /** Randomise timing (seconds) and velocity per note for a human feel. */
-  humanize?: { timing?: number; velocity?: number };
+  /** Randomise timing (ms) and velocity per note for a human feel. */
+  humanize?: { timingMs?: number; velocity?: number };
 };
 
 // ---------------------------------------------------------------------------
 // Internal types
 // ---------------------------------------------------------------------------
+
+type StopFn = (time?: number) => void;
 
 type Track = {
   instrument: SequencerInstrument;
@@ -107,6 +109,8 @@ export class Sequencer {
   private _totalTicks = 0;
   /** Guards against scheduling the auto-stop setTimeout more than once. */
   private _endScheduled = false;
+  /** Active voices keyed by noteId, so individual notes can be stopped. */
+  private _activeVoices: Map<string | number, StopFn> = new Map();
 
   constructor(context: BaseAudioContext, options: SequencerOptions = {}) {
     this._context = context;
@@ -136,7 +140,7 @@ export class Sequencer {
     this._lookaheadSec = (options.lookaheadMs ?? 200) / 1000;
     this._intervalMs = options.intervalMs ?? 50;
     this._humanize = {
-      timing: options.humanize?.timing ?? 0,
+      timing: options.humanize?.timingMs ?? 0,
       velocity: options.humanize?.velocity ?? 0,
     };
   }
@@ -182,7 +186,7 @@ export class Sequencer {
       this._clock.resume();
       this._scheduledThrough = this._context.currentTime;
       this._startLoop();
-      this._emit("start");
+      this._emitStateChange("playing");
       return this;
     }
 
@@ -192,7 +196,7 @@ export class Sequencer {
     this._endScheduled = false;
     this._resetRepeatEvents(startTick);
     this._startLoop();
-    this._emit("start");
+    this._emitStateChange("playing");
     return this;
   }
 
@@ -200,7 +204,7 @@ export class Sequencer {
     if (this._clock.state !== "playing") return this;
     this._clock.pause();
     this._stopLoop();
-    this._emit("pause");
+    this._emitStateChange("paused");
     return this;
   }
 
@@ -208,8 +212,31 @@ export class Sequencer {
     this._clock.stop();
     this._stopLoop();
     this._endScheduled = false;
-    this._emit("stop");
+    this._activeVoices.clear();
+    this._emitStateChange("stopped");
     return this;
+  }
+
+  /**
+   * Stop a single note that was scheduled by the sequencer.
+   * @param noteId  The id of the note (from SequencerNote.id or auto-assigned index).
+   * @param time    Optional AudioContext time to schedule the stop.
+   */
+  stopNote(noteId: string | number, time?: number): this {
+    const stopFn = this._activeVoices.get(noteId);
+    if (stopFn) {
+      stopFn(time);
+      this._activeVoices.delete(noteId);
+    }
+    return this;
+  }
+
+  /**
+   * Toggle between playing and paused. If stopped, starts from the beginning.
+   */
+  togglePlayPause(): this {
+    if (this._clock.state === "playing") return this.pause();
+    return this.start();
   }
 
   // ---------------------------------------------------------------------------
@@ -337,17 +364,18 @@ export class Sequencer {
   /**
    * Listen to a sequencer event.
    *
-   * | Event     | Args                         |
-   * |-----------|------------------------------|
-   * | "start"   |                              |
-   * | "stop"    |                              |
-   * | "pause"   |                              |
-   * | "end"     |                              |
-   * | "loop"    |                              |
-   * | "beat"    | (beat: number, time: number) |
-   * | "bar"     | (bar: number, time: number)  |
-   * | "noteOn"  | (event: NoteEvent)           |
-   * | "noteOff" | (event: NoteEvent)           |
+   * | Event          | Args                                              |
+   * |----------------|---------------------------------------------------|
+   * | "statechange"  | (state: "playing" \| "paused" \| "stopped")       |
+   * | "start"        |                                                   |
+   * | "stop"         |                                                   |
+   * | "pause"        |                                                   |
+   * | "end"          |                                                   |
+   * | "loop"         |                                                   |
+   * | "beat"         | (beat: number, time: number)                      |
+   * | "bar"          | (bar: number, time: number)                       |
+   * | "noteOn"       | (event: NoteEvent)                                |
+   * | "noteOff"      | (event: NoteEvent)                                |
    */
   on(event: string, callback: (...args: any[]) => void): this {
     if (!this._listeners.has(event)) {
@@ -433,6 +461,7 @@ export class Sequencer {
         this._stopLoop();
         this._clock.stop();
         this._emit("end");
+        this._emit("statechange", "stopped");
       }, delay);
     }
   }
@@ -459,7 +488,7 @@ export class Sequencer {
             : undefined;
 
         const timingOffset = this._humanize.timing
-          ? (Math.random() * 2 - 1) * this._humanize.timing
+          ? (Math.random() * 2 - 1) * this._humanize.timing / 1000
           : 0;
         const velocityOffset = this._humanize.velocity
           ? Math.round((Math.random() * 2 - 1) * this._humanize.velocity)
@@ -468,15 +497,23 @@ export class Sequencer {
         const noteId = note.id ?? noteIndex;
         const noteEvent: NoteEvent = { noteId, trackIndex, noteIndex, note };
 
-        track.instrument.start({
+        const result = track.instrument.start({
           note: note.note,
-          time: audioTime + timingOffset,
+          time: Math.max(0, audioTime + timingOffset),
           duration: durationSec,
           velocity: (note.velocity ?? 100) + velocityOffset,
           noteId,
           onStart: () => this._emit("noteOn", noteEvent),
-          onEnded: () => this._emit("noteOff", noteEvent),
+          onEnded: () => {
+            this._activeVoices.delete(noteId);
+            this._emit("noteOff", noteEvent);
+          },
         });
+
+        // Capture the stop function if the instrument returns one
+        if (typeof result === "function") {
+          this._activeVoices.set(noteId, result as StopFn);
+        }
       }
     }
 
@@ -528,6 +565,13 @@ export class Sequencer {
         fn(...args);
       }
     }
+  }
+
+  /** Emit both the specific state event ("start"/"pause"/"stop") and the unified "statechange" event. */
+  private _emitStateChange(state: "playing" | "paused" | "stopped"): void {
+    const eventName = state === "playing" ? "start" : state === "paused" ? "pause" : "stop";
+    this._emit(eventName);
+    this._emit("statechange", state);
   }
 
   /** Recompute _totalTicks from all track notes (at + duration). */
