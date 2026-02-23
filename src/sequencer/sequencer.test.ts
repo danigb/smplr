@@ -742,3 +742,154 @@ describe("on / off", () => {
     expect(seq.on("start", jest.fn())).toBe(seq);
   });
 });
+
+// ---------------------------------------------------------------------------
+// noteOn / noteOff events
+// ---------------------------------------------------------------------------
+
+describe("noteOn / noteOff events", () => {
+  it("passes onStart and onEnded callbacks to instrument.start()", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const seq = makeSeq(ctx);
+    seq.addTrack(inst, [{ note: "C4", at: "1:1" }]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    const call = inst.start.mock.calls[0][0];
+    expect(call.noteId).toBe(0); // default: note array index
+    expect(typeof call.onStart).toBe("function");
+    expect(typeof call.onEnded).toBe("function");
+  });
+
+  it("emits noteOn when instrument calls onStart", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const onNoteOn = jest.fn();
+    const seq = makeSeq(ctx);
+    seq.on("noteOn", onNoteOn);
+    seq.addTrack(inst, [{ note: "C4", at: "1:1", duration: "4n" }]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    // Simulate the instrument calling onStart
+    const call = inst.start.mock.calls[0][0];
+    call.onStart({ noteId: call.noteId });
+
+    expect(onNoteOn).toHaveBeenCalledTimes(1);
+    const event = onNoteOn.mock.calls[0][0];
+    expect(event.noteId).toBe(0);
+    expect(event.trackIndex).toBe(0);
+    expect(event.noteIndex).toBe(0);
+    expect(event.note).toMatchObject({ note: "C4", at: "1:1" });
+  });
+
+  it("emits noteOff when instrument calls onEnded", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const onNoteOff = jest.fn();
+    const seq = makeSeq(ctx);
+    seq.on("noteOff", onNoteOff);
+    seq.addTrack(inst, [{ note: "C4", at: "1:1", duration: "4n" }]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    // Simulate the instrument calling onEnded
+    const call = inst.start.mock.calls[0][0];
+    call.onEnded({ noteId: call.noteId });
+
+    expect(onNoteOff).toHaveBeenCalledTimes(1);
+    const event = onNoteOff.mock.calls[0][0];
+    expect(event.noteId).toBe(0);
+    expect(event.trackIndex).toBe(0);
+    expect(event.noteIndex).toBe(0);
+  });
+
+  it("uses custom id from SequencerNote as noteId", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const onNoteOn = jest.fn();
+    const seq = makeSeq(ctx);
+    seq.on("noteOn", onNoteOn);
+    seq.addTrack(inst, [{ id: "intro-c4", note: "C4", at: "1:1" }]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    const call = inst.start.mock.calls[0][0];
+    expect(call.noteId).toBe("intro-c4");
+
+    call.onStart({ noteId: call.noteId });
+    expect(onNoteOn.mock.calls[0][0].noteId).toBe("intro-c4");
+  });
+
+  it("defaults noteId to array index when no id provided", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const seq = makeSeq(ctx);
+    seq.addTrack(inst, [
+      { note: "C4", at: "1:1" },
+      { note: "E4", at: "1:2" },
+    ]);
+    seq.start();
+
+    // First flush: note 0 at t=0
+    jest.advanceTimersByTime(50);
+    expect(inst.start.mock.calls[0][0].noteId).toBe(0);
+
+    // Advance to get note 1 scheduled
+    ctx.currentTime = 0.35;
+    jest.advanceTimersByTime(50);
+    expect(inst.start.mock.calls[1][0].noteId).toBe(1);
+  });
+
+  it("provides correct trackIndex for multi-track", () => {
+    const ctx = makeContext(0) as any;
+    const inst1 = makeInstrument();
+    const inst2 = makeInstrument();
+    const onNoteOn = jest.fn();
+    const seq = makeSeq(ctx);
+    seq.on("noteOn", onNoteOn);
+    seq.addTrack(inst1, [{ note: "C4", at: "1:1" }]);
+    seq.addTrack(inst2, [{ note: "kick", at: "1:1" }]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    // Track 0
+    const call0 = inst1.start.mock.calls[0][0];
+    call0.onStart({ noteId: call0.noteId });
+    expect(onNoteOn.mock.calls[0][0].trackIndex).toBe(0);
+
+    // Track 1
+    const call1 = inst2.start.mock.calls[0][0];
+    call1.onStart({ noteId: call1.noteId });
+    expect(onNoteOn.mock.calls[1][0].trackIndex).toBe(1);
+  });
+
+  it("emits noteOn/noteOff on each loop iteration", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const onNoteOn = jest.fn();
+    const seq = makeSeq(ctx, { loop: true, loopEnd: "1:2" });
+    seq.on("noteOn", onNoteOn);
+    seq.addTrack(inst, [{ note: "C4", at: "1:1" }]);
+    seq.start();
+
+    // First iteration: note at t=0
+    jest.advanceTimersByTime(50);
+    expect(inst.start).toHaveBeenCalledTimes(1);
+
+    // Advance past loop end (0.5s at 120bpm for "1:2") into second iteration
+    ctx.currentTime = 0.4;
+    jest.advanceTimersByTime(50);
+
+    // The note should be scheduled again for the second loop iteration
+    expect(inst.start.mock.calls.length).toBeGreaterThanOrEqual(2);
+
+    // Both calls should have onStart callbacks
+    for (const call of inst.start.mock.calls) {
+      expect(typeof call[0].onStart).toBe("function");
+      call[0].onStart({ noteId: call[0].noteId });
+    }
+    expect(onNoteOn.mock.calls.length).toBe(inst.start.mock.calls.length);
+  });
+});

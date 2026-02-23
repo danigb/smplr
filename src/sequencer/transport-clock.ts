@@ -47,7 +47,7 @@ export class TransportClock {
   constructor(context: BaseAudioContext, options: TransportClockOptions = {}) {
     this._context = context;
     this._bpm = options.bpm ?? 120;
-    this.ppq = options.ppq ?? 96;
+    this.ppq = options.ppq ?? 480;
     this._timeSignature = options.timeSignature ?? 4;
   }
 

@@ -6,6 +6,8 @@ import { TransportClock } from "./transport-clock";
 // ---------------------------------------------------------------------------
 
 export type SequencerNote = {
+  /** Optional identifier for this note. Used as `noteId` in noteOn/noteOff events. Defaults to the note's array index. */
+  id?: string | number;
   note: string | number;
   /** Musical position: ticks, "4n", "1m", "2:1", "1:1.5", etc. */
   at: string | number;
@@ -25,7 +27,18 @@ export type SequencerInstrument = {
     time?: number;
     duration?: number;
     velocity?: number;
+    noteId?: string | number;
+    onStart?: (event: { noteId?: string | number }) => void;
+    onEnded?: (event: { noteId?: string | number }) => void;
   }): unknown;
+};
+
+/** Emitted with "noteOn" and "noteOff" events. */
+export type NoteEvent = {
+  noteId: string | number;
+  trackIndex: number;
+  noteIndex: number;
+  note: SequencerNote;
 };
 
 export type SequencerOptions = {
@@ -97,7 +110,7 @@ export class Sequencer {
 
   constructor(context: BaseAudioContext, options: SequencerOptions = {}) {
     this._context = context;
-    this._ppq = options.ppq ?? 96;
+    this._ppq = options.ppq ?? 480;
     this._timeSignature = options.timeSignature ?? 4;
 
     this._clock = new TransportClock(context, {
@@ -324,15 +337,17 @@ export class Sequencer {
   /**
    * Listen to a sequencer event.
    *
-   * | Event   | Args                        |
-   * |---------|-----------------------------|
-   * | "start" |                             |
-   * | "stop"  |                             |
-   * | "pause" |                             |
-   * | "end"   |                             |
-   * | "loop"  |                             |
-   * | "beat"  | (beat: number, time: number)|
-   * | "bar"   | (bar: number, time: number) |
+   * | Event     | Args                         |
+   * |-----------|------------------------------|
+   * | "start"   |                              |
+   * | "stop"    |                              |
+   * | "pause"   |                              |
+   * | "end"     |                              |
+   * | "loop"    |                              |
+   * | "beat"    | (beat: number, time: number) |
+   * | "bar"     | (bar: number, time: number)  |
+   * | "noteOn"  | (event: NoteEvent)           |
+   * | "noteOff" | (event: NoteEvent)           |
    */
   on(event: string, callback: (...args: any[]) => void): this {
     if (!this._listeners.has(event)) {
@@ -428,8 +443,10 @@ export class Sequencer {
 
   private _scheduleWindow(fromTick: number, toTick: number): void {
     // ---- Track notes ----
-    for (const track of this._tracks) {
-      for (const note of track.notes) {
+    for (let trackIndex = 0; trackIndex < this._tracks.length; trackIndex++) {
+      const track = this._tracks[trackIndex];
+      for (let noteIndex = 0; noteIndex < track.notes.length; noteIndex++) {
+        const note = track.notes[noteIndex];
         const noteTick = parseTicks(note.at, this._ppq, this._timeSignature);
         if (noteTick < fromTick || noteTick >= toTick) continue;
 
@@ -448,11 +465,17 @@ export class Sequencer {
           ? Math.round((Math.random() * 2 - 1) * this._humanize.velocity)
           : 0;
 
+        const noteId = note.id ?? noteIndex;
+        const noteEvent: NoteEvent = { noteId, trackIndex, noteIndex, note };
+
         track.instrument.start({
           note: note.note,
           time: audioTime + timingOffset,
           duration: durationSec,
           velocity: (note.velocity ?? 100) + velocityOffset,
+          noteId,
+          onStart: () => this._emit("noteOn", noteEvent),
+          onEnded: () => this._emit("noteOff", noteEvent),
         });
       }
     }
