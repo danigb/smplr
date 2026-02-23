@@ -2,6 +2,8 @@
 
 ## 0.18.x
 
+- Minor Sequencer fixes and code cleanup
+
 #### New Sequencer
 
 A timing-correct, multi-track `Sequencer` that delegates audio scheduling to instruments
