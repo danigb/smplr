@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import Head from "next/head";
-import { version } from "smplr/package.json";
+import pkg from "smplr/package.json";
+const { version } = pkg;
 import { DrumMachineExample } from "src/DrumMachineExample";
 import { ElectricPianoExample } from "src/ElectricPianoExample";
 import { MalletExample } from "src/MalletExample";

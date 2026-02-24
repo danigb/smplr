@@ -1,72 +1,9 @@
-import { spreadRegions } from "../player/layers";
-import { AudioBuffers, findFirstSupportedFormat } from "../smplr/load-audio";
-import { toMidi } from "../smplr/midi";
-import { RegionGroup } from "../player/types";
-import { Storage } from "../storage";
+import { findFirstSupportedFormat } from "../smplr/load-audio";
 
 export function gleitzKitUrl(name: string, kit: string) {
   const format = findFirstSupportedFormat(["ogg", "mp3"]) ?? "mp3";
   console.debug(`Soundfont: using ${format} format for ${name}`);
   return `https://gleitz.github.io/midi-js-soundfonts/${kit}/${name}-${format}.js`;
-}
-
-export function soundfontInstrumentLoader(
-  url: string,
-  buffers: AudioBuffers,
-  group: RegionGroup
-) {
-  return async (context: BaseAudioContext, storage: Storage) => {
-    const sourceFile = await (await storage.fetch(url)).text();
-    const json = midiJsToJson(sourceFile);
-
-    const noteNames = Object.keys(json);
-    await Promise.all(
-      noteNames.map(async (noteName) => {
-        const midi = toMidi(noteName);
-        if (!midi) return;
-        try {
-          const audioData = base64ToArrayBuffer(
-            removeBase64Prefix(json[noteName])
-          );
-          const buffer = await context.decodeAudioData(audioData);
-          buffers[noteName] = buffer;
-          group.regions.push({
-            sampleName: noteName,
-            midiPitch: midi,
-          });
-        } catch (error) {
-          console.warn(
-            `Soundfont: failed to decode note ${noteName}`,
-            error instanceof Error ? error.message : error
-          );
-        }
-      })
-    );
-    spreadRegions(group.regions);
-  };
-}
-
-// convert a MIDI.js javascript soundfont file to json
-function midiJsToJson(source: string) {
-  const header = source.indexOf("MIDI.Soundfont.");
-  if (header < 0) throw Error("Invalid MIDI.js Soundfont format");
-  const start = source.indexOf("=", header) + 2;
-  const end = source.lastIndexOf(",");
-  return JSON.parse(source.slice(start, end) + "}");
-}
-
-function removeBase64Prefix(audioBase64: string) {
-  return audioBase64.slice(audioBase64.indexOf(",") + 1);
-}
-
-function base64ToArrayBuffer(base64: string) {
-  const decoded = window.atob(base64);
-  const len = decoded.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = decoded.charCodeAt(i);
-  }
-  return bytes.buffer;
 }
 
 export const SOUNDFONT_KITS = ["MusyngKite", "FluidR3_GM"];

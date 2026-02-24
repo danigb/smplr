@@ -24,7 +24,7 @@ const BPM = 120;
 
 function makeSeq(
   ctx: BaseAudioContext,
-  opts: ConstructorParameters<typeof Sequencer>[1] = {}
+  opts: ConstructorParameters<typeof Sequencer>[1] = {},
 ) {
   return new Sequencer(ctx, {
     bpm: BPM,
@@ -199,7 +199,10 @@ describe("note scheduling", () => {
     ctx.currentTime = 0.35;
     jest.advanceTimersByTime(50);
     expect(inst.start).toHaveBeenCalledTimes(2);
-    expect(inst.start.mock.calls[1][0]).toMatchObject({ note: "E4", time: 0.5 });
+    expect(inst.start.mock.calls[1][0]).toMatchObject({
+      note: "E4",
+      time: 0.5,
+    });
   });
 
   it("does not double-schedule notes", () => {
@@ -228,7 +231,7 @@ describe("note scheduling", () => {
     jest.advanceTimersByTime(50);
 
     expect(inst.start).toHaveBeenCalledWith(
-      expect.objectContaining({ duration: expect.closeTo(0.5, 5) })
+      expect.objectContaining({ duration: expect.closeTo(0.5, 5) }),
     );
   });
 
@@ -240,7 +243,7 @@ describe("note scheduling", () => {
     seq.start();
     jest.advanceTimersByTime(50);
     expect(inst.start).toHaveBeenCalledWith(
-      expect.objectContaining({ velocity: 100 })
+      expect.objectContaining({ velocity: 100 }),
     );
   });
 
@@ -252,7 +255,7 @@ describe("note scheduling", () => {
     seq.start();
     jest.advanceTimersByTime(50);
     expect(inst.start).toHaveBeenCalledWith(
-      expect.objectContaining({ velocity: 64 })
+      expect.objectContaining({ velocity: 64 }),
     );
   });
 });
@@ -274,8 +277,12 @@ describe("multi-track", () => {
     seq.start();
     jest.advanceTimersByTime(50);
 
-    expect(piano.start).toHaveBeenCalledWith(expect.objectContaining({ note: "C4" }));
-    expect(drums.start).toHaveBeenCalledWith(expect.objectContaining({ note: "kick" }));
+    expect(piano.start).toHaveBeenCalledWith(
+      expect.objectContaining({ note: "C4" }),
+    );
+    expect(drums.start).toHaveBeenCalledWith(
+      expect.objectContaining({ note: "kick" }),
+    );
   });
 
   it("removeTrack stops events for that instrument only", () => {
@@ -561,7 +568,12 @@ describe("scheduleRepeat", () => {
   it("fires the callback every interval", () => {
     const ctx = makeContext(0) as any;
     const cb = jest.fn();
-    const seq = makeSeq(ctx, { lookaheadMs: 200, intervalMs: 50, loop: true, loopEnd: "4m" });
+    const seq = makeSeq(ctx, {
+      lookaheadMs: 200,
+      intervalMs: 50,
+      loop: true,
+      loopEnd: "4m",
+    });
     seq.addTrack(makeInstrument(), []);
     seq.scheduleRepeat(cb, "4n"); // every quarter note = 0.5s
     seq.start();
@@ -678,12 +690,12 @@ describe("humanize", () => {
   it("timing offset is within the declared range", () => {
     const ctx = makeContext(0) as any;
     const inst = makeInstrument();
-    const timingRange = 0.05; // ±50ms
-    const seq = makeSeq(ctx, { humanize: { timing: timingRange } });
+    const seq = makeSeq(ctx, { humanize: { timingMs: 50 } });
     seq.addTrack(inst, [{ note: "C4", at: "1:1" }]);
     seq.start();
     jest.advanceTimersByTime(50);
 
+    const timingRange = 0.05; // ±50ms
     const scheduledTime = inst.start.mock.calls[0][0].time;
     expect(scheduledTime).toBeGreaterThanOrEqual(-timingRange);
     expect(scheduledTime).toBeLessThanOrEqual(timingRange);

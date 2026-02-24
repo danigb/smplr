@@ -349,9 +349,9 @@ seq.addTrack(piano, [
 ]);
 
 seq.addTrack(drums, [
-  { note: "kick",  at: "1:1" },
+  { note: "kick", at: "1:1" },
   { note: "snare", at: "1:2" },
-  { note: "kick",  at: "1:3" },
+  { note: "kick", at: "1:3" },
   { note: "snare", at: "1:4" },
 ]);
 
@@ -363,60 +363,68 @@ seq.start();
 
 Note positions and durations accept several formats:
 
-| Format      | Meaning                              |
-|-------------|--------------------------------------|
-| `"4n"`      | quarter note                         |
-| `"8n"`      | eighth note                          |
-| `"4n."`     | dotted quarter (1.5×)                |
-| `"1m"`      | one measure                          |
-| `"2:1"`     | bar 2, beat 1 (1-indexed)            |
-| `"2:3:48"`  | bar 2, beat 3, +48 ticks             |
-| `96`        | raw ticks (number passthrough)       |
+| Format     | Meaning                        |
+| ---------- | ------------------------------ |
+| `"4n"`     | quarter note                   |
+| `"8n"`     | eighth note                    |
+| `"4n."`    | dotted quarter (1.5×)          |
+| `"1m"`     | one measure                    |
+| `"2:1"`    | bar 2, beat 1 (1-indexed)      |
+| `"2:3:48"` | bar 2, beat 3, +48 ticks       |
+| `96`       | raw ticks (number passthrough) |
 
 #### Constructor options
 
 ```js
 const seq = new Sequencer(context, {
-  bpm: 120,            // default 120
-  ppq: 480,            // pulses per quarter note, default 480
-  timeSignature: 4,    // beats per bar, default 4
-  loop: false,         // default false
-  loopStart: 0,        // loop start position (ticks or string)
-  loopEnd: "2:1",      // loop end position; defaults to end of longest track
-  lookaheadMs: 200,    // scheduling lookahead, default 200
-  intervalMs: 50,      // flush interval, default 50
-  humanize: { timing: 0.01, velocity: 8 }, // optional randomisation
+  bpm: 120, // default 120
+  ppq: 480, // pulses per quarter note, default 480
+  timeSignature: 4, // beats per bar, default 4
+  loop: false, // default false
+  loopStart: 0, // loop start position (ticks or string)
+  loopEnd: "2:1", // loop end position; defaults to end of longest track
+  lookaheadMs: 200, // scheduling lookahead, default 200
+  intervalMs: 50, // flush interval, default 50
+  humanize: { timingMs: 10, velocity: 8 }, // optional randomisation
 });
 ```
 
 #### Playback
 
 ```js
-seq.start();   // start from beginning (or resume from pause if no offset given)
-seq.pause();   // freeze position
-seq.stop();    // stop and reset to 0
+seq.start(); // start from beginning (or resume from pause if no offset given)
+seq.pause(); // freeze position
+seq.stop(); // stop and reset to 0
+seq.togglePlayPause(); // pause if playing, start/resume otherwise
 
-seq.state;     // "stopped" | "playing" | "paused"
+seq.state; // "stopped" | "playing" | "paused"
+```
+
+Individual sequenced notes can be stopped by their id:
+
+```js
+seq.stopNote("intro-c"); // stop immediately
+seq.stopNote("intro-c", time); // stop at a scheduled time
 ```
 
 #### Tempo and position
 
 ```js
-seq.bpm = 140;            // change BPM live, no glitch
-seq.timeSignature = 3;    // change time signature
+seq.bpm = 140; // change BPM live, no glitch
+seq.timeSignature = 3; // change time signature
 
-seq.position;             // current position as "bar:beat:tick" string
-seq.position = "3:1";     // seek while playing or stopped
+seq.position; // current position as "bar:beat:tick" string
+seq.position = "3:1"; // seek while playing or stopped
 ```
 
 #### Loop
 
 ```js
 seq.loop = true;
-seq.loopStart = "1:1";  // ticks or string notation
-seq.loopEnd   = "3:1";  // ticks or string notation
+seq.loopStart = "1:1"; // ticks or string notation
+seq.loopEnd = "3:1"; // ticks or string notation
 
-seq.progress;            // 0..1 within the loop range
+seq.progress; // 0..1 within the loop range
 ```
 
 #### Pattern API
@@ -440,19 +448,30 @@ seq.scheduleRepeat(callback, "4n", "2:1"); // start at bar 2
 #### Events
 
 ```js
+seq.on("statechange", (state) => {
+  // state: "playing" | "paused" | "stopped"
+  setSeqState(state);
+});
+
 seq.on("beat", (beat, time) => {
   const delay = (time - context.currentTime) * 1000;
   setTimeout(() => metronome.flash(), delay);
 });
 
-seq.on("bar",  (bar, time)  => { ui.updateBar(bar); });
-seq.on("loop", ()           => { console.log("looped"); });
-seq.on("end",  ()           => { console.log("done"); });
-seq.on("start", ()          => { });
-seq.on("stop",  ()          => { });
-seq.on("pause", ()          => { });
+seq.on("bar", (bar, time) => {
+  ui.updateBar(bar);
+});
+seq.on("loop", () => {
+  console.log("looped");
+});
+seq.on("end", () => {
+  console.log("done");
+});
+seq.on("start", () => {});
+seq.on("stop", () => {});
+seq.on("pause", () => {});
 
-seq.off("beat", handler);  // remove a listener
+seq.off("beat", handler); // remove a listener
 ```
 
 #### Note events
@@ -471,12 +490,12 @@ seq.on("noteOff", (event) => {
 
 The `event` object (`NoteEvent`) contains:
 
-| Field        | Type               | Description                                      |
-|--------------|--------------------|--------------------------------------------------|
+| Field        | Type               | Description                                            |
+| ------------ | ------------------ | ------------------------------------------------------ |
 | `noteId`     | `string \| number` | The note's `id` if provided, otherwise its array index |
-| `trackIndex` | `number`           | Index of the track in the order it was added      |
-| `noteIndex`  | `number`           | Index of the note within its track's notes array  |
-| `note`       | `SequencerNote`    | The original note object                          |
+| `trackIndex` | `number`           | Index of the track in the order it was added           |
+| `noteIndex`  | `number`           | Index of the note within its track's notes array       |
+| `note`       | `SequencerNote`    | The original note object                               |
 
 You can set a custom `id` on any `SequencerNote` to use as `noteId`:
 
@@ -489,14 +508,17 @@ seq.addTrack(piano, [
 
 #### Humanize
 
-Add subtle randomisation to timing (seconds) and velocity for a more natural feel:
+Add subtle randomisation to timing and velocity for a more natural feel:
 
 ```js
 const seq = new Sequencer(context, {
   bpm: 90,
-  humanize: { timing: 0.012, velocity: 8 },
+  humanize: { timingMs: 12, velocity: 8 },
 });
 ```
+
+- `timingMs`: maximum random offset in milliseconds (±). Default 0.
+- `velocity`: maximum random offset in MIDI velocity units (±). Default 0.
 
 ---
 
