@@ -1,5 +1,11 @@
 # smplr
 
+## 0.19.0
+
+### Minor Changes
+
+- Export `Smplr` class and all core types (`SmplrJson`, `SmplrGroup`, `SmplrRegion`, `PlaybackParams`, etc.) from the package root. Rename sequencer's `NoteEvent` to `SequencerNoteEvent` to avoid the name collision.
+
 ## 0.18.x
 
 - Minor Sequencer fixes and code cleanup
