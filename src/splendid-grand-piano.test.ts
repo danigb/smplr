@@ -53,6 +53,11 @@ function makeContext() {
       connect: jest.fn(),
       disconnect: jest.fn(),
     })),
+    createStereoPanner: jest.fn(() => ({
+      pan: { value: 0 },
+      connect: jest.fn(),
+      disconnect: jest.fn(),
+    })),
   };
 }
 

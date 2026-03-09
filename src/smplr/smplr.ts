@@ -25,6 +25,8 @@ export type SmplrOptions = {
   volume?: number;
   /** Custom volume-to-gain mapping function. Defaults to midiVelToGain. */
   volumeToGain?: (volume: number) => number;
+  /** Stereo pan position (-1 = full left, 0 = centre, +1 = full right). Defaults to 0. */
+  pan?: number;
   /** Default note velocity when not specified in NoteEvent (0–127). Defaults to 100. */
   velocity?: number;
   /** Shared SampleLoader instance. If omitted, a private one is created. */
@@ -53,6 +55,7 @@ type NormalizedNoteEvent = {
   lpfCutoffHz?: number;
   loop?: boolean;
   ampRelease?: number;
+  reverse?: boolean;
   stopId: string | number;
   onStart?: (event: NoteEvent) => void;
   onEnded?: (event: NoteEvent) => void;
@@ -106,6 +109,7 @@ export class Smplr {
 
   #loadProgress: LoadProgress = { loaded: 0, total: 0 };
   #buffers: Map<string, AudioBuffer> = new Map();
+  #reversedBuffers: Map<string, AudioBuffer> = new Map();
   #defaults: PlaybackParams | undefined;
   #defaultVelocity: number;
   #aliases: Map<string, number> | undefined;
@@ -147,6 +151,7 @@ export class Smplr {
       destination: options?.destination,
       volume: options?.volume,
       volumeToGain: options?.volumeToGain,
+      pan: options?.pan,
     });
 
     // 2. Scheduler — shared or private
@@ -277,8 +282,27 @@ export class Smplr {
     this.#scheduler.stop();
   }
 
+  #getBuffer(sample: string, reverse: boolean): AudioBuffer | undefined {
+    if (!reverse) return this.#buffers.get(sample);
+    const cached = this.#reversedBuffers.get(sample);
+    if (cached) return cached;
+    const original = this.#buffers.get(sample);
+    if (!original) return undefined;
+    const reversed = this.context.createBuffer(
+      original.numberOfChannels,
+      original.length,
+      original.sampleRate
+    );
+    for (let ch = 0; ch < original.numberOfChannels; ch++) {
+      const data = original.getChannelData(ch).slice().reverse();
+      reversed.copyToChannel(data, ch);
+    }
+    this.#reversedBuffers.set(sample, reversed);
+    return reversed;
+  }
+
   #playNote(event: NormalizedNoteEvent): void {
-    const { midi, velocity, time, stopId, duration, detune, lpfCutoffHz, loop, ampRelease, onStart, onEnded } =
+    const { midi, velocity, time, stopId, duration, detune, lpfCutoffHz, loop, ampRelease, reverse, onStart, onEnded } =
       event;
 
     const matches = this.#matcher.match(midi, velocity, this.#ccState);
@@ -293,7 +317,7 @@ export class Smplr {
     // Create a voice for each matched region
     let voiceStarted = false;
     for (const match of matches) {
-      const buffer = this.#buffers.get(match.sample);
+      const buffer = this.#getBuffer(match.sample, reverse ?? false);
       if (!buffer) continue;
 
       const params = resolveParams(
@@ -302,7 +326,7 @@ export class Smplr {
         match.regionRef,
         midi,
         velocity,
-        { detune, lpfCutoffHz, loop, ampRelease }
+        { detune, lpfCutoffHz, loop, ampRelease, reverse }
       );
 
       const voice = new Voice(

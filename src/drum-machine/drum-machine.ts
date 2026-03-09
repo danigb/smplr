@@ -32,6 +32,7 @@ export type DrumMachineOptions = Partial<
   DrumMachineConfig & {
     destination?: AudioNode;
     volume?: number;
+    pan?: number;
     velocity?: number;
     onLoadProgress?: (progress: LoadProgress) => void;
   }
@@ -66,6 +67,7 @@ export class DrumMachine {
     const smplrOptions: SmplrOptions = {
       destination: options?.destination,
       volume: options?.volume,
+      pan: options?.pan,
       velocity: options?.velocity,
       storage: config.storage,
       onLoadProgress: options?.onLoadProgress,

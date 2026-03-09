@@ -14,6 +14,8 @@ export type SequencerNote = {
   /** Note duration: ticks, "4n", "8n", etc. Omit for a one-shot trigger. */
   duration?: string | number;
   velocity?: number;
+  /** Probability (0–100) that this note fires on each pass. Default 100 (always). */
+  chance?: number;
 };
 
 /**
@@ -34,7 +36,7 @@ export type SequencerInstrument = {
 };
 
 /** Emitted with "noteOn" and "noteOff" events. */
-export type NoteEvent = {
+export type SequencerNoteEvent = {
   noteId: string | number;
   trackIndex: number;
   noteIndex: number;
@@ -54,6 +56,8 @@ export type SequencerOptions = {
   intervalMs?: number;
   /** Randomise timing (ms) and velocity per note for a human feel. */
   humanize?: { timingMs?: number; velocity?: number };
+  /** Emit a "step" event at this interval. Accepts musical notation or ticks: "16n", "8n", ticks, etc. */
+  stepSize?: string | number;
 };
 
 // ---------------------------------------------------------------------------
@@ -86,6 +90,7 @@ export class Sequencer {
   private readonly _ppq: number;
 
   private _timeSignature: number;
+  private _stepTicks: number | undefined;
   private _tracks: Track[] = [];
   private _repeatEvents: RepeatEvent[] = [];
   private _listeners: Map<string, Set<(...args: any[]) => void>> = new Map();
@@ -136,6 +141,11 @@ export class Sequencer {
         this._timeSignature
       );
     }
+
+    this._stepTicks =
+      options.stepSize !== undefined
+        ? parseTicks(options.stepSize, this._ppq, this._timeSignature)
+        : undefined;
 
     this._lookaheadSec = (options.lookaheadMs ?? 200) / 1000;
     this._intervalMs = options.intervalMs ?? 50;
@@ -374,8 +384,9 @@ export class Sequencer {
    * | "loop"         |                                                   |
    * | "beat"         | (beat: number, time: number)                      |
    * | "bar"          | (bar: number, time: number)                       |
-   * | "noteOn"       | (event: NoteEvent)                                |
-   * | "noteOff"      | (event: NoteEvent)                                |
+   * | "step"         | (stepIndex: number, time: number)                 |
+   * | "noteOn"       | (event: SequencerNoteEvent)                       |
+   * | "noteOff"      | (event: SequencerNoteEvent)                       |
    */
   on(event: string, callback: (...args: any[]) => void): this {
     if (!this._listeners.has(event)) {
@@ -479,6 +490,11 @@ export class Sequencer {
         const noteTick = parseTicks(note.at, this._ppq, this._timeSignature);
         if (noteTick < fromTick || noteTick >= toTick) continue;
 
+        // Chance gate — re-rolled every pass through the scheduler
+        if (note.chance !== undefined && note.chance < 100) {
+          if (Math.random() * 100 >= note.chance) continue;
+        }
+
         const audioTime = this._clock.tickToAudioTime(noteTick);
         const durationSec =
           note.duration !== undefined
@@ -495,7 +511,7 @@ export class Sequencer {
           : 0;
 
         const noteId = note.id ?? noteIndex;
-        const noteEvent: NoteEvent = { noteId, trackIndex, noteIndex, note };
+        const noteEvent: SequencerNoteEvent = { noteId, trackIndex, noteIndex, note };
 
         const result = track.instrument.start({
           note: note.note,
@@ -527,11 +543,25 @@ export class Sequencer {
 
     // ---- Beat / bar events ----
     this._emitBeatsInWindow(fromTick, toTick);
+
+    // ---- Step events ----
+    this._emitStepsInWindow(fromTick, toTick);
   }
 
   // ---------------------------------------------------------------------------
   // Private — beat / bar events
   // ---------------------------------------------------------------------------
+
+  private _emitStepsInWindow(fromTick: number, toTick: number): void {
+    if (!this._stepTicks) return;
+    const firstStep = Math.ceil((fromTick - 0.001) / this._stepTicks) * this._stepTicks;
+    for (let t = firstStep; t < toTick; t += this._stepTicks) {
+      if (t < 0) continue;
+      const stepIndex = Math.floor(t / this._stepTicks);
+      const audioTime = this._clock.tickToAudioTime(t);
+      this._emit("step", stepIndex, audioTime);
+    }
+  }
 
   private _emitBeatsInWindow(fromTick: number, toTick: number): void {
     const beatTicks = this._ppq;

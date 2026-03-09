@@ -13,6 +13,7 @@ export type PlaybackParams = {
   loop?: boolean;
   loopStart?: number; // sample frames, or 0-1 as fraction of buffer duration
   loopEnd?: number; // sample frames, or 0-1 as fraction of buffer duration (0 = end)
+  reverse?: boolean; // play the sample backwards
 };
 
 /**
@@ -92,6 +93,7 @@ export type NoteEvent =
       stopId?: string | number; // key for targeted stop; defaults to note
       onStart?: (event: NoteEvent) => void; // called when the note is dispatched
       onEnded?: (event: NoteEvent) => void; // called when each voice's audio ends
+      reverse?: boolean; // play the sample backwards
     }
   | string
   | number;
@@ -138,4 +140,5 @@ export type VoiceParams = {
   ampVelCurve?: [number, number]; // [velocity, gain] single-point velocity curve
   /** If set, loop points are computed from buffer.duration at play time. */
   loopAuto?: { startRatio: number; endRatio: number };
+  reverse?: boolean; // buffer passed in is already reversed; mirror offset if needed
 };

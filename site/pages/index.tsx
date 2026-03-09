@@ -3,6 +3,7 @@ import Head from "next/head";
 import pkg from "smplr/package.json";
 const { version } = pkg;
 import { DrumMachineExample } from "src/DrumMachineExample";
+import { SequencerExample } from "src/SequencerExample";
 import { ElectricPianoExample } from "src/ElectricPianoExample";
 import { MalletExample } from "src/MalletExample";
 import { MellotronExample } from "src/MellotronExample";
@@ -34,6 +35,7 @@ export default function Home() {
           <ElectricPianoExample />
           <MalletExample />
           <DrumMachineExample />
+          <SequencerExample />
           <MellotronExample />
           <SmolkenExample />
           <VersilianExample />

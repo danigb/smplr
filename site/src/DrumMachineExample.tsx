@@ -11,6 +11,16 @@ export function DrumMachineExample({ className }: { className?: string }) {
   const [drums, setDrumMachine] = useState<DrumMachine | undefined>(undefined);
   const [reverbMix, setReverbMix] = useState(0.0);
   const [volume, setVolume] = useState(100);
+  const [reversedGroups, setReversedGroups] = useState<Set<string>>(new Set());
+
+  function toggleReverse(group: string) {
+    setReversedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(group)) next.delete(group);
+      else next.add(group);
+      return next;
+    });
+  }
 
   function loadDrumMachine(instrument: string) {
     setStatus("loading");
@@ -91,36 +101,48 @@ export function DrumMachineExample({ className }: { className?: string }) {
           />
         </div>
         <div className="grid grid-cols-6 gap-1">
-          {drums?.getGroupNames().map((group) => (
-            <div key={group} className="bg-zinc-900 rounded px-2 pb-2">
-              <div className="flex">
-                <button
-                  className="text-left flex-grow"
-                  onClick={() => {
-                    drums?.start({
-                      note: group,
-                      detune: 50 * (Math.random() - 0.5),
-                    });
-                  }}
-                >
-                  {group}
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {drums?.getSampleNamesForGroup(group).map((sample) => (
+          {drums?.getGroupNames().map((group) => {
+            const rev = reversedGroups.has(group);
+            return (
+              <div key={group} className="bg-zinc-900 rounded px-2 pb-2">
+                <div className="flex gap-1">
                   <button
-                    key={sample}
-                    className="bg-zinc-600 w-4 h-4 rounded"
-                    onPointerDown={() => {
+                    className="text-left flex-grow"
+                    onClick={() => {
                       drums?.start({
-                        note: sample,
+                        note: group,
+                        detune: 50 * (Math.random() - 0.5),
+                        reverse: rev,
                       });
                     }}
-                  ></button>
-                ))}
+                  >
+                    {group}
+                  </button>
+                  <button
+                    className={`text-xs px-1 rounded ${rev ? "bg-rose-700 text-white" : "bg-zinc-700 text-zinc-400"}`}
+                    onClick={() => toggleReverse(group)}
+                    title="Toggle reverse playback"
+                  >
+                    Rev
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {drums?.getSampleNamesForGroup(group).map((sample) => (
+                    <button
+                      key={sample}
+                      className="bg-zinc-600 w-4 h-4 rounded"
+                      onPointerDown={() => {
+                        drums?.start({
+                          note: sample,
+                          reverse: rev,
+                        });
+                      }}
+                    ></button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

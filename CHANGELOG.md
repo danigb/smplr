@@ -1,5 +1,62 @@
 # smplr
 
+## 0.19.0
+
+#### Pan
+
+Stereo panning is now built into every instrument's output channel. Set it at construction time or at runtime:
+
+```ts
+const drums = new DrumMachine(context, { pan: -0.5 }); // slightly left
+drums.output.pan = 0.8; // right
+drums.output.pan = 0; // centre
+```
+
+`pan` accepts a value from `-1` (full left) to `+1` (full right). Default is `0` (centre).
+
+#### Probabilistic steps (`chance` on `SequencerNote`)
+
+Add a `chance` field (0–100, default 100) to any sequencer note. The probability is re-rolled on every loop pass:
+
+```ts
+seq.addTrack(drums, [
+  { note: "kick", at: "1:1" },
+  { note: "hihat", at: "1:1", chance: 50 }, // fires ~50 % of the time
+  { note: "hihat", at: "1:3", chance: 75 },
+]);
+```
+
+#### Reverse playback
+
+Play a sample backwards by setting `reverse: true` on a note event:
+
+```ts
+drums.start({ note: "cymbal", reverse: true });
+```
+
+The reversed buffer is created lazily on first use and cached — subsequent calls reuse it with no extra allocation.
+
+#### Step event on `Sequencer`
+
+`sequencer.on("step", (stepIndex, time) => ...)` fires at each grid subdivision. Enable it with the `stepSize` constructor option:
+
+```ts
+const seq = new Sequencer(context, {
+  bpm: 120,
+  loop: true,
+  stepSize: "16n",
+});
+
+seq.on("step", (stepIndex, time) => {
+  const delay = (time - context.currentTime) * 1000;
+  setTimeout(() => ui.highlightStep(stepIndex % 16), delay);
+});
+```
+
+#### Minor Changes
+
+- Export `Smplr` class and all core types (`SmplrJson`, `SmplrGroup`, `SmplrRegion`, `PlaybackParams`, etc.) from the package root. Rename sequencer's `NoteEvent` to `SequencerNoteEvent` to avoid the name collision.
+
 ## 0.18.x
 
 - Minor Sequencer fixes and code cleanup

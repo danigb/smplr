@@ -62,9 +62,17 @@ class AudioBufferMock {
   }
 }
 
+class StereoPannerMock extends NodeMock {
+  pan = { value: 0 };
+  constructor(context: AudioContextMock) {
+    super(context);
+  }
+}
+
 export class AudioContextMock {
   gains: GainNodeMock[] = [];
   bufferSources: BufferSourceMock[] = [];
+  stereoPanners: StereoPannerMock[] = [];
   currentTime = 0;
   destination: any;
 
@@ -80,6 +88,10 @@ export class AudioContextMock {
 
   createGain() {
     return add(new GainNodeMock(this), this.gains);
+  }
+
+  createStereoPanner() {
+    return add(new StereoPannerMock(this), this.stereoPanners);
   }
 
   decodeAudioData(arrayBuffer: any) {
