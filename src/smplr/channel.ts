@@ -6,6 +6,7 @@ export type ChannelConfig = {
   destination: AudioNode;
   volume: number;
   volumeToGain: (volume: number) => number;
+  pan?: number;
 };
 
 export type OutputChannel = Omit<Channel, "input">;
@@ -25,6 +26,7 @@ export class Channel {
   public readonly input: AudioNode;
 
   #volume: GainNode;
+  #panner: StereoPannerNode;
   #sends?: Send[];
   #inserts?: (AudioNode | AudioInsert)[];
   #disconnect: () => void;
@@ -40,14 +42,18 @@ export class Channel {
       destination: options?.destination ?? context.destination,
       volume: options?.volume ?? 100,
       volumeToGain: options?.volumeToGain ?? midiVelToGain,
+      pan: options?.pan ?? 0,
     };
 
     this.input = context.createGain();
     this.#volume = context.createGain();
+    this.#panner = context.createStereoPanner();
+    this.#panner.pan.value = this.#config.pan!;
 
     this.#disconnect = connectSerial([
       this.input,
       this.#volume,
+      this.#panner,
       this.#config.destination,
     ]);
 
@@ -56,6 +62,14 @@ export class Channel {
     this.#unsubscribe = volume.subscribe((volume) => {
       this.#volume.gain.value = this.#config.volumeToGain(volume);
     });
+  }
+
+  get pan(): number {
+    return this.#panner.pan.value;
+  }
+
+  set pan(value: number) {
+    this.#panner.pan.value = value;
   }
 
   addInsert(effect: AudioNode | AudioInsert) {
@@ -69,6 +83,7 @@ export class Channel {
       this.input,
       ...this.#inserts,
       this.#volume,
+      this.#panner,
       this.#config.destination,
     ]);
   }

@@ -14,6 +14,7 @@ export const PARAM_DEFAULTS: Required<PlaybackParams> = {
   loop: false,
   loopStart: 0,
   loopEnd: 0,
+  reverse: false,
 };
 
 const PLAYBACK_KEYS = Object.keys(PARAM_DEFAULTS) as (keyof PlaybackParams)[];
@@ -39,6 +40,7 @@ export type NoteOverrides = {
   lpfCutoffHz?: number;
   loop?: boolean;
   ampRelease?: number;
+  reverse?: boolean;
 };
 
 /**
@@ -98,5 +100,6 @@ export function resolveParams(
     loopEnd: merged.loopEnd,
     ampVelCurve: region.ampVelCurve,
     loopAuto: region.loopAuto,
+    reverse: overrides?.reverse,
   };
 }
