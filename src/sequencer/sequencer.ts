@@ -34,7 +34,7 @@ export type SequencerInstrument = {
 };
 
 /** Emitted with "noteOn" and "noteOff" events. */
-export type NoteEvent = {
+export type SequencerNoteEvent = {
   noteId: string | number;
   trackIndex: number;
   noteIndex: number;
@@ -374,8 +374,8 @@ export class Sequencer {
    * | "loop"         |                                                   |
    * | "beat"         | (beat: number, time: number)                      |
    * | "bar"          | (bar: number, time: number)                       |
-   * | "noteOn"       | (event: NoteEvent)                                |
-   * | "noteOff"      | (event: NoteEvent)                                |
+   * | "noteOn"       | (event: SequencerNoteEvent)                       |
+   * | "noteOff"      | (event: SequencerNoteEvent)                       |
    */
   on(event: string, callback: (...args: any[]) => void): this {
     if (!this._listeners.has(event)) {
@@ -495,7 +495,7 @@ export class Sequencer {
           : 0;
 
         const noteId = note.id ?? noteIndex;
-        const noteEvent: NoteEvent = { noteId, trackIndex, noteIndex, note };
+        const noteEvent: SequencerNoteEvent = { noteId, trackIndex, noteIndex, note };
 
         const result = track.instrument.start({
           note: note.note,
