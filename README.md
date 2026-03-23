@@ -522,6 +522,84 @@ const seq = new Sequencer(context, {
 
 ---
 
+## Export Audio
+
+Render audio offline (faster than real-time) and export it as a WAV file. Uses `OfflineAudioContext` under the hood.
+
+```js
+import { renderOffline } from "smplr";
+
+const result = await renderOffline(async (context) => {
+  const piano = await new SplendidGrandPiano(context).load;
+  piano.start({ note: "C4", time: 0, duration: 1 });
+  piano.start({ note: "E4", time: 0.5, duration: 1 });
+});
+
+result.downloadWav("export.wav");
+```
+
+#### Options
+
+```js
+const result = await renderOffline(callback, {
+  duration: 10, // Total duration in seconds (auto-detected if omitted)
+  sampleRate: 48000, // Sample rate (default: 48000)
+  channels: 2, // Number of channels (default: 2)
+});
+```
+
+When `duration` is omitted, a 60-second buffer is used and trailing silence is automatically trimmed. Pass an explicit `duration` for longer renders or to preserve trailing silence.
+
+#### RenderResult
+
+`renderOffline` returns a `RenderResult` object:
+
+- `result.audioBuffer` — the raw `AudioBuffer`
+- `result.toWav()` — encode as 32-bit float WAV `Blob` (lossless)
+- `result.toWav16()` — encode as 16-bit integer WAV `Blob` (smaller file)
+- `result.downloadWav(filename?)` — download as 32-bit WAV
+- `result.downloadWav16(filename?)` — download as 16-bit WAV
+- `result.duration` — actual duration in seconds
+- `result.sampleRate` — sample rate used
+
+WAV encoding is lazy — it only happens when you call `toWav()` or `toWav16()`.
+
+#### Buffer reuse
+
+If you already have an instrument loaded, pass the same `SampleLoader` to avoid re-fetching samples:
+
+```js
+import { SplendidGrandPiano, SampleLoader, renderOffline } from "smplr";
+
+const loader = new SampleLoader(audioContext);
+const piano = new SplendidGrandPiano(audioContext, { loader });
+await piano.load;
+
+// Offline render reuses cached buffers — no re-fetch
+const result = await renderOffline(async (context) => {
+  const offlinePiano = await new SplendidGrandPiano(context, { loader }).load;
+  offlinePiano.start({ note: "C4", time: 0, duration: 1 });
+});
+```
+
+#### Bug reports
+
+Use offline rendering to generate reproducible audio files for issue reports. No install needed — just open your browser's DevTools console on any page and paste:
+
+```js
+const { renderOffline, SplendidGrandPiano } = await import("https://esm.sh/smplr");
+
+const result = await renderOffline(async (context) => {
+  const piano = await new SplendidGrandPiano(context).load;
+  piano.start({ note: "C4", time: 0, duration: 2 });
+});
+result.downloadWav16("bug-report.wav");
+```
+
+This will download a WAV file you can attach to your issue or pull request.
+
+---
+
 ## Instruments
 
 ### Sampler
