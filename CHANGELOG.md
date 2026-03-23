@@ -1,5 +1,23 @@
 # smplr
 
+## 0.21.0
+
+### Preparing for API 1.0
+
+Those are future breaking changes (in 1.0) with a deprecated notice on the previous behaviour. Library should work without changes, but should show deprecation notes.
+
+- **Factory functions replace classes.** All instruments (`SplendidGrandPiano`, `Soundfont`, `Sampler`, `ElectricPiano`, `DrumMachine`, `Mallet`, `Mellotron`, `Smolken`, `Versilian`) are now factory functions — drop `new`. `new` still works at runtime for backward compatibility but is no longer documented.
+- **`instrument.load` renamed to `instrument.ready`.** `instrument.load` is kept as a deprecated alias. Change `await instrument.load` to `await instrument.ready`.
+- **`load` resolves to `void`.** Previously `await instrument.load` returned the instrument itself.
+- **`output.setVolume(v)` is deprecated.** Use `output.volume = v` (getter/setter) instead.
+- **`output.sendEffect(name, mix)` is deprecated.** Use `output.setEffectMix(name, mix)` instead.
+- **`Soundfont2Sampler` renamed to `Soundfont2`.**
+
+### New features
+
+- `loader` and `scheduler` are now public readonly fields on every instrument. Pass them via options to share cached buffers or coordinated timing between instruments.
+- Standalone metadata functions exported at top level: `getSoundfontNames`, `getSoundfontKits`, `getDrumMachineNames`, `getElectricPianoNames`, `getMalletNames`, `getMellotronNames`, `getSmolkenNames`, `getVersilianInstruments`.
+
 ## 0.20.0
 
 ### Export Audio (offline rendering)

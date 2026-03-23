@@ -6,6 +6,7 @@ import {
   Reverb,
   Storage,
   Versilian,
+  Smplr,
   getVersilianInstruments,
 } from "smplr";
 import { ConnectMidi } from "./ConnectMidi";
@@ -20,7 +21,7 @@ let instrumentNames: string[] = [];
 // https://smpldsnds.github.io/sgossner-vcsl/Electrophones/TX81Z/FM%20Piano.sfz
 
 export function VersilianExample({ className }: { className?: string }) {
-  const [instrument, setInstrument] = useState<Versilian | undefined>(
+  const [instrument, setInstrument] = useState<Smplr | undefined>(
     undefined
   );
   const [instrumentName, setInstrumentName] = useState<string>(
@@ -43,14 +44,14 @@ export function VersilianExample({ className }: { className?: string }) {
     const context = getAudioContext();
     reverb ??= new Reverb(context);
     storage ??= new CacheStorage("smolken");
-    const newInstrument = new Versilian(context, {
+    const newInstrument = Versilian(context, {
       instrument: instrumentName,
       volume,
       onLoadProgress,
     });
     newInstrument.output.addEffect("reverb", reverb, reverbMix);
     setInstrument(newInstrument);
-    newInstrument.load.then(() => {
+    newInstrument.ready.then(() => {
       setStatus("ready");
     });
   }
@@ -109,7 +110,7 @@ export function VersilianExample({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              instrument?.output.setVolume(volume);
+              if (instrument) instrument.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -122,7 +123,7 @@ export function VersilianExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              instrument?.output.sendEffect("reverb", mix);
+              instrument?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />

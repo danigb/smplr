@@ -1,5 +1,5 @@
 import { Smplr } from "./smplr";
-import { NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "./smplr/types";
+import { SmplrGroup, SmplrJson } from "./smplr/types";
 
 type Sf2 = {
   instruments: Sf2Instrument[];
@@ -77,60 +77,50 @@ export function sf2InstrumentToSmplrJson(
   };
 }
 
-export class Soundfont2Sampler {
-  readonly context: AudioContext;
-  readonly options: Soundfont2Options;
-  soundfont: Sf2 | undefined;
-  readonly load: Promise<this>;
-  #smplr: Smplr;
-  #instrumentNames: string[] = [];
+type Soundfont2SmplrResult = Smplr & {
+  readonly instrumentNames: string[];
+  loadInstrument(instrumentName: string): Promise<void> | undefined;
+};
 
-  constructor(context: AudioContext, options: Soundfont2Options) {
-    this.context = context;
-    this.options = options;
-    this.#smplr = new Smplr(context, {
-      destination: options.destination,
-      volume: options.volume,
-      velocity: options.velocity,
-    });
-    this.load = loadSoundfont(options)
-      .then((sf2) => {
-        this.soundfont = sf2;
-        this.#instrumentNames = sf2.instruments.map(
-          (inst: Sf2Instrument) => inst.header.name
-        );
-      })
-      .then(() => this);
-  }
+/** @deprecated Use `Soundfont2` instead. */
+export function Soundfont2Sampler(
+  context: BaseAudioContext,
+  options: Soundfont2Options
+): Soundfont2SmplrResult {
+  console.warn("smplr: `Soundfont2Sampler` is deprecated. Use `Soundfont2` instead.");
+  return Soundfont2(context, options);
+}
 
-  get instrumentNames() {
-    return this.#instrumentNames;
-  }
+export function Soundfont2(
+  context: BaseAudioContext,
+  options: Soundfont2Options
+): Soundfont2SmplrResult {
+  if (new.target) console.warn("smplr: `new Soundfont2(ctx, opts)` is deprecated. Call as a function: `Soundfont2(ctx, opts)`.");
+  const smplr = new Smplr(context, {
+    destination: options.destination,
+    volume: options.volume,
+    velocity: options.velocity,
+  });
 
-  get output() {
-    return this.#smplr.output;
-  }
+  let soundfont: Sf2 | undefined;
+  let instrumentNames: string[] = [];
 
-  loadInstrument(instrumentName: string): Promise<void> | undefined {
-    const sf2inst = this.soundfont?.instruments.find(
-      (inst: Sf2Instrument) => inst.header.name === instrumentName
-    );
-    if (!sf2inst) return undefined;
-    const { json, buffers } = sf2InstrumentToSmplrJson(sf2inst, this.context);
-    return this.#smplr.loadInstrument(json, buffers);
-  }
+  (smplr as any).ready = loadSoundfont(options).then((sf2) => {
+    soundfont = sf2;
+    instrumentNames = sf2.instruments.map((inst: Sf2Instrument) => inst.header.name);
+  });
 
-  start(sample: NoteEvent | string | number) {
-    return this.#smplr.start(typeof sample === "object" ? sample : { note: sample });
-  }
-
-  stop(sample?: StopTarget | string | number) {
-    return this.#smplr.stop(sample === undefined ? undefined : sample);
-  }
-
-  disconnect() {
-    this.#smplr.disconnect();
-  }
+  return Object.assign(smplr, {
+    get instrumentNames() { return instrumentNames; },
+    loadInstrument(instrumentName: string): Promise<void> | undefined {
+      const sf2inst = soundfont?.instruments.find(
+        (inst: Sf2Instrument) => inst.header.name === instrumentName
+      );
+      if (!sf2inst) return undefined;
+      const { json, buffers } = sf2InstrumentToSmplrJson(sf2inst, context as AudioContext);
+      return smplr.loadInstrument(json, buffers);
+    },
+  }) as Soundfont2SmplrResult;
 }
 
 async function loadSoundfont(options: Soundfont2Options) {

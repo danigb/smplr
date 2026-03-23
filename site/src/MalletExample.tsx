@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getMalletNames, Mallet, Reverb } from "smplr";
+import { getMalletNames, Mallet, Reverb, Smplr } from "smplr";
 import { getAudioContext } from "./audio-context";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
@@ -11,7 +11,7 @@ let reverb: Reverb | undefined;
 let instrumentNames = getMalletNames();
 
 export function MalletExample({ className }: { className?: string }) {
-  const [instrument, setInstrument] = useState<Mallet | undefined>(undefined);
+  const [instrument, setInstrument] = useState<Smplr | undefined>(undefined);
   const [instrumentName, setInstrumentName] = useState<string>(
     instrumentNames[0]
   );
@@ -24,14 +24,14 @@ export function MalletExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const newPiano = new Mallet(context, {
+    const newPiano = Mallet(context, {
       instrument: instrumentName,
       volume,
       onLoadProgress,
     });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setInstrument(newPiano);
-    newPiano.load.then(() => {
+    newPiano.ready.then(() => {
       setStatus("ready");
     });
   }
@@ -85,7 +85,7 @@ export function MalletExample({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              instrument?.output.setVolume(volume);
+              if (instrument) instrument.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -98,7 +98,7 @@ export function MalletExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              instrument?.output.sendEffect("reverb", mix);
+              instrument?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />

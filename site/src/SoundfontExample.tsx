@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Reverb, Soundfont, getSoundfontKits, getSoundfontNames } from "smplr";
+import { Reverb, Soundfont, Smplr, getSoundfontKits, getSoundfontNames } from "smplr";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { getAudioContext } from "./audio-context";
@@ -14,7 +14,7 @@ export function SoundfontExample({ className }: { className?: string }) {
   );
   const [libraryName, setLibraryName] = useState(getSoundfontKits()[0]);
   const [instrumentName, setInstrumentName] = useState("marimba");
-  const [instrument, setInstrument] = useState<Soundfont | undefined>(
+  const [instrument, setInstrument] = useState<Smplr | undefined>(
     undefined
   );
   const [reverbMix, setReverbMix] = useState(0.0);
@@ -23,7 +23,7 @@ export function SoundfontExample({ className }: { className?: string }) {
   function loadSoundfont(kit: string, instrument: string) {
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const soundfont = new Soundfont(context, {
+    const soundfont = Soundfont(context, {
       kit,
       instrument,
       loadLoopData: true,
@@ -31,17 +31,14 @@ export function SoundfontExample({ className }: { className?: string }) {
     });
     soundfont.output.addEffect("reverb", reverb, 0.0);
     soundfont.load
-      .then((instrument) => {
+      .then(() => {
         setStatus("ready");
         setInstrument((prevInstrument) => {
           if (prevInstrument) {
             prevInstrument.disconnect();
           }
-          return instrument;
+          return soundfont;
         });
-        if (instrument.hasLoops) {
-          setLoopStatus("loop");
-        }
       })
       .catch((err) => {
         setStatus("error");
@@ -148,7 +145,7 @@ export function SoundfontExample({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              instrument?.output.setVolume(volume);
+              if (instrument) instrument.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -161,7 +158,7 @@ export function SoundfontExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              instrument?.output.sendEffect("reverb", mix);
+              instrument?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />

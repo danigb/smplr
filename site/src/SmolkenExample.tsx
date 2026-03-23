@@ -33,7 +33,7 @@ export function SmolkenExample({ className }: { className?: string }) {
     });
     newInstrument.output.addEffect("reverb", reverb, reverbMix);
     setInstrument(newInstrument);
-    newInstrument.load.then(() => {
+    newInstrument.ready.then(() => {
       setStatus("ready");
     });
   }

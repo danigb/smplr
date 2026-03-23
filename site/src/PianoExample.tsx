@@ -58,7 +58,7 @@ export function PianoExample({ className }: { className?: string }) {
     });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
-    newPiano.load.then(() => {
+    newPiano.ready.then(() => {
       setStatus("ready");
     });
   }

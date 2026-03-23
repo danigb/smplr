@@ -1,6 +1,6 @@
 import { HttpStorage, Storage } from "./storage";
 import { Smplr, SmplrOptions } from "./smplr";
-import { LoadProgress, NoteEvent, StopTarget } from "./smplr/types";
+import { LoadProgress } from "./smplr/types";
 import { sfzToSmplrJson } from "./smplr/sfz-convert";
 
 export function getSmolkenNames() {
@@ -33,64 +33,41 @@ export type SmolkenOptions = Partial<
 const SMOLKEN_BASE_URL =
   "https://smpldsnds.github.io/sfzinstruments-dsmolken-double-bass";
 
-export class Smolken {
-  #smplr: Smplr;
-  readonly load: Promise<this>;
+export function Smolken(
+  context: BaseAudioContext,
+  options: SmolkenOptions = {}
+): Smplr {
+  if (new.target) console.warn("smplr: `new Smolken(ctx, opts)` is deprecated. Call as a function: `Smolken(ctx, opts)`.");
+  const config: SmolkenConfig = {
+    instrument: options.instrument ?? "Arco",
+    storage: options.storage ?? HttpStorage,
+  };
 
-  constructor(
-    public readonly context: BaseAudioContext,
-    options: SmolkenOptions = {}
-  ) {
-    const config: SmolkenConfig = {
-      instrument: options.instrument ?? "Arco",
-      storage: options.storage ?? HttpStorage,
-    };
+  const smplrOptions: SmplrOptions = {
+    destination: options.destination,
+    volume: options.volume,
+    velocity: options.velocity,
+    storage: config.storage,
+    onLoadProgress: options.onLoadProgress,
+  };
+  const smplr = new Smplr(context as AudioContext, smplrOptions);
 
-    const smplrOptions: SmplrOptions = {
-      destination: options.destination,
-      volume: options.volume,
-      velocity: options.velocity,
-      storage: config.storage,
-      onLoadProgress: options.onLoadProgress,
-    };
-    this.#smplr = new Smplr(context as AudioContext, smplrOptions);
+  const sfzUrl = getSmolkenUrl(config.instrument);
 
-    const sfzUrl = getSmolkenUrl(config.instrument);
-
-    this.load = fetch(sfzUrl)
-      .then((r) => r.text())
-      .then((sfzText) =>
-        this.#smplr.loadInstrument(
-          sfzToSmplrJson(sfzText, {
-            baseUrl: SMOLKEN_BASE_URL,
-            pathFromSampleName: (name) =>
-              name.replace(/\\/g, "/").replace(/\.wav$/i, ""),
-            formats: ["ogg", "m4a"],
-          })
-        )
+  const loadPromise = fetch(sfzUrl)
+    .then((r) => r.text())
+    .then((sfzText) =>
+      smplr.loadInstrument(
+        sfzToSmplrJson(sfzText, {
+          baseUrl: SMOLKEN_BASE_URL,
+          pathFromSampleName: (name) =>
+            name.replace(/\\/g, "/").replace(/\.wav$/i, ""),
+          formats: ["ogg", "m4a"],
+        })
       )
-      .then(() => this);
-  }
-
-  get output() {
-    return this.#smplr.output;
-  }
-
-  get loadProgress() {
-    return this.#smplr.loadProgress;
-  }
-
-  start(sample: NoteEvent | string | number) {
-    return this.#smplr.start(
-      typeof sample === "object" ? sample : { note: sample }
     );
-  }
 
-  stop(target?: StopTarget) {
-    return this.#smplr.stop(target);
-  }
+  (smplr as any).ready = loadPromise;
 
-  disconnect() {
-    return this.#smplr.disconnect();
-  }
+  return smplr;
 }

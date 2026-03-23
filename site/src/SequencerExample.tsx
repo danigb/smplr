@@ -35,7 +35,7 @@ export function SequencerExample({ className }: { className?: string }) {
   function load() {
     setStatus("loading");
     const context = getAudioContext();
-    const drums = new DrumMachine(context, { instrument: "TR-808", onLoadProgress });
+    const drums = DrumMachine(context, { instrument: "TR-808", onLoadProgress });
 
     drums.load
       .then(() => {

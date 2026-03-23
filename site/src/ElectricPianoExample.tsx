@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ElectricPiano, getElectricPianoNames, Reverb } from "smplr";
+import { ElectricPiano, getElectricPianoNames, Reverb, Smplr } from "smplr";
+
+type ElectricPianoSmplr = Smplr & {
+  readonly tremolo: Readonly<{ level: (value: number) => void }>;
+};
 import { getAudioContext } from "./audio-context";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
@@ -11,7 +15,7 @@ let reverb: Reverb | undefined;
 let instrumentNames = getElectricPianoNames();
 
 export function ElectricPianoExample({ className }: { className?: string }) {
-  const [piano, setPiano] = useState<ElectricPiano | undefined>(undefined);
+  const [piano, setPiano] = useState<ElectricPianoSmplr | undefined>(undefined);
   const [instrumentName, setInstrumentName] = useState("CP80");
   const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [format, setFormat] = useState<SampleFormat>("ogg");
@@ -24,10 +28,10 @@ export function ElectricPianoExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const newPiano = new ElectricPiano(context, { instrument, volume, onLoadProgress, formats: [format] });
+    const newPiano = ElectricPiano(context, { instrument, volume, onLoadProgress, formats: [format] });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
-    newPiano.load.then(() => {
+    newPiano.ready.then(() => {
       setStatus("ready");
     });
   }
@@ -82,7 +86,7 @@ export function ElectricPianoExample({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              piano?.output.setVolume(volume);
+              if (piano) piano.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -108,7 +112,7 @@ export function ElectricPianoExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              piano?.output.sendEffect("reverb", mix);
+              piano?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />

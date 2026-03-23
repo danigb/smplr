@@ -17,7 +17,7 @@ type QueueItem = {
  * Multiple Smplr instances can share a single Scheduler for coordinated timing.
  */
 export class Scheduler {
-  #context: BaseAudioContext;
+  readonly context: BaseAudioContext;
   #lookaheadSec: number;
   #intervalMs: number;
   #queue: SortedQueue<QueueItem>;
@@ -27,7 +27,7 @@ export class Scheduler {
     context: BaseAudioContext,
     options?: { lookaheadMs?: number; intervalMs?: number }
   ) {
-    this.#context = context;
+    this.context = context;
     this.#lookaheadSec = (options?.lookaheadMs ?? LOOKAHEAD_MS_DEFAULT) / 1000;
     this.#intervalMs = options?.intervalMs ?? INTERVAL_MS_DEFAULT;
     this.#queue = new SortedQueue<QueueItem>((a, b) => a.time - b.time);
@@ -42,7 +42,7 @@ export class Scheduler {
    *   is returned that removes the event from the queue before it is dispatched.
    */
   schedule(event: NoteEvent, callback: (event: NoteEvent) => void): StopFn {
-    const now = this.#context.currentTime;
+    const now = this.context.currentTime;
     const time = getEventTime(event) ?? now;
 
     if (time <= now + this.#lookaheadSec) {
@@ -75,7 +75,7 @@ export class Scheduler {
     if (this.#intervalId !== undefined) return;
 
     this.#intervalId = setInterval(() => {
-      const dispatchBefore = this.#context.currentTime + this.#lookaheadSec;
+      const dispatchBefore = this.context.currentTime + this.#lookaheadSec;
 
       while (this.#queue.size() > 0 && this.#queue.peek()!.time <= dispatchBefore) {
         const item = this.#queue.pop()!;
