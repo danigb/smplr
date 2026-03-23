@@ -1,5 +1,56 @@
 # smplr
 
+## 0.20.0
+
+### Export Audio (offline rendering)
+
+Render audio offline and export as WAV — faster than real-time, no speakers needed:
+
+```ts
+import { renderOffline, SplendidGrandPiano } from "smplr";
+
+const result = await renderOffline(async (context) => {
+  const piano = await new SplendidGrandPiano(context).load;
+  piano.start({ note: "C4", time: 0, duration: 1 });
+  piano.start({ note: "E4", time: 0.5, duration: 1 });
+});
+
+result.downloadWav("export.wav");
+```
+
+`renderOffline` returns a `RenderResult` with:
+
+- `audioBuffer` — raw `AudioBuffer`
+- `toWav()` / `toWav16()` — encode as 32-bit or 16-bit WAV `Blob`
+- `downloadWav(filename?)` / `downloadWav16(filename?)` — one-liner file download
+
+Duration is auto-detected (trailing silence trimmed), or pass it explicitly:
+
+```ts
+const result = await renderOffline(callback, {
+  duration: 10,
+  sampleRate: 48000,
+});
+```
+
+For bug reports, paste this in any browser console — no install needed:
+
+```js
+const { renderOffline, SplendidGrandPiano } =
+  await import("https://esm.sh/smplr");
+const result = await renderOffline(async (ctx) => {
+  const piano = await new SplendidGrandPiano(ctx).load;
+  piano.start({ note: "C4", time: 0, duration: 1 });
+});
+result.downloadWav16("bug-report.wav");
+```
+
+### Other changes
+
+- `Smplr` context type relaxed from `AudioContext` to `BaseAudioContext` for `OfflineAudioContext` compatibility
+- Duration auto-stop now uses audio-time scheduling instead of `setTimeout` (works in both real-time and offline contexts)
+- Updated devDependencies to fix all known vulnerabilities
+
 ## 0.19.0
 
 #### Pan
