@@ -104,8 +104,8 @@ function isSmplrJson(x: unknown): x is SmplrJson {
 export class Smplr {
   /** Resolves with `this` once all sample buffers are loaded. */
   readonly load: Promise<Smplr>;
-  /** The AudioContext passed to the constructor. */
-  readonly context: AudioContext;
+  /** The AudioContext (or OfflineAudioContext) passed to the constructor. */
+  readonly context: BaseAudioContext;
 
   #loadProgress: LoadProgress = { loaded: 0, total: 0 };
   #buffers: Map<string, AudioBuffer> = new Map();
@@ -123,10 +123,10 @@ export class Smplr {
   #onEnded: ((event: NoteEvent) => void) | undefined;
   #ccState: Map<number, number> = new Map();
 
-  constructor(context: AudioContext, json: SmplrJson, options?: SmplrOptions);
-  constructor(context: AudioContext, options?: SmplrOptions);
+  constructor(context: BaseAudioContext, json: SmplrJson, options?: SmplrOptions);
+  constructor(context: BaseAudioContext, options?: SmplrOptions);
   constructor(
-    context: AudioContext,
+    context: BaseAudioContext,
     jsonOrOptions?: SmplrJson | SmplrOptions,
     maybeOptions?: SmplrOptions
   ) {
@@ -352,12 +352,12 @@ export class Smplr {
         voice.onEnded(() => onEnded(event));
       }
 
-      // Auto-stop for duration
+      // Auto-stop for duration — schedule directly on the audio timeline
+      // so it works in both real-time and offline (OfflineAudioContext) contexts.
       if (duration != null) {
         const startT = time ?? this.context.currentTime;
         const releaseAt = startT + duration;
-        const delayMs = Math.max(0, (releaseAt - this.context.currentTime) * 1000);
-        setTimeout(() => voice.stop(releaseAt), delayMs);
+        voice.stop(releaseAt);
       }
     }
   }
