@@ -10,7 +10,8 @@ Examples:
 import { Soundfont } from "smplr";
 
 const context = new AudioContext();
-const marimba = new Soundfont(context, { instrument: "marimba" });
+const marimba = Soundfont(context, { instrument: "marimba" });
+await marimba.ready;
 marimba.start({ note: 60, velocity: 80 });
 ```
 
@@ -18,7 +19,8 @@ marimba.start({ note: 60, velocity: 80 });
 import { DrumMachine } from "smplr";
 
 const context = new AudioContext();
-const dm = new DrumMachine(context);
+const dm = DrumMachine(context);
+await dm.ready;
 dm.start({ note: "kick" });
 ```
 
@@ -26,15 +28,15 @@ dm.start({ note: "kick" });
 import { SplendidGrandPiano, Reverb } from "smplr";
 
 const context = new AudioContext();
-const piano = new SplendidGrandPiano(context);
+const piano = SplendidGrandPiano(context);
 piano.output.addEffect("reverb", new Reverb(context), 0.2);
-
+await piano.ready;
 piano.start({ note: "C4" });
 ```
 
 See demo: https://danigb.github.io/smplr/
 
-`smplr` is still under development and features are considered unstable until v 1.0
+> **Migrating from 0.x?** The main change is dropping `new` — `new SplendidGrandPiano(ctx)` becomes `SplendidGrandPiano(ctx)`. The `new` form still works at runtime but is no longer the documented API. See [CHANGELOG](./CHANGELOG.md) for details.
 
 Read [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md) for changes.
 
@@ -86,40 +88,39 @@ The package needs to be serve as a url from a service like [unpkg](unpkg.com) or
 
 ### Create and load an instrument
 
-All instruments follows the same pattern: `new Instrument(context, options)`. For example:
+All instruments are factory functions with the pattern `Instrument(context, options)`. For example:
 
 ```js
 import { SplendidGrandPiano, Soundfont } from "smplr";
 
 const context = new AudioContext();
-const piano = new SplendidGrandPiano(context, { decayTime: 0.5 });
-const marimba = new Soundfont(context, { instrument: "marimba" });
+const piano = SplendidGrandPiano(context, { decayTime: 0.5 });
+const marimba = Soundfont(context, { instrument: "marimba" });
 ```
 
 #### Wait for audio loading
 
-You can start playing notes as soon as one audio is loaded. But if you want to wait for all of them, you can use the `load` property that returns a promise:
+You can start playing notes as soon as one audio is loaded. But if you want to wait for all of them, you can use the `ready` property that returns a promise:
 
 ```js
-piano.load.then(() => {
+piano.ready.then(() => {
   // now the piano is fully loaded
 });
 ```
 
-Since the promise returns the instrument instance, you can create and wait in a single line:
+Or with `await`:
 
 ```js
-const piano = await new SplendidGrandPiano(context).load;
+const piano = SplendidGrandPiano(context);
+await piano.ready;
 ```
-
-⚠️ In versions lower than 0.8.0 a `loaded()` function was exposed instead.
 
 #### Load progress
 
 Track how many samples have loaded via the `onLoadProgress` option or the `loadProgress` getter:
 
 ```js
-const piano = new SplendidGrandPiano(context, {
+const piano = SplendidGrandPiano(context, {
   onLoadProgress: ({ loaded, total }) => {
     console.log(`${loaded} / ${total} samples loaded`);
   },
@@ -133,17 +134,30 @@ console.log(piano.loadProgress); // { loaded: 12, total: 48 }
 
 #### Shared configuration options
 
-All instruments share some configuration options that are passed as second argument of the constructor. As it name implies, all fields are optional:
+All instruments share some configuration options that are passed as second argument. All fields are optional:
 
 - `volume`: A number from 0 to 127 representing the instrument global volume. 100 by default
 - `destination`: An `AudioNode` that is the output of the instrument. `AudioContext.destination` is used by default
 - `volumeToGain`: a function to convert the volume to gain. It uses MIDI standard as default.
-- `disableScheduler`: disable internal scheduler. `false` by default.
-- `scheduleLookaheadMs`: the lookahead of the scheduler. If the start time of the note is less than current time plus this lookahead time, the note will be started. 200ms by default.
-- `scheduleIntervalMs`: the interval of the scheduler. 50ms by default.
+- `loader`: a shared `SampleLoader` instance — pass between instruments to reuse cached buffers.
+- `scheduler`: a shared `Scheduler` instance — pass between instruments for coordinated timing.
 - `onLoadProgress`: a function called after each sample buffer is decoded. Receives `{ loaded, total }` where `total` is the full count known before loading starts.
 - `onStart`: a function that is called when starting a note. It receives the note started as parameter. Bear in mind that the time this function is called is not precise, and it's determined by lookahead.
 - `onEnded`: a function that is called when the note ends. It receives the started note as parameter.
+
+#### Shared resources
+
+You can share a `SampleLoader` between instruments to reuse cached buffers, or share a `Scheduler` for coordinated timing:
+
+```js
+import { SplendidGrandPiano, Soundfont } from "smplr";
+
+const piano = SplendidGrandPiano(context);
+await piano.ready;
+
+// Reuse the same loader — no re-fetch, buffers served from cache
+const piano2 = SplendidGrandPiano(context, { loader: piano.loader });
+```
 
 #### Usage with standardized-audio-context
 
@@ -153,7 +167,7 @@ This package should be compatible with [standardized-audio-context](https://gith
 import { AudioContext } from "standardized-audio-context";
 
 const context = new AudioContext();
-const piano = new SplendidGrandPiano(context);
+const piano = SplendidGrandPiano(context);
 ```
 
 However, if you are using Typescript, you might need to "force cast" the types:
@@ -163,7 +177,7 @@ import { Soundfont } from "smplr";
 import { AudioContext as StandardizedAudioContext } from "standardized-audio-context";
 
 const context = new StandardizedAudioContext() as unknown as AudioContext;
-const marimba = new Soundfont(context, { instrument: "marimba" });
+const marimba = Soundfont(context, { instrument: "marimba" });
 ```
 
 In case you need to use the `Reverb` module (or any other module that needs `AudioWorkletNode`) you need to enforce to use the one from `standardized-audio-context` package. Here is how:
@@ -236,7 +250,7 @@ const now = context.currentTime;
 You can loop a note by using `loop`, `loopStart` and `loopEnd`:
 
 ```js
-const sampler = new Sampler(audioContext, { duh: "duh-duh-ah.mp3" });
+const sampler = Sampler(audioContext, { duh: "duh-duh-ah.mp3" });
 sampler.start({
   note: "duh"
   loop: true
@@ -249,10 +263,10 @@ If `loop` is true but `loopStart` or `loopEnd` are not specified, 0 and total du
 
 #### Change volume
 
-Instrument `output` attribute represents the main output of the instrument. `output.setVolume` method accepts a number where 0 means no volume, and 127 is max volume without amplification:
+Instrument `output` attribute represents the main output of the instrument. Set `output.volume` to a number where 0 means no volume, and 127 is max volume without amplification:
 
 ```js
-piano.output.setVolume(80);
+piano.output.volume = 80;
 ```
 
 ⚠️ `volume` is global to the instrument, but `velocity` is specific for each note.
@@ -265,7 +279,7 @@ Events can be configured globally:
 
 ```js
 const context = new AudioContext();
-const sampler = new Sample(context, {
+const sampler = Sampler(context, {
   onStart: (note) => {
     console.log(note.time, context.currentTime);
   },
@@ -299,14 +313,14 @@ Use `output.addEffect(name, effect, mix)` to connect an effect using a send bus:
 ```js
 import { Reverb, SplendidGrandPiano } from "smplr";
 const reverb = new Reverb(context);
-const piano = new SplendidGrandPiano(context, { volume });
+const piano = SplendidGrandPiano(context, { volume });
 piano.output.addEffect("reverb", reverb, 0.2);
 ```
 
-To change the mix level, use `output.sendEffect(name, mix)`:
+To change the mix level, use `output.setEffectMix(name, mix)`:
 
 ```js
-piano.output.sendEffect("reverb", 0.5);
+piano.output.setEffectMix("reverb", 0.5);
 ```
 
 ### Experimental features
@@ -323,7 +337,7 @@ import { SplendidGrandPiano, CacheStorage } from "smplr";
 const context = new AudioContext();
 const storage = new CacheStorage();
 // First time the instrument loads, will fetch the samples from http. Subsequent times from cache.
-const piano = new SplendidGrandPiano(context, { storage });
+const piano = SplendidGrandPiano(context, { storage });
 ```
 
 ⚠️ `CacheStorage` is based on [Cache API](https://developer.mozilla.org/en-US/docs/Web/API/Cache) and only works in secure environments that runs with `https`. Read your framework documentation for setup instructions. For example, in nextjs you can use https://www.npmjs.com/package/next-dev-https. For vite there's https://github.com/liuweiGL/vite-plugin-mkcert. Find the appropriate solution for your environment.
@@ -336,8 +350,8 @@ const piano = new SplendidGrandPiano(context, { storage });
 import { Sequencer, SplendidGrandPiano, DrumMachine } from "smplr";
 
 const context = new AudioContext();
-const piano = new SplendidGrandPiano(context);
-const drums = new DrumMachine(context, { instrument: "TR-808" });
+const piano = SplendidGrandPiano(context);
+const drums = DrumMachine(context, { instrument: "TR-808" });
 
 const seq = new Sequencer(context, { bpm: 120, loop: true });
 
@@ -527,10 +541,11 @@ const seq = new Sequencer(context, {
 Render audio offline (faster than real-time) and export it as a WAV file. Uses `OfflineAudioContext` under the hood.
 
 ```js
-import { renderOffline } from "smplr";
+import { renderOffline, SplendidGrandPiano } from "smplr";
 
 const result = await renderOffline(async (context) => {
-  const piano = await new SplendidGrandPiano(context).load;
+  const piano = SplendidGrandPiano(context);
+  await piano.ready;
   piano.start({ note: "C4", time: 0, duration: 1 });
   piano.start({ note: "E4", time: 0.5, duration: 1 });
 });
@@ -566,18 +581,18 @@ WAV encoding is lazy — it only happens when you call `toWav()` or `toWav16()`.
 
 #### Buffer reuse
 
-If you already have an instrument loaded, pass the same `SampleLoader` to avoid re-fetching samples:
+If you already have an instrument loaded, pass the same `loader` to avoid re-fetching samples:
 
 ```js
-import { SplendidGrandPiano, SampleLoader, renderOffline } from "smplr";
+import { SplendidGrandPiano, renderOffline } from "smplr";
 
-const loader = new SampleLoader(audioContext);
-const piano = new SplendidGrandPiano(audioContext, { loader });
-await piano.load;
+const piano = SplendidGrandPiano(audioContext);
+await piano.ready;
 
 // Offline render reuses cached buffers — no re-fetch
 const result = await renderOffline(async (context) => {
-  const offlinePiano = await new SplendidGrandPiano(context, { loader }).load;
+  const offlinePiano = SplendidGrandPiano(context, { loader: piano.loader });
+  await offlinePiano.ready;
   offlinePiano.start({ note: "C4", time: 0, duration: 1 });
 });
 ```
@@ -590,7 +605,8 @@ Use offline rendering to generate reproducible audio files for issue reports. No
 const { renderOffline, SplendidGrandPiano } = await import("https://esm.sh/smplr");
 
 const result = await renderOffline(async (context) => {
-  const piano = await new SplendidGrandPiano(context).load;
+  const piano = SplendidGrandPiano(context);
+  await piano.ready;
   piano.start({ note: "C4", time: 0, duration: 2 });
 });
 result.downloadWav16("bug-report.wav");
@@ -613,7 +629,7 @@ const buffers = {
   kick: "https://smpldsnds.github.io/drum-machines/808-mini/kick.m4a",
   snare: "https://smpldsnds.github.io/drum-machines/808-mini/snare-1.m4a",
 };
-const sampler = new Sampler(new AudioContext(), { buffers });
+const sampler = Sampler(new AudioContext(), { buffers });
 ```
 
 And then use the name of the buffer as note name:
@@ -630,7 +646,8 @@ A Soundfont player. By default it loads audio from Benjamin Gleitzman's package 
 ```js
 import { Soundfont, getSoundfontNames, getSoundfontKits } from "smplr";
 
-const marimba = new Soundfont(new AudioContext(), { instrument: "marimba" });
+const marimba = Soundfont(new AudioContext(), { instrument: "marimba" });
+await marimba.ready;
 marimba.start({ note: "C4" });
 ```
 
@@ -643,7 +660,7 @@ Use `getSoundfontNames` to get all available instrument names and `getSoundfontK
 There are two kits available: `MusyngKite` or `FluidR3_GM`. The first one is used by default: it sounds better but samples weights more.
 
 ```js
-const marimba = new Soundfont(context, {
+const marimba = Soundfont(context, {
   instrument: "clavinet",
   kit: "FluidR3_GM", // "MusyngKite" is used by default if not specified
 });
@@ -652,7 +669,7 @@ const marimba = new Soundfont(context, {
 Alternatively, you can pass your custom url as the instrument. In that case, the `kit` is ignored:
 
 ```js
-const marimba = new Soundfont(context, {
+const marimba = Soundfont(context, {
   instrumentUrl:
     "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/marimba-mp3.js",
 });
@@ -663,7 +680,7 @@ const marimba = new Soundfont(context, {
 You can enable note looping to make note names indefinitely long by loading loop data:
 
 ```js
-const marimba = new Soundfont(context, {
+const marimba = Soundfont(context, {
   instrument: "cello",
   loadLoopData: true,
 });
@@ -679,16 +696,15 @@ A sampled acoustic piano. It uses Steinway samples with 4 velocity groups from
 ```js
 import { SplendidGrandPiano } from "smplr";
 
-const piano = new SplendidGrandPiano(new AudioContext());
-
+const piano = SplendidGrandPiano(new AudioContext());
+await piano.ready;
 piano.start({ note: "C4" });
 ```
 
-#### SplendidGrandPiano constructor
+#### SplendidGrandPiano options
 
-The second argument of the constructor accepts the following options:
+The second argument accepts the following options:
 
-- `baseUrl`:
 - `detune`: global detune in cents (0 if not specified)
 - `velocity`: default velocity (100 if not specified)
 - `volume`: default volume (100 if not specified)
@@ -698,7 +714,7 @@ The second argument of the constructor accepts the following options:
 Example:
 
 ```ts
-const piano = new SplendidGrandPiano(context, {
+const piano = SplendidGrandPiano(context, {
   detune: -20,
   volume: 80,
   notesToLoad: {
@@ -717,10 +733,8 @@ import { ElectricPiano, getElectricPianoNames } from "smplr";
 
 const instruments = getElectricPianoNames(); // => ["CP80", "PianetT", "WurlitzerEP200"]
 
-const epiano = new ElectricPiano(new AudioContext(), {
-  instrument: "PianetT",
-});
-
+const epiano = ElectricPiano(new AudioContext(), { instrument: "PianetT" });
+await epiano.ready;
 epiano.start({ note: "C4" });
 
 // Includes a (basic) tremolo effect:
@@ -742,9 +756,8 @@ import { Mallet, getMalletNames } from "smplr";
 
 const instruments = getMalletNames();
 
-const mallet = new Mallet(new AudioContext(), {
-  instrument: instruments[0],
-});
+const mallet = Mallet(new AudioContext(), { instrument: instruments[0] });
+await mallet.ready;
 ```
 
 ### Mellotron
@@ -756,9 +769,8 @@ import { Mellotron, getMellotronNames } from "smplr";
 
 const instruments = getMellotronNames();
 
-const mallet = new Mellotron(new AudioContext(), {
-  instrument: instruments[0],
-});
+const mellotron = Mellotron(new AudioContext(), { instrument: instruments[0] });
+await mellotron.ready;
 ```
 
 ### Drum Machines
@@ -771,7 +783,8 @@ import { DrumMachine, getDrumMachineNames } from "smplr";
 const instruments = getDrumMachineNames();
 
 const context = new AudioContext();
-const drums = new DrumMachine(context, { instrument: "TR-808" });
+const drums = DrumMachine(context, { instrument: "TR-808" });
+await drums.ready;
 drums.start({ note: "kick" });
 
 // Drum samples are grouped and can have sample variations:
@@ -791,9 +804,9 @@ import { Smolken, getSmolkenNames } from "smplr";
 
 const instruments = getSmolkenNames(); // => Arco, Pizzicato & Switched
 
-// Create an instrument
 const context = new AudioContext();
-const doubleBass = await new Smolken(context, { instrument: "Arco" }).load;
+const doubleBass = Smolken(context, { instrument: "Arco" });
+await doubleBass.ready;
 ```
 
 ### Versilian
@@ -809,24 +822,25 @@ import { Versilian, getVersilianInstruments } from "smplr";
 const instrumentNames = await getVersilianInstruments();
 
 const context = new AudioContext();
-const sampler = new Versilian(context, { instrument: instrumentNames[0] });
+const sampler = Versilian(context, { instrument: instrumentNames[0] });
+await sampler.ready;
 ```
 
-### Soundfont2Sampler
+### Soundfont2
 
 Sampler capable of reading .sf2 files directly:
 
 ```ts
-import { Soundfont2Sampler } from "smplr";
+import { Soundfont2 } from "smplr";
 import { SoundFont2 } from "soundfont2";
 
 const context = new AudioContext();
-const sampler = new Soundfont2Sampler(context, {
+const sampler = Soundfont2(context, {
   url: "https://smpldsnds.github.io/soundfonts/soundfonts/galaxy-electric-pianos.sf2",
   createSoundfont: (data) => new SoundFont2(data),
 });
 
-sampler.load.then(() => {
+sampler.ready.then(() => {
   // list all available instruments for the soundfont
   console.log(sampler.instrumentNames);
 

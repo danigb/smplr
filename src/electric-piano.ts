@@ -1,6 +1,6 @@
 import { HttpStorage, Storage } from "./storage";
 import { Smplr, SmplrOptions } from "./smplr";
-import { LoadProgress, NoteEvent, StopTarget } from "./smplr/types";
+import { LoadProgress } from "./smplr/types";
 import { sfzToSmplrJson } from "./smplr/sfz-convert";
 import { createControl } from "./smplr/signals";
 import { midiVelToGain } from "./smplr/volume";
@@ -62,74 +62,51 @@ export type ElectricPianoOptions = Partial<{
   formats: string[];
 }>;
 
-export class ElectricPiano {
-  #smplr: Smplr;
-  readonly load: Promise<this>;
-  public readonly tremolo: Readonly<{ level: (value: number) => void }>;
+type ElectricPianoSmplr = Smplr & {
+  readonly tremolo: Readonly<{ level: (value: number) => void }>;
+};
 
-  constructor(
-    public readonly context: AudioContext,
-    options: ElectricPianoOptions & { instrument: string }
-  ) {
-    const config = INSTRUMENTS[options.instrument];
-    if (!config) {
-      throw new Error(
-        `Unknown electric piano: "${options.instrument}". ` +
-          `Valid names: ${Object.keys(INSTRUMENTS).join(", ")}`
-      );
-    }
-
-    const smplrOptions: SmplrOptions = {
-      destination: options.destination,
-      volume: options.volume,
-      velocity: options.velocity,
-      storage: options.storage ?? HttpStorage,
-      onLoadProgress: options.onLoadProgress,
-    };
-    this.#smplr = new Smplr(context, smplrOptions);
-
-    // Tremolo effect
-    const depth = createControl(0);
-    this.tremolo = {
-      level: (level) => depth.set(midiVelToGain(level)),
-    };
-    const tremolo = createTremolo(context, depth.subscribe);
-    this.output.addInsert(tremolo);
-
-    // Fetch raw .sfz and convert to SmplrJson
-    this.load = fetch(config.sfzUrl)
-      .then((r) => r.text())
-      .then((sfzText) =>
-        this.#smplr.loadInstrument(
-          sfzToSmplrJson(sfzText, {
-            baseUrl: config.baseUrl,
-            pathFromSampleName: config.pathFromSampleName,
-            formats: options.formats ?? ["ogg", "m4a"],
-          })
-        )
-      )
-      .then(() => this);
-  }
-
-  get output() {
-    return this.#smplr.output;
-  }
-
-  get loadProgress() {
-    return this.#smplr.loadProgress;
-  }
-
-  start(sample: NoteEvent | string | number) {
-    return this.#smplr.start(
-      typeof sample === "object" ? sample : { note: sample }
+export function ElectricPiano(
+  context: BaseAudioContext,
+  options: ElectricPianoOptions & { instrument: string }
+): ElectricPianoSmplr {
+  if (new.target) console.warn("smplr: `new ElectricPiano(ctx, opts)` is deprecated. Call as a function: `ElectricPiano(ctx, opts)`.");
+  const config = INSTRUMENTS[options.instrument];
+  if (!config) {
+    throw new Error(
+      `Unknown electric piano: "${options.instrument}". ` +
+        `Valid names: ${Object.keys(INSTRUMENTS).join(", ")}`
     );
   }
 
-  stop(target?: StopTarget) {
-    return this.#smplr.stop(target);
-  }
+  const smplrOptions: SmplrOptions = {
+    destination: options.destination,
+    volume: options.volume,
+    velocity: options.velocity,
+    storage: options.storage ?? HttpStorage,
+    onLoadProgress: options.onLoadProgress,
+  };
+  const smplr = new Smplr(context, smplrOptions);
 
-  disconnect() {
-    return this.#smplr.disconnect();
-  }
+  // Tremolo effect
+  const depth = createControl(0);
+  const tremolo = {
+    level: (level: number) => depth.set(midiVelToGain(level)),
+  };
+  const tremoloNode = createTremolo(context as AudioContext, depth.subscribe);
+  smplr.output.addInsert(tremoloNode);
+
+  (smplr as any).ready = fetch(config.sfzUrl)
+    .then((r) => r.text())
+    .then((sfzText) =>
+      smplr.loadInstrument(
+        sfzToSmplrJson(sfzText, {
+          baseUrl: config.baseUrl,
+          pathFromSampleName: config.pathFromSampleName,
+          formats: options.formats ?? ["ogg", "m4a"],
+        })
+      )
+    );
+
+  return Object.assign(smplr, { tremolo }) as ElectricPianoSmplr;
 }

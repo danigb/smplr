@@ -1,9 +1,8 @@
 import { HttpStorage, Storage } from "../storage";
 import { Smplr, SmplrOptions } from "../smplr";
-import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "../smplr/types";
+import { LoadProgress, SmplrGroup, SmplrJson } from "../smplr/types";
 import { spreadKeyRanges } from "../smplr/utils";
 import { toMidi } from "../smplr/midi";
-import { findFirstSupportedFormat } from "../smplr/load-audio";
 import {
   SOUNDFONT_INSTRUMENTS,
   SOUNDFONT_KITS,
@@ -43,71 +42,32 @@ export type SoundfontOptions = Partial<
   }
 >;
 
-export class Soundfont {
-  public readonly config: Readonly<SoundfontConfig>;
-  #smplr: Smplr;
-  #hasLoops = false;
-  readonly load: Promise<this>;
+export function Soundfont(
+  context: BaseAudioContext,
+  options: SoundfontOptions
+): Smplr {
+  if (new.target) console.warn("smplr: `new Soundfont(ctx, opts)` is deprecated. Call as a function: `Soundfont(ctx, opts)`.");
+  const config = getSoundfontConfig(options);
+  const smplrOptions: SmplrOptions = {
+    destination: options.destination,
+    volume: options.volume,
+    velocity: options.velocity,
+    storage: config.storage,
+    onLoadProgress: options.onLoadProgress,
+  };
+  const smplr = new Smplr(context, smplrOptions);
 
-  constructor(
-    public readonly context: AudioContext,
-    options: SoundfontOptions
-  ) {
-    this.config = getSoundfontConfig(options);
+  // Apply extra gain insert
+  const gain = (context as AudioContext).createGain();
+  gain.gain.value = config.extraGain;
+  smplr.output.addInsert(gain);
 
-    const smplrOptions: SmplrOptions = {
-      destination: options.destination,
-      volume: options.volume,
-      velocity: options.velocity,
-      storage: this.config.storage,
-      onLoadProgress: options.onLoadProgress,
-    };
-    this.#smplr = new Smplr(context, smplrOptions);
-
-    // Apply extra gain insert immediately (output is available before load)
-    const gain = context.createGain();
-    gain.gain.value = this.config.extraGain;
-    this.#smplr.output.addInsert(gain);
-
-    this.load = loadSoundfontData(context, this.config)
-      .then(({ buffers, noteNames, loopData }) => {
-        this.#hasLoops = !!loopData;
-        return this.#smplr.loadInstrument(
-          soundfontToSmplrJson(noteNames, loopData),
-          buffers
-        );
-      })
-      .then(() => this);
-  }
-
-  get hasLoops() {
-    return this.#hasLoops;
-  }
-
-  get output() {
-    return this.#smplr.output;
-  }
-
-  async loaded() {
-    console.warn("deprecated: use load instead");
-    return this.load;
-  }
-
-  public disconnect() {
-    return this.#smplr.disconnect();
-  }
-
-  start(sample: NoteEvent | string | number) {
-    return this.#smplr.start(
-      typeof sample === "object" ? sample : { note: sample }
+  (smplr as any).ready = loadSoundfontData(context as AudioContext, config)
+    .then(({ buffers, noteNames, loopData }) =>
+      smplr.loadInstrument(soundfontToSmplrJson(noteNames, loopData), buffers)
     );
-  }
 
-  stop(sample?: StopTarget | string | number) {
-    return this.#smplr.stop(
-      sample === undefined ? undefined : sample
-    );
-  }
+  return smplr;
 }
 
 // ---------------------------------------------------------------------------

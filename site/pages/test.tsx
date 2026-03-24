@@ -112,7 +112,7 @@ async function playMelody(
 }
 
 async function playDrums(
-  dm: DrumMachine,
+  dm: ReturnType<typeof DrumMachine>,
   log: LogApi,
   signal: AbortSignal,
 ): Promise<void> {
@@ -144,11 +144,11 @@ const INSTRUMENT_TESTS: InstrumentTest[] = [
     label: "SplendidGrandPiano",
     async run(ctx, log, signal) {
       log.append("  Loading… 0 / ?");
-      const instrument = new SplendidGrandPiano(ctx, {
+      const instrument = SplendidGrandPiano(ctx, {
         onLoadProgress: makeProgressHandler(log),
       });
       try {
-        await instrument.load;
+        await instrument.ready;
         if (signal.aborted) return;
         log.append("  ready");
         await playMelody(instrument, chromaticNotes(48, 72), 200, log, signal);
@@ -163,12 +163,12 @@ const INSTRUMENT_TESTS: InstrumentTest[] = [
       const name = pick(getSoundfontNames());
       log.append(`  Preset: ${name} (MusyngKite)`);
       log.append("  Loading… 0 / ?");
-      const instrument = new Soundfont(ctx, {
+      const instrument = Soundfont(ctx, {
         instrument: name,
         onLoadProgress: makeProgressHandler(log),
       });
       try {
-        await instrument.load;
+        await instrument.ready;
         if (signal.aborted) return;
         log.append("  ready");
         await playMelody(instrument, chromaticNotes(48, 72), 200, log, signal);
@@ -183,12 +183,12 @@ const INSTRUMENT_TESTS: InstrumentTest[] = [
       const name = pick(getElectricPianoNames());
       log.append(`  Preset: ${name}`);
       log.append("  Loading… 0 / ?");
-      const instrument = new ElectricPiano(ctx, {
+      const instrument = ElectricPiano(ctx, {
         instrument: name,
         onLoadProgress: makeProgressHandler(log),
       });
       try {
-        await instrument.load;
+        await instrument.ready;
         if (signal.aborted) return;
         log.append("  ready");
         await playMelody(instrument, chromaticNotes(48, 72), 200, log, signal);
@@ -203,12 +203,12 @@ const INSTRUMENT_TESTS: InstrumentTest[] = [
       const name = pick(getMalletNames());
       log.append(`  Preset: ${name}`);
       log.append("  Loading… 0 / ?");
-      const instrument = new Mallet(ctx, {
+      const instrument = Mallet(ctx, {
         instrument: name,
         onLoadProgress: makeProgressHandler(log),
       });
       try {
-        await instrument.load;
+        await instrument.ready;
         if (signal.aborted) return;
         log.append("  ready");
         await playMelody(instrument, chromaticNotes(48, 72), 200, log, signal);
@@ -223,12 +223,12 @@ const INSTRUMENT_TESTS: InstrumentTest[] = [
       const name = pick(getMellotronNames());
       log.append(`  Preset: ${name}`);
       log.append("  Loading… 0 / ?");
-      const instrument = new Mellotron(ctx, {
+      const instrument = Mellotron(ctx, {
         instrument: name,
         onLoadProgress: makeProgressHandler(log),
       });
       try {
-        await instrument.load;
+        await instrument.ready;
         if (signal.aborted) return;
         log.append("  ready");
         await playMelody(instrument, chromaticNotes(48, 72), 200, log, signal);
@@ -243,12 +243,12 @@ const INSTRUMENT_TESTS: InstrumentTest[] = [
       const name = pick(getSmolkenNames());
       log.append(`  Preset: ${name}`);
       log.append("  Loading… 0 / ?");
-      const instrument = new Smolken(ctx, {
+      const instrument = Smolken(ctx, {
         instrument: name,
         onLoadProgress: makeProgressHandler(log),
       });
       try {
-        await instrument.load;
+        await instrument.ready;
         if (signal.aborted) return;
         log.append("  ready");
         // Double bass — lower range
@@ -264,12 +264,12 @@ const INSTRUMENT_TESTS: InstrumentTest[] = [
       const name = pick(getDrumMachineNames());
       log.append(`  Preset: ${name}`);
       log.append("  Loading… 0 / ?");
-      const dm = new DrumMachine(ctx, {
+      const dm = DrumMachine(ctx, {
         instrument: name,
         onLoadProgress: makeProgressHandler(log),
       });
       try {
-        await dm.load;
+        await dm.ready;
         if (signal.aborted) return;
         log.append("  ready");
         await playDrums(dm, log, signal);
@@ -287,12 +287,12 @@ const INSTRUMENT_TESTS: InstrumentTest[] = [
       const name = pick(names);
       log.append(`  Preset: ${name}`);
       log.append("  Loading… 0 / ?");
-      const instrument = new Versilian(ctx, {
+      const instrument = Versilian(ctx, {
         instrument: name,
         onLoadProgress: makeProgressHandler(log),
       });
       try {
-        await instrument.load;
+        await instrument.ready;
         if (signal.aborted) return;
         log.append("  ready");
         await playMelody(instrument, chromaticNotes(48, 72), 200, log, signal);

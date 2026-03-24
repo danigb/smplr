@@ -1,7 +1,6 @@
-import { OutputChannel } from "../smplr/channel";
 import { HttpStorage, Storage } from "../storage";
 import { Smplr, SmplrOptions } from "../smplr";
-import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "../smplr/types";
+import { LoadProgress, SmplrGroup, SmplrJson } from "../smplr/types";
 import {
   DrumMachineInstrument,
   EMPTY_INSTRUMENT,
@@ -55,83 +54,45 @@ function getConfig(options?: DrumMachineOptions): DrumMachineConfig {
   return config;
 }
 
-export class DrumMachine {
-  #smplr: Smplr;
-  #instrument = EMPTY_INSTRUMENT;
-  readonly load: Promise<this>;
-  readonly output: OutputChannel;
+type DrumMachineSmplr = Smplr & {
+  getSampleNames(): string[];
+  getGroupNames(): string[];
+  getSampleNamesForGroup(name: string): string[];
+};
 
-  constructor(context: AudioContext, options?: DrumMachineOptions) {
-    const config = getConfig(options);
+export function DrumMachine(
+  context: BaseAudioContext,
+  options?: DrumMachineOptions
+): DrumMachineSmplr {
+  if (new.target) console.warn("smplr: `new DrumMachine(ctx, opts)` is deprecated. Call as a function: `DrumMachine(ctx, opts)`.");
+  const config = getConfig(options);
+  const smplrOptions: SmplrOptions = {
+    destination: options?.destination,
+    volume: options?.volume,
+    pan: options?.pan,
+    velocity: options?.velocity,
+    storage: config.storage,
+    onLoadProgress: options?.onLoadProgress,
+  };
+  const smplr = new Smplr(context, smplrOptions);
 
-    const smplrOptions: SmplrOptions = {
-      destination: options?.destination,
-      volume: options?.volume,
-      pan: options?.pan,
-      velocity: options?.velocity,
-      storage: config.storage,
-      onLoadProgress: options?.onLoadProgress,
-    };
-    this.#smplr = new Smplr(context, smplrOptions);
-    this.output = this.#smplr.output;
+  let instrument = EMPTY_INSTRUMENT;
 
-    const instrumentPromise = isDrumMachineInstrument(config.instrument)
-      ? Promise.resolve(config.instrument)
-      : fetchDrumMachineInstrument(config.url, config.storage);
+  const instrumentPromise = isDrumMachineInstrument(config.instrument)
+    ? Promise.resolve(config.instrument)
+    : fetchDrumMachineInstrument(config.url, config.storage);
 
-    this.load = instrumentPromise
-      .then((inst) => {
-        this.#instrument = inst;
-        return this.#smplr.loadInstrument(drumMachineToSmplrJson(inst));
-      })
-      .then(() => this);
-  }
-
-  getSampleNames(): string[] {
-    return this.#instrument.samples.slice();
-  }
-
-  getGroupNames(): string[] {
-    return this.#instrument.groupNames.slice();
-  }
-
-  getSampleNamesForGroup(groupName: string): string[] {
-    return this.#instrument.sampleGroupVariations[groupName] ?? [];
-  }
-
-  start(sample: NoteEvent) {
-    const s = typeof sample === "object" ? sample : { note: sample };
-    return this.#smplr.start({
-      ...s,
-      stopId: (s as { stopId?: string | number; note: string | number }).stopId ?? s.note,
+  (smplr as any).ready = instrumentPromise
+    .then((inst) => {
+      instrument = inst;
+      return smplr.loadInstrument(drumMachineToSmplrJson(inst));
     });
-  }
 
-  stop(sample?: StopTarget) {
-    return this.#smplr.stop(sample);
-  }
-
-  disconnect() {
-    return this.#smplr.disconnect();
-  }
-
-  /** @deprecated */
-  async loaded() {
-    console.warn("deprecated: use load instead");
-    return this.load;
-  }
-
-  /** @deprecated */
-  get sampleNames(): string[] {
-    console.log("deprecated: Use getGroupNames instead");
-    return this.#instrument.groupNames.slice();
-  }
-
-  /** @deprecated */
-  getVariations(groupName: string): string[] {
-    console.warn("deprecated: use getSampleNamesForGroup");
-    return this.#instrument.sampleGroupVariations[groupName] ?? [];
-  }
+  return Object.assign(smplr, {
+    getSampleNames: () => instrument.samples.slice(),
+    getGroupNames: () => instrument.groupNames.slice(),
+    getSampleNamesForGroup: (name: string) => instrument.sampleGroupVariations[name] ?? [],
+  }) as DrumMachineSmplr;
 }
 
 // ---------------------------------------------------------------------------

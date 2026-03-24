@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Reverb, Soundfont2Sampler, Storage } from "smplr";
+import { Reverb, Soundfont2, Smplr, Storage } from "smplr";
+
+type Soundfont2SmplrResult = Smplr & {
+  readonly instrumentNames: string[];
+  loadInstrument(instrumentName: string): Promise<void> | undefined;
+};
 import { SoundFont2 } from "soundfont2";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
@@ -27,7 +32,7 @@ let samplerNames: string[] = [
 ];
 
 export function Soundfont2Example({ className }: { className?: string }) {
-  const [sampler, setSampler] = useState<Soundfont2Sampler | undefined>(
+  const [sampler, setSampler] = useState<Soundfont2SmplrResult | undefined>(
     undefined
   );
   const [samplerName, setSamplerName] = useState<string>(samplerNames[0]);
@@ -49,17 +54,17 @@ export function Soundfont2Example({ className }: { className?: string }) {
 
     reverb ??= new Reverb(context);
     const url = isUrl ? nameOrUrl : SF2_INSTRUMENTS[nameOrUrl];
-    const newSampler = new Soundfont2Sampler(context, {
+    const newSampler = Soundfont2(context, {
       url,
       createSoundfont: (data) => new SoundFont2(data),
     });
     newSampler.output.addEffect("reverb", reverb, reverbMix);
     setSampler(newSampler);
 
-    newSampler.load.then((sampler) => {
-      const instrumentName = sampler.instrumentNames[0];
+    newSampler.ready.then(() => {
+      const instrumentName = newSampler.instrumentNames[0];
       setInstrumentName(instrumentName);
-      sampler.loadInstrument(instrumentName);
+      newSampler.loadInstrument(instrumentName);
       setStatus("ready");
     });
   }
@@ -156,7 +161,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              sampler?.output.setVolume(volume);
+              if (sampler) sampler.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -169,7 +174,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              sampler?.output.sendEffect("reverb", mix);
+              sampler?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />

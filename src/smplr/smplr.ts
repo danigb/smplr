@@ -102,10 +102,20 @@ function isSmplrJson(x: unknown): x is SmplrJson {
  *   `new Smplr(context, options?)`  then  `smplr.loadInstrument(json)`
  */
 export class Smplr {
-  /** Resolves with `this` once all sample buffers are loaded. */
-  readonly load: Promise<Smplr>;
+  /** Resolves once all sample buffers are loaded. */
+  readonly ready: Promise<void>;
+
+  /** @deprecated Use `instrument.ready` instead. */
+  get load(): Promise<void> {
+    console.warn("smplr: `instrument.load` is deprecated. Use `instrument.ready` instead.");
+    return this.ready;
+  }
   /** The AudioContext (or OfflineAudioContext) passed to the constructor. */
   readonly context: BaseAudioContext;
+  /** The sample loader — share between instruments to reuse cached buffers. */
+  readonly loader: SampleLoader;
+  /** The scheduler — share between instruments for coordinated timing. */
+  readonly scheduler: Scheduler;
 
   #loadProgress: LoadProgress = { loaded: 0, total: 0 };
   #buffers: Map<string, AudioBuffer> = new Map();
@@ -115,9 +125,7 @@ export class Smplr {
   #aliases: Map<string, number> | undefined;
   #matcher: RegionMatcher;
   #voices: VoiceManager;
-  #scheduler: Scheduler;
   #channel: Channel;
-  #loader: SampleLoader;
   #onLoadProgress: ((progress: LoadProgress) => void) | undefined;
   #onStart: ((event: NoteEvent) => void) | undefined;
   #onEnded: ((event: NoteEvent) => void) | undefined;
@@ -155,7 +163,7 @@ export class Smplr {
     });
 
     // 2. Scheduler — shared or private
-    this.#scheduler = options?.scheduler ?? new Scheduler(context);
+    this.scheduler = options?.scheduler ?? new Scheduler(context);
 
     // 3. Region matcher — pre-processes groups/regions once
     this.#matcher = new RegionMatcher(json ?? EMPTY_JSON);
@@ -164,23 +172,22 @@ export class Smplr {
     this.#voices = new VoiceManager();
 
     // 5. Sample loader — shared or private
-    this.#loader =
+    this.loader =
       options?.loader ?? new SampleLoader(context, { storage: options?.storage });
 
     if (json) {
       // Pattern A: load immediately
-      this.load = this.#loader
-        .load(json, (loaded, total) => {
+      this.ready = this.loader
+        .load(json, (loaded: number, total: number) => {
           this.#loadProgress = { loaded, total };
           this.#onLoadProgress?.({ loaded, total });
         })
-        .then((buffers) => {
+        .then((buffers: Map<string, AudioBuffer>) => {
           this.#buffers = buffers;
-          return this;
         });
     } else {
       // Pattern B: resolve immediately; caller will call loadInstrument()
-      this.load = Promise.resolve(this);
+      this.ready = Promise.resolve();
     }
   }
 
@@ -201,7 +208,7 @@ export class Smplr {
       : undefined;
     this.#matcher = new RegionMatcher(json);
 
-    return this.#loader
+    return this.loader
       .load(json, {
         buffers,
         onProgress: (loaded, total) => {
@@ -239,7 +246,7 @@ export class Smplr {
   start(event: NoteEvent): StopFn {
     const normalized = this.#normalizeNoteEvent(event);
 
-    const schedulerStop = this.#scheduler.schedule(
+    const schedulerStop = this.scheduler.schedule(
       normalized as NoteEvent,
       (e) => this.#playNote(e as NormalizedNoteEvent)
     );
@@ -279,7 +286,7 @@ export class Smplr {
   disconnect(): void {
     this.#voices.stopAll();
     this.#channel.disconnect();
-    this.#scheduler.stop();
+    this.scheduler.stop();
   }
 
   #getBuffer(sample: string, reverse: boolean): AudioBuffer | undefined {

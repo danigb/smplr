@@ -13,12 +13,12 @@ import { SmplrJson } from "./types";
  * passing it via SmplrOptions.loader.
  */
 export class SampleLoader {
-  #context: BaseAudioContext;
+  readonly context: BaseAudioContext;
   #storage: Storage;
   #cache: Map<string, AudioBuffer> = new Map();
 
   constructor(context: BaseAudioContext, options?: { storage?: Storage }) {
-    this.#context = context;
+    this.context = context;
     this.#storage = options?.storage ?? HttpStorage;
   }
 
@@ -80,7 +80,7 @@ export class SampleLoader {
 
         if (!buffer) {
           const fetched = await loadAudioBuffer(
-            this.#context,
+            this.context,
             url,
             this.#storage
           );

@@ -29,7 +29,8 @@ const DEFAULT_MAX_DURATION = 60;
  * @example
  * ```ts
  * const result = await renderOffline(async (context) => {
- *   const piano = await new SplendidGrandPiano(context).load;
+ *   const piano = SplendidGrandPiano(context);
+ *   await piano.ready;
  *   piano.start({ note: "C4", time: 0, duration: 1 });
  * });
  * result.downloadWav("export.wav");

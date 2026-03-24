@@ -1,5 +1,5 @@
 import { AudioInsert, connectSerial } from "./connect";
-import { createControl } from "./signals";
+import { Control, createControl } from "./signals";
 import { midiVelToGain } from "./volume";
 
 export type ChannelConfig = {
@@ -22,10 +22,10 @@ type Send = {
  * @private
  */
 export class Channel {
-  public readonly setVolume: (vol: number) => void;
   public readonly input: AudioNode;
 
-  #volume: GainNode;
+  #volumeControl: Control<number>;
+  #volumeGain: GainNode;
   #panner: StereoPannerNode;
   #sends?: Send[];
   #inserts?: (AudioNode | AudioInsert)[];
@@ -46,22 +46,35 @@ export class Channel {
     };
 
     this.input = context.createGain();
-    this.#volume = context.createGain();
+    this.#volumeGain = context.createGain();
     this.#panner = context.createStereoPanner();
     this.#panner.pan.value = this.#config.pan!;
 
     this.#disconnect = connectSerial([
       this.input,
-      this.#volume,
+      this.#volumeGain,
       this.#panner,
       this.#config.destination,
     ]);
 
-    const volume = createControl(this.#config.volume);
-    this.setVolume = volume.set;
-    this.#unsubscribe = volume.subscribe((volume) => {
-      this.#volume.gain.value = this.#config.volumeToGain(volume);
+    this.#volumeControl = createControl(this.#config.volume);
+    this.#unsubscribe = this.#volumeControl.subscribe((volume) => {
+      this.#volumeGain.gain.value = this.#config.volumeToGain(volume);
     });
+  }
+
+  get volume(): number {
+    return this.#volumeControl.get();
+  }
+
+  set volume(value: number) {
+    this.#volumeControl.set(value);
+  }
+
+  /** @deprecated Use `output.volume = value` instead. */
+  setVolume(vol: number) {
+    console.warn("smplr: output.setVolume() is deprecated. Use `output.volume = value` instead.");
+    this.volume = vol;
   }
 
   get pan(): number {
@@ -82,7 +95,7 @@ export class Channel {
     this.#disconnect = connectSerial([
       this.input,
       ...this.#inserts,
-      this.#volume,
+      this.#volumeGain,
       this.#panner,
       this.#config.destination,
     ]);
@@ -99,15 +112,15 @@ export class Channel {
     const mix = this.context.createGain();
     mix.gain.value = mixValue;
     const input = "input" in effect ? effect.input : effect;
-    const disconnect = connectSerial([this.#volume, mix, input]);
+    const disconnect = connectSerial([this.#volumeGain, mix, input]);
 
     this.#sends ??= [];
     this.#sends.push({ name, mix, disconnect });
   }
 
-  sendEffect(name: string, mix: number) {
+  setEffectMix(name: string, mix: number) {
     if (this.#disconnected) {
-      throw Error("Can't send effect to disconnected channel");
+      throw Error("Can't set effect mix on disconnected channel");
     }
 
     const send = this.#sends?.find((send) => send.name === name);
@@ -116,6 +129,12 @@ export class Channel {
     } else {
       console.warn("Send bus not found: " + name);
     }
+  }
+
+  /** @deprecated Use `output.setEffectMix(name, mix)` instead. */
+  sendEffect(name: string, mix: number) {
+    console.warn("smplr: output.sendEffect() is deprecated. Use `output.setEffectMix(name, mix)` instead.");
+    this.setEffectMix(name, mix);
   }
 
   disconnect() {

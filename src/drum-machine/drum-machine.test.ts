@@ -21,9 +21,10 @@ function setup() {
 describe("Drum machine", () => {
   it("starts a voice when triggered by group name alias", async () => {
     const { context, mock } = setup();
-    const dm = await new DrumMachine(context, {
+    const dm = DrumMachine(context, {
       instrument: "TR-808",
-    }).load;
+    });
+    await dm.ready;
 
     dm.start({ note: "kick" });
 
@@ -34,9 +35,10 @@ describe("Drum machine", () => {
 
   it("returns all samples", async () => {
     const { context } = setup();
-    const dm = await new DrumMachine(context, {
+    const dm = DrumMachine(context, {
       instrument: "TR-808",
-    }).load;
+    });
+    await dm.ready;
     expect(dm.getSampleNames()).toEqual(["kick/low", "kick/mid", "kick/high"]);
     expect(dm.getGroupNames()).toEqual(["kick"]);
     expect(dm.getSampleNamesForGroup("kick")).toEqual([
@@ -48,13 +50,13 @@ describe("Drum machine", () => {
 
   it("stop does not throw", () => {
     const { context } = setup();
-    const dm = new DrumMachine(context, { instrument: "TR-808" });
+    const dm = DrumMachine(context, { instrument: "TR-808" });
     expect(() => dm.stop({ stopId: "kick" })).not.toThrow();
   });
 
   it("has output", () => {
     const { context } = setup();
-    const dm = new DrumMachine(context, { instrument: "TR-808" });
+    const dm = DrumMachine(context, { instrument: "TR-808" });
     expect(dm.output).toBeDefined();
   });
 });

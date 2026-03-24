@@ -1,16 +1,19 @@
+import { Smplr } from "./smplr";
 import { Versilian, VersilianOptions } from "./versilian";
 
 export function getMalletNames() {
   return Object.keys(NAME_TO_PATH) as MalletName[];
 }
 
-export class Mallet extends Versilian {
-  constructor(context: AudioContext, options: VersilianOptions) {
-    super(context, {
-      ...options,
-      instrument: NAME_TO_PATH[options.instrument ?? ""],
-    });
-  }
+export function Mallet(
+  context: BaseAudioContext,
+  options: VersilianOptions = {}
+): Smplr {
+  if (new.target) console.warn("smplr: `new Mallet(ctx, opts)` is deprecated. Call as a function: `Mallet(ctx, opts)`.");
+  return Versilian(context, {
+    ...options,
+    instrument: NAME_TO_PATH[options.instrument ?? ""],
+  });
 }
 
 type MalletName = keyof typeof NAME_TO_PATH;

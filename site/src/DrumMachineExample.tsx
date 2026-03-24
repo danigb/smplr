@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { DrumMachine, getDrumMachineNames, Reverb } from "smplr";
+import { DrumMachine, getDrumMachineNames, Reverb, Smplr } from "smplr";
+
+type DrumMachineSmplr = Smplr & {
+  getSampleNames(): string[];
+  getGroupNames(): string[];
+  getSampleNamesForGroup(name: string): string[];
+};
 import { getAudioContext } from "./audio-context";
 import { LoadWithStatus, useStatus } from "./useStatus";
 
@@ -8,7 +14,7 @@ let reverb: Reverb | undefined;
 export function DrumMachineExample({ className }: { className?: string }) {
   const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [dmName, setDmName] = useState(getDrumMachineNames()[0]);
-  const [drums, setDrumMachine] = useState<DrumMachine | undefined>(undefined);
+  const [drums, setDrumMachine] = useState<DrumMachineSmplr | undefined>(undefined);
   const [reverbMix, setReverbMix] = useState(0.0);
   const [volume, setVolume] = useState(100);
   const [reversedGroups, setReversedGroups] = useState<Set<string>>(new Set());
@@ -26,7 +32,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const drums = new DrumMachine(context, { instrument, onLoadProgress });
+    const drums = DrumMachine(context, { instrument, onLoadProgress });
     drums.output.addEffect("reverb", reverb, reverbMix);
 
     drums.load
@@ -82,7 +88,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              drums?.output.setVolume(volume);
+              if (drums) drums.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -95,7 +101,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              drums?.output.sendEffect("reverb", mix);
+              drums?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />
