@@ -14,7 +14,7 @@ export function getGoldstSoundfontLoopsUrl(instrument: string, kit: string) {
  */
 export async function fetchSoundfontLoopData(
   url?: string,
-  sampleRate = 44100
+  sampleRate = 44100,
 ): Promise<LoopData | undefined> {
   if (!url) return undefined;
   try {

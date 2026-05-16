@@ -17,13 +17,13 @@ export function toMidi(note: string | number | undefined): number | undefined {
   return note === undefined
     ? undefined
     : typeof note === "number"
-    ? note
-    : noteNameToMidi(note);
+      ? note
+      : noteNameToMidi(note);
 }
 
 export function findNearestMidi(
   midi: number,
-  isAvailable: Record<string | number, unknown>
+  isAvailable: Record<string | number, unknown>,
 ): [number, number] {
   let i = 0;
   while (isAvailable[midi + i] === undefined && i < 128) {

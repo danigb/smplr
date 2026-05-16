@@ -41,7 +41,7 @@ export type Soundfont2Options = {
 
 export function sf2InstrumentToSmplrJson(
   sf2Instrument: Sf2Instrument,
-  context: BaseAudioContext
+  context: BaseAudioContext,
 ): { json: SmplrJson; buffers: Map<string, AudioBuffer> } {
   const buffers = new Map<string, AudioBuffer>();
   const regions: SmplrGroup["regions"] = [];
@@ -52,8 +52,13 @@ export function sf2InstrumentToSmplrJson(
     const sampleName = header.name;
 
     const float32 = new Float32Array(sample.data.length);
-    for (let i = 0; i < sample.data.length; i++) float32[i] = sample.data[i] / 32768;
-    const audioBuffer = context.createBuffer(1, float32.length, header.sampleRate);
+    for (let i = 0; i < sample.data.length; i++)
+      float32[i] = sample.data[i] / 32768;
+    const audioBuffer = context.createBuffer(
+      1,
+      float32.length,
+      header.sampleRate,
+    );
     audioBuffer.getChannelData(0).set(float32);
     buffers.set(sampleName, audioBuffer);
 
@@ -62,7 +67,9 @@ export function sf2InstrumentToSmplrJson(
     regions.push({
       sample: sampleName,
       pitch: header.originalPitch,
-      ...(keyRange && { keyRange: [keyRange.lo, keyRange.hi] as [number, number] }),
+      ...(keyRange && {
+        keyRange: [keyRange.lo, keyRange.hi] as [number, number],
+      }),
       ...(hasLoop && {
         loop: true,
         loopStart: header.startLoop / header.sampleRate,
@@ -99,7 +106,7 @@ export const Soundfont2Sampler = Instrument(
       },
       loadInstrument(instrumentName) {
         const sf2inst = soundfont?.instruments.find(
-          (inst: Sf2Instrument) => inst.header.name === instrumentName
+          (inst: Sf2Instrument) => inst.header.name === instrumentName,
         );
         if (!sf2inst) return undefined;
         const { json, buffers } = sf2InstrumentToSmplrJson(sf2inst, ctx);
@@ -110,12 +117,12 @@ export const Soundfont2Sampler = Instrument(
     const ready = loadSoundfont(options).then((sf2) => {
       soundfont = sf2;
       instrumentNamesList = sf2.instruments.map(
-        (inst: Sf2Instrument) => inst.header.name
+        (inst: Sf2Instrument) => inst.header.name,
       );
     });
 
     return { extras, ready };
-  }
+  },
 );
 
 async function loadSoundfont(options: Soundfont2Options) {

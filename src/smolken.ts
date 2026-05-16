@@ -45,8 +45,8 @@ export const Smolken = Instrument(
             pathFromSampleName: (name) =>
               name.replace(/\\/g, "/").replace(/\.wav$/i, ""),
             formats: ["ogg", "m4a"],
-          })
-        )
+          }),
+        ),
       );
-  }
+  },
 );

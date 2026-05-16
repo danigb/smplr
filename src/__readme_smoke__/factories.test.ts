@@ -44,7 +44,9 @@ describe("README — single-line factory examples", () => {
 
   it("L759: Mellotron(ctx, { instrument })", () => {
     const instruments = getMellotronNames();
-    const mellotron = new Mellotron(makeContext(), { instrument: instruments[0] });
+    const mellotron = new Mellotron(makeContext(), {
+      instrument: instruments[0],
+    });
     mellotron.load.catch(() => {});
     expect(typeof mellotron.start).toBe("function");
   });

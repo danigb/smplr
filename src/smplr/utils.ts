@@ -20,16 +20,15 @@ export function spreadKeyRanges(samples: [number, string][]): SpreadResult[] {
   const sorted = [...samples].sort(([a], [b]) => a - b);
 
   return sorted.map(([midi, name], i) => {
-    const low =
-      i === 0
-        ? 0
-        : Math.floor((sorted[i - 1][0] + midi) / 2) + 1;
+    const low = i === 0 ? 0 : Math.floor((sorted[i - 1][0] + midi) / 2) + 1;
 
     const high =
-      i === sorted.length - 1
-        ? 127
-        : Math.floor((midi + sorted[i + 1][0]) / 2);
+      i === sorted.length - 1 ? 127 : Math.floor((midi + sorted[i + 1][0]) / 2);
 
-    return { keyRange: [low, high] as [number, number], pitch: midi, sample: name };
+    return {
+      keyRange: [low, high] as [number, number],
+      pitch: midi,
+      sample: name,
+    };
   });
 }

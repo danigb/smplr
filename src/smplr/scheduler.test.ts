@@ -20,7 +20,7 @@ function makeContext(currentTime = 0) {
 
 function makeScheduler(
   ctx: BaseAudioContext,
-  options?: { lookaheadMs?: number; intervalMs?: number }
+  options?: { lookaheadMs?: number; intervalMs?: number },
 ) {
   return new Scheduler(ctx, { lookaheadMs: 200, intervalMs: 50, ...options });
 }
@@ -63,7 +63,10 @@ describe("immediate dispatch", () => {
     // now=0, lookahead=0.2s → anything at time ≤ 0.2 dispatches immediately
     const ctx = makeContext(0);
     const cb = jest.fn();
-    makeScheduler(ctx, { lookaheadMs: 200 }).schedule({ note: "C4", time: 0.15 }, cb);
+    makeScheduler(ctx, { lookaheadMs: 200 }).schedule(
+      { note: "C4", time: 0.15 },
+      cb,
+    );
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
@@ -92,7 +95,10 @@ describe("future scheduling", () => {
   it("does not dispatch immediately for events beyond the lookahead window", () => {
     const ctx = makeContext(0);
     const cb = jest.fn();
-    makeScheduler(ctx, { lookaheadMs: 200 }).schedule({ note: "C4", time: 1.0 }, cb);
+    makeScheduler(ctx, { lookaheadMs: 200 }).schedule(
+      { note: "C4", time: 1.0 },
+      cb,
+    );
     expect(cb).not.toHaveBeenCalled();
   });
 
@@ -101,7 +107,7 @@ describe("future scheduling", () => {
     const cb = jest.fn();
     makeScheduler(ctx, { lookaheadMs: 200, intervalMs: 50 }).schedule(
       { note: "C4", time: 0.5 },
-      cb
+      cb,
     );
 
     // At audio time 0.4, window reaches 0.6 → event at 0.5 dispatches
@@ -117,7 +123,7 @@ describe("future scheduling", () => {
     const cb = jest.fn();
     makeScheduler(ctx, { lookaheadMs: 200, intervalMs: 50 }).schedule(
       { note: "C4", time: 1.0 },
-      cb
+      cb,
     );
 
     // At audio time 0.7, window reaches 0.9 → event at 1.0 not yet due
@@ -310,7 +316,10 @@ describe("edge cases", () => {
     const ctx = makeContext(0);
     const cb = jest.fn();
     // lookahead = 0.2, event.time = 0.2 → 0.2 <= 0 + 0.2 → immediate
-    makeScheduler(ctx, { lookaheadMs: 200 }).schedule({ note: "C4", time: 0.2 }, cb);
+    makeScheduler(ctx, { lookaheadMs: 200 }).schedule(
+      { note: "C4", time: 0.2 },
+      cb,
+    );
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
@@ -320,7 +329,7 @@ describe("edge cases", () => {
     // lookahead = 0.2, event.time = 0.201 → not immediate
     makeScheduler(ctx, { lookaheadMs: 200 }).schedule(
       { note: "C4", time: 0.201 } as NoteEvent,
-      cb
+      cb,
     );
     expect(cb).not.toHaveBeenCalled();
   });
@@ -331,7 +340,7 @@ describe("edge cases", () => {
     const callbacks = Array.from({ length: 5 }, () => jest.fn());
 
     callbacks.forEach((cb, i) =>
-      s.schedule({ note: "C4", time: 1.0 + i * 0.1 }, cb)
+      s.schedule({ note: "C4", time: 1.0 + i * 0.1 }, cb),
     );
 
     // All 5 events still pending — one interval serves them all

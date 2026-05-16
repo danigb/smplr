@@ -1,6 +1,12 @@
 import { HttpStorage, Storage } from "../storage";
 import { Instrument } from "../smplr";
-import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopFn } from "../smplr/types";
+import {
+  LoadProgress,
+  NoteEvent,
+  SmplrGroup,
+  SmplrJson,
+  StopFn,
+} from "../smplr/types";
 import {
   DrumMachineInstrument,
   EMPTY_INSTRUMENT,
@@ -101,7 +107,7 @@ export const DrumMachine = Instrument(
     });
 
     return { extras, ready };
-  }
+  },
 );
 
 // ---------------------------------------------------------------------------
@@ -116,7 +122,7 @@ export const DrumMachine = Instrument(
  * name ("kick") so both forms work with Smplr.start({ note: "kick" }).
  */
 export function drumMachineToSmplrJson(
-  instrument: DrumMachineInstrument
+  instrument: DrumMachineInstrument,
 ): SmplrJson {
   const aliases: Record<string, number> = {};
   const regions: SmplrGroup["regions"] = [];
@@ -138,7 +144,7 @@ export function drumMachineToSmplrJson(
 
   // Group name aliases: "kick" → first sample MIDI
   for (const [groupName, firstSample] of Object.entries(
-    instrument.nameToSampleName
+    instrument.nameToSampleName,
   )) {
     if (firstSample) {
       const idx = instrument.samples.indexOf(firstSample);

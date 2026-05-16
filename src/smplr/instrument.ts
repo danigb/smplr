@@ -63,7 +63,7 @@ export interface PluginSmplr extends Smplr {
    */
   loadInstrument(
     json: SmplrJson,
-    buffers?: Map<string, AudioBuffer>
+    buffers?: Map<string, AudioBuffer>,
   ): Promise<void>;
 }
 
@@ -94,7 +94,7 @@ export type SmplrPluginResult<E extends object> =
 export type SmplrPlugin<O, E extends object = {}> = (
   ctx: BaseAudioContext,
   options: O,
-  smplr: PluginSmplr
+  smplr: PluginSmplr,
 ) => SmplrPluginResult<E>;
 
 /**
@@ -113,7 +113,7 @@ export type InstrumentInstance<E extends object = {}> = Smplr &
 export type InstrumentFactory<O, E extends object = {}> = {
   (
     ctx: BaseAudioContext,
-    options?: O & Partial<SmplrOptions>
+    options?: O & Partial<SmplrOptions>,
   ): InstrumentInstance<E>;
 
   /**
@@ -122,7 +122,7 @@ export type InstrumentFactory<O, E extends object = {}> = {
    */
   new (
     ctx: BaseAudioContext,
-    options?: O & Partial<SmplrOptions>
+    options?: O & Partial<SmplrOptions>,
   ): InstrumentInstance<E>;
 };
 
@@ -140,9 +140,10 @@ const SMPLR_OPTION_KEYS = [
   "onEnded",
 ] as const;
 
-function splitOptions<O>(
-  options: O & Partial<SmplrOptions>
-): { smplrOpts: SmplrOptions; pluginOpts: O } {
+function splitOptions<O>(options: O & Partial<SmplrOptions>): {
+  smplrOpts: SmplrOptions;
+  pluginOpts: O;
+} {
   // SmplrOptions keys are *copied*, not moved — plugins may also depend on
   // them (e.g. Sampler uses `storage` to fetch URL-loaded buffers in addition
   // to SmplrImpl using it for its internal SampleLoader).
@@ -194,14 +195,14 @@ function mergeExtras(target: object, extras: object): void {
  * ```
  */
 export function Instrument<O, E extends object = {}>(
-  plugin: SmplrPlugin<O, E>
+  plugin: SmplrPlugin<O, E>,
 ): InstrumentFactory<O, E> {
   function factory(
     ctx: BaseAudioContext,
-    options?: O & Partial<SmplrOptions>
+    options?: O & Partial<SmplrOptions>,
   ): InstrumentInstance<E> {
     const { smplrOpts, pluginOpts } = splitOptions(
-      (options ?? {}) as O & Partial<SmplrOptions>
+      (options ?? {}) as O & Partial<SmplrOptions>,
     );
     const smplr = new SmplrImpl(ctx, smplrOpts);
     const result: unknown = plugin(ctx, pluginOpts, smplr);

@@ -60,8 +60,12 @@ describe("B1 — dual call/construct signature", () => {
 
   it("Soundfont accepts `new` and call forms", () => {
     const ctx = createAudioContextMock();
-    const viaNew = new Soundfont(ctx as any, { instrument: "acoustic_grand_piano" });
-    const viaCall = Soundfont(ctx as any, { instrument: "acoustic_grand_piano" });
+    const viaNew = new Soundfont(ctx as any, {
+      instrument: "acoustic_grand_piano",
+    });
+    const viaCall = Soundfont(ctx as any, {
+      instrument: "acoustic_grand_piano",
+    });
     swallow(viaNew.load);
     swallow(viaCall.load);
     expect(typeof viaNew.start).toBe("function");

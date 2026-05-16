@@ -11,7 +11,7 @@ let instruments: string[] = [];
 export async function getVersilianInstruments(): Promise<string[]> {
   if (instruments.length) return instruments;
   instruments = await fetch(VCSL_BASE_URL + "/sfz_files.json").then((res) =>
-    res.json()
+    res.json(),
   );
   return instruments;
 }
@@ -38,7 +38,7 @@ export type VersilianOptions = Partial<
  */
 export const Versilian = Instrument(
   (ctx: BaseAudioContext, options: VersilianOptions = {}, smplr) =>
-    loadVersilianInstrument(smplr, options)
+    loadVersilianInstrument(smplr, options),
 );
 
 /**
@@ -48,7 +48,7 @@ export const Versilian = Instrument(
  */
 export function loadVersilianInstrument(
   smplr: PluginSmplr,
-  options: VersilianOptions
+  options: VersilianOptions,
 ): Promise<void> {
   const instrument = options.instrument ?? "Strings/Violin/Violin - Arco";
   const sfzUrl = `${VCSL_BASE_URL}/${instrument}.sfz`;
@@ -63,7 +63,7 @@ export function loadVersilianInstrument(
           baseUrl: sampleBaseUrl,
           pathFromSampleName: (name) => name.replace(/\.wav$/i, ""),
           formats: ["ogg", "m4a"],
-        })
-      )
+        }),
+      ),
     );
 }

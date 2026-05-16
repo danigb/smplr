@@ -138,7 +138,7 @@ export class Sequencer {
       this._loopEndOverride = parseTicks(
         options.loopEnd,
         this._ppq,
-        this._timeSignature
+        this._timeSignature,
       );
     }
 
@@ -285,7 +285,11 @@ export class Sequencer {
    * Works while playing (seamless) or stopped/paused.
    */
   set position(value: string | number) {
-    const targetTick = parseTicks(String(value), this._ppq, this._timeSignature);
+    const targetTick = parseTicks(
+      String(value),
+      this._ppq,
+      this._timeSignature,
+    );
     this._clock.seek(targetTick);
     if (this._clock.state === "playing") {
       this._scheduledThrough = this._context.currentTime;
@@ -312,7 +316,11 @@ export class Sequencer {
   }
 
   set loopStart(value: string | number) {
-    this._loopStartTick = parseTicks(String(value), this._ppq, this._timeSignature);
+    this._loopStartTick = parseTicks(
+      String(value),
+      this._ppq,
+      this._timeSignature,
+    );
   }
 
   /** Loop end in ticks. Defaults to the end of the longest track. */
@@ -321,7 +329,11 @@ export class Sequencer {
   }
 
   set loopEnd(value: string | number) {
-    this._loopEndOverride = parseTicks(String(value), this._ppq, this._timeSignature);
+    this._loopEndOverride = parseTicks(
+      String(value),
+      this._ppq,
+      this._timeSignature,
+    );
   }
 
   /**
@@ -351,10 +363,18 @@ export class Sequencer {
   scheduleRepeat(
     callback: (time: number) => void,
     interval: string | number,
-    startAt: string | number = 0
+    startAt: string | number = 0,
   ): () => void {
-    const intervalTicks = parseTicks(String(interval), this._ppq, this._timeSignature);
-    const startTick = parseTicks(String(startAt), this._ppq, this._timeSignature);
+    const intervalTicks = parseTicks(
+      String(interval),
+      this._ppq,
+      this._timeSignature,
+    );
+    const startTick = parseTicks(
+      String(startAt),
+      this._ppq,
+      this._timeSignature,
+    );
     const event: RepeatEvent = {
       callback,
       intervalTicks,
@@ -499,19 +519,24 @@ export class Sequencer {
         const durationSec =
           note.duration !== undefined
             ? this._clock.tickDuration(
-                parseTicks(note.duration, this._ppq, this._timeSignature)
+                parseTicks(note.duration, this._ppq, this._timeSignature),
               )
             : undefined;
 
         const timingOffset = this._humanize.timing
-          ? (Math.random() * 2 - 1) * this._humanize.timing / 1000
+          ? ((Math.random() * 2 - 1) * this._humanize.timing) / 1000
           : 0;
         const velocityOffset = this._humanize.velocity
           ? Math.round((Math.random() * 2 - 1) * this._humanize.velocity)
           : 0;
 
         const noteId = note.id ?? noteIndex;
-        const noteEvent: SequencerNoteEvent = { noteId, trackIndex, noteIndex, note };
+        const noteEvent: SequencerNoteEvent = {
+          noteId,
+          trackIndex,
+          noteIndex,
+          note,
+        };
 
         const result = track.instrument.start({
           note: note.note,
@@ -554,7 +579,8 @@ export class Sequencer {
 
   private _emitStepsInWindow(fromTick: number, toTick: number): void {
     if (!this._stepTicks) return;
-    const firstStep = Math.ceil((fromTick - 0.001) / this._stepTicks) * this._stepTicks;
+    const firstStep =
+      Math.ceil((fromTick - 0.001) / this._stepTicks) * this._stepTicks;
     for (let t = firstStep; t < toTick; t += this._stepTicks) {
       if (t < 0) continue;
       const stepIndex = Math.floor(t / this._stepTicks);
@@ -568,8 +594,7 @@ export class Sequencer {
     const barTicks = this._ppq * this._timeSignature;
 
     // Small tolerance so floating-point drift doesn't skip a beat at tick=0.
-    const firstBeat =
-      Math.ceil((fromTick - 0.001) / beatTicks) * beatTicks;
+    const firstBeat = Math.ceil((fromTick - 0.001) / beatTicks) * beatTicks;
 
     for (let t = firstBeat; t < toTick; t += beatTicks) {
       if (t < 0) continue;
@@ -599,7 +624,8 @@ export class Sequencer {
 
   /** Emit both the specific state event ("start"/"pause"/"stop") and the unified "statechange" event. */
   private _emitStateChange(state: "playing" | "paused" | "stopped"): void {
-    const eventName = state === "playing" ? "start" : state === "paused" ? "pause" : "stop";
+    const eventName =
+      state === "playing" ? "start" : state === "paused" ? "pause" : "stop";
     this._emit(eventName);
     this._emit("statechange", state);
   }
@@ -638,9 +664,7 @@ export class Sequencer {
     for (const rep of this._repeatEvents) {
       rep.nextTick = rep.startTick;
       if (fromTick > rep.startTick && rep.intervalTicks > 0) {
-        const steps = Math.ceil(
-          (fromTick - rep.startTick) / rep.intervalTicks
-        );
+        const steps = Math.ceil((fromTick - rep.startTick) / rep.intervalTicks);
         rep.nextTick = rep.startTick + steps * rep.intervalTicks;
       }
     }

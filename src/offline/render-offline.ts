@@ -37,7 +37,7 @@ const DEFAULT_MAX_DURATION = 60;
  */
 export async function renderOffline(
   callback: (context: OfflineAudioContext) => Promise<void>,
-  options?: RenderOfflineOptions
+  options?: RenderOfflineOptions,
 ): Promise<RenderResult> {
   const sampleRate = options?.sampleRate ?? DEFAULT_SAMPLE_RATE;
   const channels = options?.channels ?? DEFAULT_CHANNELS;

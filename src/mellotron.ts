@@ -77,10 +77,10 @@ export const Mellotron = Instrument(
           mellotronToSmplrJson(names, {
             instrument: instrumentName,
             variation: variation?.[1],
-          })
-        )
+          }),
+        ),
       );
-  }
+  },
 );
 
 // ---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ type MellotronJsonConfig = {
  */
 export function mellotronToSmplrJson(
   sampleNames: string[],
-  config: MellotronJsonConfig
+  config: MellotronJsonConfig,
 ): SmplrJson {
   const entries: [number, string][] = [];
 
@@ -125,7 +125,7 @@ export function mellotronToSmplrJson(
       keyRange,
       pitch,
       loopAuto: { startRatio: 0.1, endRatio: 0.9 },
-    })
+    }),
   );
 
   return {

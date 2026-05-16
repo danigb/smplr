@@ -1,4 +1,9 @@
-import { spreadKeyRanges, pianoToSmplrJson, LAYERS, SplendidGrandPiano } from "./splendid-grand-piano";
+import {
+  spreadKeyRanges,
+  pianoToSmplrJson,
+  LAYERS,
+  SplendidGrandPiano,
+} from "./splendid-grand-piano";
 
 // ---------------------------------------------------------------------------
 // Mock load-audio
@@ -89,9 +94,12 @@ describe("spreadKeyRanges", () => {
 
   it("two samples split at floor((a+b)/2)", () => {
     // Samples at MIDI 23 and 27: midpoint = floor((23+27)/2) = 25
-    const result = spreadKeyRanges([[23, "A"], [27, "B"]]);
-    expect(result[0].keyRange).toEqual([0, 25]);   // 23 covers [0, 25]
-    expect(result[1].keyRange).toEqual([26, 127]);  // 27 covers [26, 127]
+    const result = spreadKeyRanges([
+      [23, "A"],
+      [27, "B"],
+    ]);
+    expect(result[0].keyRange).toEqual([0, 25]); // 23 covers [0, 25]
+    expect(result[1].keyRange).toEqual([26, 127]); // 27 covers [26, 127]
   });
 
   it("ranges are contiguous — no gaps or overlaps", () => {
@@ -118,14 +126,20 @@ describe("spreadKeyRanges", () => {
 
   it("sorts unsorted input before spreading", () => {
     // Supply in reverse order
-    const result = spreadKeyRanges([[27, "B"], [23, "A"]]);
+    const result = spreadKeyRanges([
+      [27, "B"],
+      [23, "A"],
+    ]);
     expect(result[0].pitch).toBe(23);
     expect(result[1].pitch).toBe(27);
   });
 
   it("boundary matches findNearestMidi logic: notes ≤ mid go to lower sample", () => {
     // samples at 60 and 72; midpoint = floor((60+72)/2) = 66
-    const result = spreadKeyRanges([[60, "C4"], [72, "C5"]]);
+    const result = spreadKeyRanges([
+      [60, "C4"],
+      [72, "C5"],
+    ]);
     // note 66 should be in the lower sample's range
     const [low, high] = result[0].keyRange;
     expect(low).toBe(0);
@@ -223,7 +237,7 @@ describe("pianoToSmplrJson", () => {
     const json = pianoToSmplrJson(BASE_OPTS);
     for (const group of json.groups) {
       const sorted = [...group.regions].sort(
-        (a, b) => a.keyRange![0] - b.keyRange![0]
+        (a, b) => a.keyRange![0] - b.keyRange![0],
       );
       expect(sorted[0].keyRange![0]).toBe(0);
       expect(sorted[sorted.length - 1].keyRange![1]).toBe(127);
@@ -266,7 +280,7 @@ describe("pianoToSmplrJson", () => {
         notesToLoad: { notes: [60, 72], velocityRange: [105, 127] },
       });
       const regions = json.groups[0].regions.sort(
-        (a, b) => a.keyRange![0] - b.keyRange![0]
+        (a, b) => a.keyRange![0] - b.keyRange![0],
       );
       expect(regions[0].keyRange![0]).toBe(0);
       expect(regions[regions.length - 1].keyRange![1]).toBe(127);
@@ -311,28 +325,32 @@ describe("SplendidGrandPiano", () => {
 
   it("start() returns a StopFn", async () => {
     const ctx = makeContext();
-    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext).load;
+    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext)
+      .load;
     const stop = piano.start({ note: "C4", velocity: 50 });
     expect(typeof stop).toBe("function");
   });
 
   it("start() creates a voice for a note in range", async () => {
     const ctx = makeContext();
-    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext).load;
+    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext)
+      .load;
     piano.start({ note: "C4", velocity: 50 });
     expect(ctx.createBufferSource).toHaveBeenCalled();
   });
 
   it("stop() does not throw", async () => {
     const ctx = makeContext();
-    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext).load;
+    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext)
+      .load;
     piano.start({ note: "C4", velocity: 50 });
     expect(() => piano.stop()).not.toThrow();
   });
 
   it("disconnect() does not throw", async () => {
     const ctx = makeContext();
-    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext).load;
+    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext)
+      .load;
     expect(() => piano.disconnect()).not.toThrow();
   });
 
@@ -344,7 +362,11 @@ describe("SplendidGrandPiano", () => {
     await piano.load;
 
     const calls = mockLoadBuffer.mock.calls as [unknown, string][];
-    expect(calls.every(([, url]) => url.startsWith("https://custom.example.com/piano/"))).toBe(true);
+    expect(
+      calls.every(([, url]) =>
+        url.startsWith("https://custom.example.com/piano/"),
+      ),
+    ).toBe(true);
   });
 
   it("notesToLoad limits the number of buffers fetched", async () => {

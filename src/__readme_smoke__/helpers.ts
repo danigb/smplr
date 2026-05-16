@@ -12,10 +12,7 @@
  * resolve immediately without hitting the wire.
  */
 
-import {
-  createAudioContextMock,
-  AudioContextMock,
-} from "../test-helpers";
+import { createAudioContextMock, AudioContextMock } from "../test-helpers";
 
 // jsdom doesn't ship the Web Audio constructors; stub the ones the factory
 // bodies reference for runtime `instanceof` narrowing. Setting once at module

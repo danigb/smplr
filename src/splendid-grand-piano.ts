@@ -30,7 +30,8 @@ export type SplendidGrandPianoConfig = {
   };
 };
 
-const BASE_URL = "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples";
+const BASE_URL =
+  "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples";
 
 const DEFAULTS: SplendidGrandPianoConfig = {
   baseUrl: BASE_URL,
@@ -45,8 +46,8 @@ export const SplendidGrandPiano = Instrument(
   (
     ctx: BaseAudioContext,
     options: Partial<SplendidGrandPianoConfig> = {},
-    smplr
-  ) => smplr.loadInstrument(pianoToSmplrJson({ ...DEFAULTS, ...options }))
+    smplr,
+  ) => smplr.loadInstrument(pianoToSmplrJson({ ...DEFAULTS, ...options })),
 );
 
 // ---------------------------------------------------------------------------
@@ -76,7 +77,7 @@ export function pianoToSmplrJson(options: PianoJsonOptions): SmplrJson {
     ? LAYERS.filter(
         (layer) =>
           layer.vel_range[0] <= notesToLoad.velocityRange[1] &&
-          layer.vel_range[1] >= notesToLoad.velocityRange[0]
+          layer.vel_range[1] >= notesToLoad.velocityRange[0],
       )
     : LAYERS;
 
@@ -85,16 +86,18 @@ export function pianoToSmplrJson(options: PianoJsonOptions): SmplrJson {
     const samples = (
       notesToLoad
         ? layer.samples.filter(([midi]) =>
-            notesToLoad.notes.includes(midi as number)
+            notesToLoad.notes.includes(midi as number),
           )
         : layer.samples
     ) as [number, string][];
 
-    const regions = spreadKeyRanges(samples).map(({ keyRange, pitch, sample }) => ({
-      keyRange,
-      pitch,
-      sample,
-    }));
+    const regions = spreadKeyRanges(samples).map(
+      ({ keyRange, pitch, sample }) => ({
+        keyRange,
+        pitch,
+        sample,
+      }),
+    );
 
     const group: SmplrGroup = {
       velRange: layer.vel_range as [number, number],

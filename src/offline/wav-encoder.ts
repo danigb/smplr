@@ -60,7 +60,11 @@ function encodeWav(buffer: AudioBuffer, bitDepth: 16 | 32): Blob {
       } else {
         // Clamp to [-1, 1] and scale to 16-bit range
         const clamped = Math.max(-1, Math.min(1, sample));
-        view.setInt16(offset, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
+        view.setInt16(
+          offset,
+          clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff,
+          true,
+        );
       }
       offset += bytesPerSample;
     }

@@ -147,13 +147,21 @@ function makeVoice(
     startTime?: number;
     stopId?: string | number;
     group?: number;
-  } = {}
+  } = {},
 ) {
   const { ctx, sources, gains, filters } = makeContext({ safari, currentTime });
   const buffer = makeBuffer();
   const destination = makeDestination();
   const params = { ...BASE_PARAMS, ...overrides };
-  const voice = new Voice(ctx, buffer, params, destination, stopId, group, startTime);
+  const voice = new Voice(
+    ctx,
+    buffer,
+    params,
+    destination,
+    stopId,
+    group,
+    startTime,
+  );
   return { voice, ctx, sources, gains, filters, buffer, destination };
 }
 
@@ -308,7 +316,10 @@ describe("offset", () => {
 
 describe("stop()", () => {
   it("with time after startAt: ramps envelope and stops source at t + ampRelease", () => {
-    const { voice, sources, gains } = makeVoice({ ampRelease: 0.5 }, { currentTime: 1 });
+    const { voice, sources, gains } = makeVoice(
+      { ampRelease: 0.5 },
+      { currentTime: 1 },
+    );
     const envelope = gains[1];
 
     voice.stop(2); // time=2, startAt=1
@@ -320,7 +331,10 @@ describe("stop()", () => {
   });
 
   it("with no time argument: uses context.currentTime", () => {
-    const { voice, sources, gains } = makeVoice({ ampRelease: 0.3 }, { currentTime: 1 });
+    const { voice, sources, gains } = makeVoice(
+      { ampRelease: 0.3 },
+      { currentTime: 1 },
+    );
     const envelope = gains[1];
 
     voice.stop(); // no time → uses currentTime=1, startAt=1 → t <= startAt
@@ -341,7 +355,10 @@ describe("stop()", () => {
   });
 
   it("is idempotent — second call does nothing", () => {
-    const { voice, sources } = makeVoice({ ampRelease: 0.5 }, { currentTime: 1 });
+    const { voice, sources } = makeVoice(
+      { ampRelease: 0.5 },
+      { currentTime: 1 },
+    );
 
     voice.stop(2);
     voice.stop(2);

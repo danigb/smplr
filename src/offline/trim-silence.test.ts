@@ -2,10 +2,7 @@ import { trimSilence } from "./trim-silence";
 
 // In jsdom, AudioBuffer constructor is not available, so we mock it.
 
-function makeBuffer(
-  data: Float32Array[],
-  sampleRate = 48000
-): AudioBuffer {
+function makeBuffer(data: Float32Array[], sampleRate = 48000): AudioBuffer {
   const length = data[0].length;
   const numberOfChannels = data.length;
 

@@ -26,7 +26,8 @@ function vcslPath(name: string): string {
   return name.replace(/\.\w+$/, "");
 }
 
-const GS_BASE = "https://smpldsnds.github.io/sfzinstruments-greg-sullivan-e-pianos";
+const GS_BASE =
+  "https://smpldsnds.github.io/sfzinstruments-greg-sullivan-e-pianos";
 
 const INSTRUMENTS: Record<string, InstrumentConfig> = {
   CP80: {
@@ -45,7 +46,8 @@ const INSTRUMENTS: Record<string, InstrumentConfig> = {
     pathFromSampleName: gsPath,
   },
   TX81Z: {
-    sfzUrl: "https://smpldsnds.github.io/sgossner-vcsl/Electrophones/TX81Z - FM Piano.sfz",
+    sfzUrl:
+      "https://smpldsnds.github.io/sgossner-vcsl/Electrophones/TX81Z - FM Piano.sfz",
     baseUrl: "https://smpldsnds.github.io/sgossner-vcsl/Electrophones",
     pathFromSampleName: vcslPath,
   },
@@ -70,13 +72,13 @@ export const ElectricPiano = Instrument(
   (
     ctx: BaseAudioContext,
     options: ElectricPianoOptions & { instrument: string },
-    smplr
+    smplr,
   ) => {
     const config = INSTRUMENTS[options.instrument];
     if (!config) {
       throw new Error(
         `Unknown electric piano: "${options.instrument}". ` +
-          `Valid names: ${Object.keys(INSTRUMENTS).join(", ")}`
+          `Valid names: ${Object.keys(INSTRUMENTS).join(", ")}`,
       );
     }
 
@@ -97,10 +99,10 @@ export const ElectricPiano = Instrument(
             baseUrl: config.baseUrl,
             pathFromSampleName: config.pathFromSampleName,
             formats: options.formats ?? ["ogg", "m4a"],
-          })
-        )
+          }),
+        ),
       );
 
     return { extras: { tremolo }, ready };
-  }
+  },
 );

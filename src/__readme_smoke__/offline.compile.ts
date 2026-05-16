@@ -9,11 +9,7 @@
  * but it's invisible to Jest.
  */
 
-import {
-  renderOffline,
-  SampleLoader,
-  SplendidGrandPiano,
-} from "../";
+import { renderOffline, SampleLoader, SplendidGrandPiano } from "../";
 
 // L529: basic renderOffline pattern
 async function _basicRenderOffline() {

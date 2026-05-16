@@ -43,6 +43,7 @@
     "test": "npm run test:unit && npm run test:types",
     "test:unit": "jest",
     "test:types": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
     "publish": "npm run build && npm run test"
   },
   "engines": {

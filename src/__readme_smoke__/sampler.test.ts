@@ -29,7 +29,7 @@ describe("README — Sampler", () => {
     expect(typeof sampler.stop).toBe("function");
   });
 
-  it("L622: `sampler.start({ note: \"kick\" })` accepts buffer-key as note", async () => {
+  it('L622: `sampler.start({ note: "kick" })` accepts buffer-key as note', async () => {
     const buffers = {
       kick: "https://example.test/kick.ogg",
     };

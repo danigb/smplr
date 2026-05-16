@@ -1,7 +1,4 @@
-import {
-  findFirstSupportedFormat,
-  loadAudioBuffer,
-} from "./load-audio";
+import { findFirstSupportedFormat, loadAudioBuffer } from "./load-audio";
 import { HttpStorage, Storage } from "../storage";
 import { SmplrJson } from "./types";
 
@@ -37,7 +34,7 @@ export class SampleLoader {
       | {
           buffers?: Map<string, AudioBuffer>;
           onProgress?: (loaded: number, total: number) => void;
-        }
+        },
   ): Promise<Map<string, AudioBuffer>> {
     // Normalise the second argument: support legacy callback or new options object
     const preloaded =
@@ -82,7 +79,7 @@ export class SampleLoader {
           const fetched = await loadAudioBuffer(
             this.#context,
             url,
-            this.#storage
+            this.#storage,
           );
           if (fetched) {
             buffer = fetched;
@@ -94,7 +91,7 @@ export class SampleLoader {
 
         loaded++;
         onProgress?.(loaded, total);
-      })
+      }),
     );
 
     return result;

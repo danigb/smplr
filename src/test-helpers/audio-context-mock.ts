@@ -54,7 +54,7 @@ class AudioBufferMock {
   constructor(
     public numberOfChannels: number,
     public length: number,
-    public sampleRate: number
+    public sampleRate: number,
   ) {}
 
   get buffer() {
@@ -70,13 +70,19 @@ class StereoPannerMock extends NodeMock {
 }
 
 class ChannelSplitterMock extends NodeMock {
-  constructor(context: AudioContextMock, public numberOfOutputs: number) {
+  constructor(
+    context: AudioContextMock,
+    public numberOfOutputs: number,
+  ) {
     super(context);
   }
 }
 
 class ChannelMergerMock extends NodeMock {
-  constructor(context: AudioContextMock, public numberOfInputs: number) {
+  constructor(
+    context: AudioContextMock,
+    public numberOfInputs: number,
+  ) {
     super(context);
   }
 }
@@ -123,7 +129,7 @@ export class AudioContextMock {
   createBuffer(
     numberOfChannels: number,
     length: number,
-    sampleRate: number
+    sampleRate: number,
   ): AudioBuffer {
     return new AudioBufferMock(numberOfChannels, length, sampleRate).buffer;
   }

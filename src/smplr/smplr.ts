@@ -64,9 +64,13 @@ type NormalizedNoteEvent = {
 
 function compose<T>(
   a: ((e: T) => void) | undefined,
-  b: ((e: T) => void) | undefined
+  b: ((e: T) => void) | undefined,
 ): ((e: T) => void) | undefined {
-  if (a && b) return (e) => { a(e); b(e); };
+  if (a && b)
+    return (e) => {
+      a(e);
+      b(e);
+    };
   return a ?? b;
 }
 
@@ -131,12 +135,16 @@ export class SmplrImpl implements Smplr {
   #onEnded: ((event: NoteEvent) => void) | undefined;
   #ccState: Map<number, number> = new Map();
 
-  constructor(context: BaseAudioContext, json: SmplrJson, options?: SmplrOptions);
+  constructor(
+    context: BaseAudioContext,
+    json: SmplrJson,
+    options?: SmplrOptions,
+  );
   constructor(context: BaseAudioContext, options?: SmplrOptions);
   constructor(
     context: BaseAudioContext,
     jsonOrOptions?: SmplrJson | SmplrOptions,
-    maybeOptions?: SmplrOptions
+    maybeOptions?: SmplrOptions,
   ) {
     const json = isSmplrJson(jsonOrOptions) ? jsonOrOptions : undefined;
     const options = isSmplrJson(jsonOrOptions)
@@ -173,7 +181,8 @@ export class SmplrImpl implements Smplr {
 
     // 5. Sample loader — shared or private
     this.loader =
-      options?.loader ?? new SampleLoader(context, { storage: options?.storage });
+      options?.loader ??
+      new SampleLoader(context, { storage: options?.storage });
 
     if (json) {
       // Pattern A: load immediately
@@ -216,7 +225,7 @@ export class SmplrImpl implements Smplr {
    */
   loadInstrument(
     json: SmplrJson,
-    buffers?: Map<string, AudioBuffer>
+    buffers?: Map<string, AudioBuffer>,
   ): Promise<void> {
     this.#defaults = json.defaults;
     this.#aliases = json.aliases
@@ -264,7 +273,7 @@ export class SmplrImpl implements Smplr {
 
     const schedulerStop = this.scheduler.schedule(
       normalized as NoteEvent,
-      (e) => this.#playNote(e as NormalizedNoteEvent)
+      (e) => this.#playNote(e as NormalizedNoteEvent),
     );
 
     return (time?: number) => {
@@ -314,7 +323,7 @@ export class SmplrImpl implements Smplr {
     const reversed = this.context.createBuffer(
       original.numberOfChannels,
       original.length,
-      original.sampleRate
+      original.sampleRate,
     );
     for (let ch = 0; ch < original.numberOfChannels; ch++) {
       const data = original.getChannelData(ch).slice().reverse();
@@ -325,8 +334,20 @@ export class SmplrImpl implements Smplr {
   }
 
   #playNote(event: NormalizedNoteEvent): void {
-    const { midi, velocity, time, stopId, duration, detune, lpfCutoffHz, loop, ampRelease, reverse, onStart, onEnded } =
-      event;
+    const {
+      midi,
+      velocity,
+      time,
+      stopId,
+      duration,
+      detune,
+      lpfCutoffHz,
+      loop,
+      ampRelease,
+      reverse,
+      onStart,
+      onEnded,
+    } = event;
 
     const matches = this.#matcher.match(midi, velocity, this.#ccState);
 
@@ -349,7 +370,7 @@ export class SmplrImpl implements Smplr {
         match.regionRef,
         midi,
         velocity,
-        { detune, lpfCutoffHz, loop, ampRelease, reverse }
+        { detune, lpfCutoffHz, loop, ampRelease, reverse },
       );
 
       const voice = new Voice(
@@ -359,7 +380,7 @@ export class SmplrImpl implements Smplr {
         this.#channel.input,
         stopId,
         match.group,
-        time
+        time,
       );
 
       this.#voices.add(voice);
@@ -387,8 +408,7 @@ export class SmplrImpl implements Smplr {
 
   #normalizeNoteEvent(event: NoteEvent): NormalizedNoteEvent {
     if (typeof event === "string" || typeof event === "number") {
-      const midi =
-        toMidi(event) ?? this.#aliases?.get(String(event)) ?? 0;
+      const midi = toMidi(event) ?? this.#aliases?.get(String(event)) ?? 0;
       return {
         note: event,
         midi,

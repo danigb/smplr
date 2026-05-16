@@ -4,7 +4,7 @@ import { Subscribe } from "./smplr/signals";
 // @private
 export function createTremolo(
   context: BaseAudioContext,
-  depth: Subscribe<number>
+  depth: Subscribe<number>,
 ): AudioInsert {
   const input = context.createGain();
   const output = context.createGain();

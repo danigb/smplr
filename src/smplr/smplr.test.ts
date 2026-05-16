@@ -169,7 +169,12 @@ describe("loadProgress", () => {
     const json: SmplrJson = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [
-        { regions: [{ sample: "C4", key: 60 }, { sample: "D4", key: 62 }] },
+        {
+          regions: [
+            { sample: "C4", key: 60 },
+            { sample: "D4", key: 62 },
+          ],
+        },
       ],
     };
     const ctx = makeContext();
@@ -421,11 +426,15 @@ describe("shared SampleLoader", () => {
     const loader = new SampleLoader(ctx as unknown as BaseAudioContext);
 
     // Load smplr1 first to warm the cache
-    const smplr1 = new Smplr(ctx as unknown as AudioContext, makeJson(), { loader });
+    const smplr1 = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+      loader,
+    });
     await smplr1.load;
 
     // smplr2 uses the same loader — cache is already warm
-    const smplr2 = new Smplr(ctx as unknown as AudioContext, makeJson(), { loader });
+    const smplr2 = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+      loader,
+    });
     await smplr2.load;
 
     // loadAudioBuffer only called once; second load hit the cache
@@ -459,7 +468,9 @@ describe("onStart", () => {
   it("global onStart is called when a note is dispatched", async () => {
     const ctx = makeContext();
     const onStart = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), { onStart });
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+      onStart,
+    });
     await smplr.load;
 
     smplr.start({ note: "C4" });
@@ -518,7 +529,9 @@ describe("onStart", () => {
   it("onStart receives the note event", async () => {
     const ctx = makeContext();
     const onStart = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), { onStart });
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+      onStart,
+    });
     await smplr.load;
 
     smplr.start({ note: "C4", velocity: 80 });
@@ -531,7 +544,9 @@ describe("onStart", () => {
   it("onStart is not called when no region matches", async () => {
     const ctx = makeContext();
     const onStart = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), { onStart });
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+      onStart,
+    });
     await smplr.load;
 
     smplr.start({ note: "D4" }); // no region for D4
@@ -544,7 +559,9 @@ describe("onEnded", () => {
   it("global onEnded is called when a voice ends", async () => {
     const ctx = makeContext();
     const onEnded = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), { onEnded });
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+      onEnded,
+    });
     await smplr.load;
 
     smplr.start({ note: "C4" });
@@ -608,7 +625,9 @@ describe("onEnded", () => {
   it("onEnded is not called before the voice ends", async () => {
     const ctx = makeContext();
     const onEnded = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), { onEnded });
+    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+      onEnded,
+    });
     await smplr.load;
 
     smplr.start({ note: "C4" });

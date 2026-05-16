@@ -13,7 +13,7 @@ describe("README — ElectricPiano", () => {
 
   it("L718: getElectricPianoNames returns the documented instrument list", () => {
     expect(getElectricPianoNames()).toEqual(
-      expect.arrayContaining(["CP80", "PianetT", "WurlitzerEP200"])
+      expect.arrayContaining(["CP80", "PianetT", "WurlitzerEP200"]),
     );
   });
 

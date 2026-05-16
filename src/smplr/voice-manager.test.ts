@@ -6,7 +6,7 @@ import { VoiceManager } from "./voice-manager";
 
 function makeVoice(
   stopId: string | number,
-  group?: number
+  group?: number,
 ): {
   stopId: string | number;
   group: number | undefined;

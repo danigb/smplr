@@ -1,4 +1,8 @@
-import { AudioBuffers, AudioBuffersLoader, loadAudioBuffer } from "./smplr/load-audio";
+import {
+  AudioBuffers,
+  AudioBuffersLoader,
+  loadAudioBuffer,
+} from "./smplr/load-audio";
 import { toMidi } from "./smplr/midi";
 import { HttpStorage, Storage } from "./storage";
 import { Instrument } from "./smplr";
@@ -14,7 +18,9 @@ export type SamplerConfig = {
   lpfCutoffHz?: number;
   destination: AudioNode;
 
-  buffers: Record<string | number, string | AudioBuffer | AudioBuffers> | AudioBuffersLoader;
+  buffers:
+    | Record<string | number, string | AudioBuffer | AudioBuffers>
+    | AudioBuffersLoader;
   volumeToGain: (volume: number) => number;
   onLoadProgress?: (progress: LoadProgress) => void;
 };
@@ -28,17 +34,17 @@ export const Sampler = Instrument(
     return getSource(ctx, options.buffers ?? {})
       .then((source) => buildSamplerBuffers(source, ctx, storage, options))
       .then(({ json, buffers }) => smplr.loadInstrument(json, buffers));
-  }
+  },
 );
 
 function getSource(
   ctx: BaseAudioContext,
-  raw: NonNullable<Partial<SamplerConfig>["buffers"]>
+  raw: NonNullable<Partial<SamplerConfig>["buffers"]>,
 ): Promise<Record<string | number, string | AudioBuffer>> {
   if (typeof raw === "function") {
     const ab: AudioBuffers = {};
     return (raw as AudioBuffersLoader)(ctx, ab).then(
-      () => ab as Record<string | number, string | AudioBuffer>
+      () => ab as Record<string | number, string | AudioBuffer>,
     );
   }
   return Promise.resolve(raw as Record<string | number, string | AudioBuffer>);
@@ -68,7 +74,7 @@ async function buildSamplerBuffers(
   source: Record<string | number, string | AudioBuffer>,
   context: BaseAudioContext,
   storage: Storage,
-  options: Partial<SamplerJsonOptions>
+  options: Partial<SamplerJsonOptions>,
 ): Promise<ConvertResult> {
   const { json, urlMap, preloaded } = samplerToSmplrJson(source, options);
 
@@ -77,7 +83,7 @@ async function buildSamplerBuffers(
     Object.entries(urlMap).map(async ([name, url]) => {
       const buffer = await loadAudioBuffer(context, url, storage);
       if (buffer) preloaded.set(name, buffer);
-    })
+    }),
   );
 
   return { json, buffers: preloaded };
@@ -101,7 +107,7 @@ type InternalConvertResult = {
  */
 export function samplerToSmplrJson(
   source: Record<string | number, string | AudioBuffer>,
-  options: Partial<SamplerJsonOptions> = {}
+  options: Partial<SamplerJsonOptions> = {},
 ): InternalConvertResult {
   const keys = Object.keys(source);
   const preloaded = new Map<string, AudioBuffer>();
@@ -136,7 +142,7 @@ export function samplerToSmplrJson(
   if (allMidi && midiEntries.length > 0) {
     // All keys are MIDI → spread key ranges for pitch-shifting
     const spread = spreadKeyRanges(
-      midiEntries.map(([midi, key]) => [midi, key] as [number, string])
+      midiEntries.map(([midi, key]) => [midi, key] as [number, string]),
     );
     for (let i = 0; i < midiEntries.length; i++) {
       const [midi, key] = midiEntries[i];
