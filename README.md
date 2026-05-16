@@ -34,9 +34,9 @@ piano.start({ note: "C4" });
 
 See demo: https://danigb.github.io/smplr/
 
-`smplr` 1.0 commits to a stable public API.
+`smplr` is approaching 1.0. The 0.21.0 release is the **1.0 candidate** — the documented surface is intended to ship unchanged into 1.0; the formal stability commitment lands when a handful of coordinated sibling tickets are in (see the 0.21.0 [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md) entry).
 
-> **Upgrading from a 0.x version?** No code changes are required — every documented `new X(ctx, opts)` keeps working. New code should drop the `new` (`X(ctx, opts)`) and prefer `await x.ready` over `await x.load`. See the [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md) for the full 1.0.0 entry.
+> **Upgrading from an earlier 0.x?** No code changes are required — every documented `new X(ctx, opts)` keeps working. New code should drop the `new` (`X(ctx, opts)`) and prefer `await x.ready` over `await x.load`.
 
 #### Library goals
 
