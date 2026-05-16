@@ -25,7 +25,7 @@ export type SfzConvertOptions = {
  */
 export function sfzToSmplrJson(
   sfzText: string,
-  options: SfzConvertOptions
+  options: SfzConvertOptions,
 ): SmplrJson {
   const formats = options.formats ?? ["ogg", "m4a"];
 
@@ -138,7 +138,7 @@ function buildGroup(props: Record<string, string | number>): SmplrGroup {
 
 function buildRegion(
   props: Record<string, string | number>,
-  pathFromSampleName: (name: string) => string
+  pathFromSampleName: (name: string) => string,
 ): SmplrRegion | null {
   const sampleRaw = str(props, "sample");
   if (!sampleRaw) return null;
@@ -274,7 +274,10 @@ function tokenize(sfz: string): Token[] {
       if (line[pos] === "<") {
         const end = line.indexOf(">", pos);
         if (end < 0) break;
-        const headerName = line.slice(pos + 1, end).trim().toLowerCase();
+        const headerName = line
+          .slice(pos + 1, end)
+          .trim()
+          .toLowerCase();
         tokens.push({ type: "header", value: headerName });
         pos = end + 1;
         continue;
@@ -297,7 +300,12 @@ function tokenize(sfz: string): Token[] {
       let rawValue: string;
       if (nextKeyMatch && nextKeyMatch.index !== undefined) {
         rawValue = rest.slice(0, nextKeyMatch.index).trim();
-        valueEnd = eqIdx + 1 + nextKeyMatch.index + nextKeyMatch[0].length - nextKeyMatch[0].trimStart().length;
+        valueEnd =
+          eqIdx +
+          1 +
+          nextKeyMatch.index +
+          nextKeyMatch[0].length -
+          nextKeyMatch[0].trimStart().length;
       } else {
         rawValue = rest.trim();
         valueEnd = line.length;
@@ -325,7 +333,7 @@ function tokenize(sfz: string): Token[] {
 
 function num(
   props: Record<string, string | number>,
-  key: string
+  key: string,
 ): number | undefined {
   const v = props[key];
   if (typeof v === "number") return v;
@@ -334,7 +342,7 @@ function num(
 
 function str(
   props: Record<string, string | number>,
-  key: string
+  key: string,
 ): string | undefined {
   const v = props[key];
   if (typeof v === "string") return v;
@@ -343,7 +351,7 @@ function str(
 
 function numArr(
   props: Record<string, string | number>,
-  _prefix: string
+  _prefix: string,
 ): [number, number] | undefined {
   // SFZ amp_velcurve_N=V format: key is amp_velcurve_<velocity>
   for (const [k, v] of Object.entries(props)) {

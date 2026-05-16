@@ -25,7 +25,7 @@ export class Scheduler {
 
   constructor(
     context: BaseAudioContext,
-    options?: { lookaheadMs?: number; intervalMs?: number }
+    options?: { lookaheadMs?: number; intervalMs?: number },
   ) {
     this.#context = context;
     this.#lookaheadSec = (options?.lookaheadMs ?? LOOKAHEAD_MS_DEFAULT) / 1000;
@@ -77,7 +77,10 @@ export class Scheduler {
     this.#intervalId = setInterval(() => {
       const dispatchBefore = this.#context.currentTime + this.#lookaheadSec;
 
-      while (this.#queue.size() > 0 && this.#queue.peek()!.time <= dispatchBefore) {
+      while (
+        this.#queue.size() > 0 &&
+        this.#queue.peek()!.time <= dispatchBefore
+      ) {
         const item = this.#queue.pop()!;
         item.callback(item.event);
       }

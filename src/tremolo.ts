@@ -3,8 +3,8 @@ import { Subscribe } from "./smplr/signals";
 
 // @private
 export function createTremolo(
-  context: AudioContext,
-  depth: Subscribe<number>
+  context: BaseAudioContext,
+  depth: Subscribe<number>,
 ): AudioInsert {
   const input = context.createGain();
   const output = context.createGain();

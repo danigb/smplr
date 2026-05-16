@@ -1,6 +1,6 @@
-import { HttpStorage, Storage } from "./storage";
-import { Smplr, SmplrOptions } from "./smplr";
-import { LoadProgress, NoteEvent, StopTarget } from "./smplr/types";
+import { Storage } from "./storage";
+import { Instrument } from "./smplr";
+import { LoadProgress } from "./smplr/types";
 import { sfzToSmplrJson } from "./smplr/sfz-convert";
 import { createControl } from "./smplr/signals";
 import { midiVelToGain } from "./smplr/volume";
@@ -26,7 +26,8 @@ function vcslPath(name: string): string {
   return name.replace(/\.\w+$/, "");
 }
 
-const GS_BASE = "https://smpldsnds.github.io/sfzinstruments-greg-sullivan-e-pianos";
+const GS_BASE =
+  "https://smpldsnds.github.io/sfzinstruments-greg-sullivan-e-pianos";
 
 const INSTRUMENTS: Record<string, InstrumentConfig> = {
   CP80: {
@@ -45,7 +46,8 @@ const INSTRUMENTS: Record<string, InstrumentConfig> = {
     pathFromSampleName: gsPath,
   },
   TX81Z: {
-    sfzUrl: "https://smpldsnds.github.io/sgossner-vcsl/Electrophones/TX81Z - FM Piano.sfz",
+    sfzUrl:
+      "https://smpldsnds.github.io/sgossner-vcsl/Electrophones/TX81Z - FM Piano.sfz",
     baseUrl: "https://smpldsnds.github.io/sgossner-vcsl/Electrophones",
     pathFromSampleName: vcslPath,
   },
@@ -62,74 +64,45 @@ export type ElectricPianoOptions = Partial<{
   formats: string[];
 }>;
 
-export class ElectricPiano {
-  #smplr: Smplr;
-  readonly load: Promise<this>;
-  public readonly tremolo: Readonly<{ level: (value: number) => void }>;
+type ElectricPianoExtras = {
+  tremolo: Readonly<{ level: (value: number) => void }>;
+};
 
-  constructor(
-    public readonly context: AudioContext,
-    options: ElectricPianoOptions & { instrument: string }
-  ) {
+export const ElectricPiano = Instrument(
+  (
+    ctx: BaseAudioContext,
+    options: ElectricPianoOptions & { instrument: string },
+    smplr,
+  ) => {
     const config = INSTRUMENTS[options.instrument];
     if (!config) {
       throw new Error(
         `Unknown electric piano: "${options.instrument}". ` +
-          `Valid names: ${Object.keys(INSTRUMENTS).join(", ")}`
+          `Valid names: ${Object.keys(INSTRUMENTS).join(", ")}`,
       );
     }
 
-    const smplrOptions: SmplrOptions = {
-      destination: options.destination,
-      volume: options.volume,
-      velocity: options.velocity,
-      storage: options.storage ?? HttpStorage,
-      onLoadProgress: options.onLoadProgress,
-    };
-    this.#smplr = new Smplr(context, smplrOptions);
-
-    // Tremolo effect
+    // Tremolo control + insert node — sync, so `tremolo.level(...)` is
+    // callable before `await load` resolves.
     const depth = createControl(0);
-    this.tremolo = {
+    const tremolo: ElectricPianoExtras["tremolo"] = {
       level: (level) => depth.set(midiVelToGain(level)),
     };
-    const tremolo = createTremolo(context, depth.subscribe);
-    this.output.addInsert(tremolo);
+    const tremoloNode = createTremolo(ctx, depth.subscribe);
+    smplr.output.addInsert(tremoloNode);
 
-    // Fetch raw .sfz and convert to SmplrJson
-    this.load = fetch(config.sfzUrl)
+    const ready = fetch(config.sfzUrl)
       .then((r) => r.text())
       .then((sfzText) =>
-        this.#smplr.loadInstrument(
+        smplr.loadInstrument(
           sfzToSmplrJson(sfzText, {
             baseUrl: config.baseUrl,
             pathFromSampleName: config.pathFromSampleName,
             formats: options.formats ?? ["ogg", "m4a"],
-          })
-        )
-      )
-      .then(() => this);
-  }
+          }),
+        ),
+      );
 
-  get output() {
-    return this.#smplr.output;
-  }
-
-  get loadProgress() {
-    return this.#smplr.loadProgress;
-  }
-
-  start(sample: NoteEvent | string | number) {
-    return this.#smplr.start(
-      typeof sample === "object" ? sample : { note: sample }
-    );
-  }
-
-  stop(target?: StopTarget) {
-    return this.#smplr.stop(target);
-  }
-
-  disconnect() {
-    return this.#smplr.disconnect();
-  }
-}
+    return { extras: { tremolo }, ready };
+  },
+);

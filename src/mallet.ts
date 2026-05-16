@@ -1,27 +1,24 @@
-import { Versilian, VersilianOptions } from "./versilian";
+import { Instrument } from "./smplr";
+import { loadVersilianInstrument, VersilianOptions } from "./versilian";
 
 export function getMalletNames() {
   return Object.keys(NAME_TO_PATH) as MalletName[];
 }
 
-export class Mallet extends Versilian {
-  constructor(context: AudioContext, options: VersilianOptions) {
-    super(context, {
+export const Mallet = Instrument(
+  (ctx: BaseAudioContext, options: VersilianOptions = {}, smplr) =>
+    loadVersilianInstrument(smplr, {
       ...options,
       instrument: NAME_TO_PATH[options.instrument ?? ""],
-    });
-  }
-}
+    }),
+);
 
 type MalletName = keyof typeof NAME_TO_PATH;
 
 export const NAME_TO_PATH: Record<string, string | undefined> = {
-  "Balafon - Hard Mallet":
-    "Idiophones/Struck Idiophones/Balafon - Hard Mallet",
-  "Balafon - Keyswitch":
-    "Idiophones/Struck Idiophones/Balafon - Keyswitch",
-  "Balafon - Soft Mallet":
-    "Idiophones/Struck Idiophones/Balafon - Soft Mallet",
+  "Balafon - Hard Mallet": "Idiophones/Struck Idiophones/Balafon - Hard Mallet",
+  "Balafon - Keyswitch": "Idiophones/Struck Idiophones/Balafon - Keyswitch",
+  "Balafon - Soft Mallet": "Idiophones/Struck Idiophones/Balafon - Soft Mallet",
   "Balafon - Traditional Mallet":
     "Idiophones/Struck Idiophones/Balafon - Traditional Mallet",
 
@@ -38,8 +35,7 @@ export const NAME_TO_PATH: Record<string, string | undefined> = {
 
   "Xylophone - Hard Mallets":
     "Idiophones/Struck Idiophones/Xylophone - Hard Mallets",
-  "Xylophone - Keyswitch":
-    "Idiophones/Struck Idiophones/Xylophone - Keyswitch",
+  "Xylophone - Keyswitch": "Idiophones/Struck Idiophones/Xylophone - Keyswitch",
   "Xylophone - Medium Mallets":
     "Idiophones/Struck Idiophones/Xylophone - Medium Mallets",
   "Xylophone - Soft Mallets":

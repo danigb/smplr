@@ -1,9 +1,8 @@
 import { HttpStorage, Storage } from "../storage";
-import { Smplr, SmplrOptions } from "../smplr";
-import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "../smplr/types";
+import { Instrument } from "../smplr";
+import { LoadProgress, SmplrGroup, SmplrJson } from "../smplr/types";
 import { spreadKeyRanges } from "../smplr/utils";
 import { toMidi } from "../smplr/midi";
-import { findFirstSupportedFormat } from "../smplr/load-audio";
 import {
   SOUNDFONT_INSTRUMENTS,
   SOUNDFONT_KITS,
@@ -43,72 +42,25 @@ export type SoundfontOptions = Partial<
   }
 >;
 
-export class Soundfont {
-  public readonly config: Readonly<SoundfontConfig>;
-  #smplr: Smplr;
-  #hasLoops = false;
-  readonly load: Promise<this>;
+export const Soundfont = Instrument(
+  (ctx: BaseAudioContext, options: SoundfontOptions = {}, smplr) => {
+    const config = getSoundfontConfig(options);
 
-  constructor(
-    public readonly context: AudioContext,
-    options: SoundfontOptions
-  ) {
-    this.config = getSoundfontConfig(options);
+    // Apply extra gain insert synchronously, before the first audible note
+    // can reach the output.
+    const gain = ctx.createGain();
+    gain.gain.value = config.extraGain;
+    smplr.output.addInsert(gain);
 
-    const smplrOptions: SmplrOptions = {
-      destination: options.destination,
-      volume: options.volume,
-      velocity: options.velocity,
-      storage: this.config.storage,
-      onLoadProgress: options.onLoadProgress,
-    };
-    this.#smplr = new Smplr(context, smplrOptions);
-
-    // Apply extra gain insert immediately (output is available before load)
-    const gain = context.createGain();
-    gain.gain.value = this.config.extraGain;
-    this.#smplr.output.addInsert(gain);
-
-    this.load = loadSoundfontData(context, this.config)
-      .then(({ buffers, noteNames, loopData }) => {
-        this.#hasLoops = !!loopData;
-        return this.#smplr.loadInstrument(
+    return loadSoundfontData(ctx, config).then(
+      ({ buffers, noteNames, loopData }) =>
+        smplr.loadInstrument(
           soundfontToSmplrJson(noteNames, loopData),
-          buffers
-        );
-      })
-      .then(() => this);
-  }
-
-  get hasLoops() {
-    return this.#hasLoops;
-  }
-
-  get output() {
-    return this.#smplr.output;
-  }
-
-  async loaded() {
-    console.warn("deprecated: use load instead");
-    return this.load;
-  }
-
-  public disconnect() {
-    return this.#smplr.disconnect();
-  }
-
-  start(sample: NoteEvent | string | number) {
-    return this.#smplr.start(
-      typeof sample === "object" ? sample : { note: sample }
+          buffers,
+        ),
     );
-  }
-
-  stop(sample?: StopTarget | string | number) {
-    return this.#smplr.stop(
-      sample === undefined ? undefined : sample
-    );
-  }
-}
+  },
+);
 
 // ---------------------------------------------------------------------------
 // loadSoundfontData — async loader for base64-encoded MIDI.js files
@@ -121,8 +73,8 @@ type SoundfontData = {
 };
 
 async function loadSoundfontData(
-  context: AudioContext,
-  config: SoundfontConfig
+  context: BaseAudioContext,
+  config: SoundfontConfig,
 ): Promise<SoundfontData> {
   const [{ buffers, noteNames }, loopData] = await Promise.all([
     decodeSoundfontFile(context, config),
@@ -133,10 +85,12 @@ async function loadSoundfontData(
 }
 
 async function decodeSoundfontFile(
-  context: AudioContext,
-  config: SoundfontConfig
+  context: BaseAudioContext,
+  config: SoundfontConfig,
 ): Promise<{ buffers: Map<string, AudioBuffer>; noteNames: string[] }> {
-  const sourceFile = await (await config.storage.fetch(config.instrumentUrl)).text();
+  const sourceFile = await (
+    await config.storage.fetch(config.instrumentUrl)
+  ).text();
   const json = midiJsToJson(sourceFile);
 
   const noteNames = Object.keys(json);
@@ -147,16 +101,18 @@ async function decodeSoundfontFile(
       const midi = toMidi(noteName);
       if (!midi) return;
       try {
-        const audioData = base64ToArrayBuffer(removeBase64Prefix(json[noteName]));
+        const audioData = base64ToArrayBuffer(
+          removeBase64Prefix(json[noteName]),
+        );
         const buffer = await context.decodeAudioData(audioData);
         buffers.set(noteName, buffer);
       } catch (error) {
         console.warn(
           `Soundfont: failed to decode note ${noteName}`,
-          error instanceof Error ? error.message : error
+          error instanceof Error ? error.message : error,
         );
       }
-    })
+    }),
   );
 
   return { buffers, noteNames: [...buffers.keys()] };
@@ -172,7 +128,7 @@ async function decodeSoundfontFile(
  */
 export function soundfontToSmplrJson(
   noteNames: string[],
-  loopData?: LoopData
+  loopData?: LoopData,
 ): SmplrJson {
   const entries: [number, string][] = [];
 
@@ -184,21 +140,23 @@ export function soundfontToSmplrJson(
 
   const spread = spreadKeyRanges(entries);
 
-  const regions: SmplrGroup["regions"] = spread.map(({ keyRange, pitch, sample }) => {
-    const region: SmplrGroup["regions"][number] = { sample, keyRange, pitch };
+  const regions: SmplrGroup["regions"] = spread.map(
+    ({ keyRange, pitch, sample }) => {
+      const region: SmplrGroup["regions"][number] = { sample, keyRange, pitch };
 
-    // Apply loop data if available
-    if (loopData) {
-      const loop = loopData[pitch];
-      if (loop) {
-        region.loop = true;
-        region.loopStart = loop[0];
-        region.loopEnd = loop[1];
+      // Apply loop data if available
+      if (loopData) {
+        const loop = loopData[pitch];
+        if (loop) {
+          region.loop = true;
+          region.loopStart = loop[0];
+          region.loopEnd = loop[1];
+        }
       }
-    }
 
-    return region;
-  });
+      return region;
+    },
+  );
 
   return {
     // baseUrl doesn't matter — all buffers are pre-loaded
@@ -227,7 +185,7 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
 
   if (config.instrument && config.instrument.startsWith("http")) {
     console.warn(
-      "Use 'instrumentUrl' instead of 'instrument' to load from a URL"
+      "Use 'instrumentUrl' instead of 'instrument' to load from a URL",
     );
     config.instrumentUrl = config.instrument;
     config.instrument = undefined;
@@ -238,13 +196,13 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
       config.instrumentUrl = gleitzKitUrl(config.instrument, config.kit);
     } else {
       throw Error(
-        "Soundfont: 'instrument' or 'instrumentUrl' configuration parameter is required"
+        "Soundfont: 'instrument' or 'instrumentUrl' configuration parameter is required",
       );
     }
   } else {
     if (config.kit !== DEFAULT_SOUNDFONT_KIT || config.instrument) {
       console.warn(
-        "Soundfont: 'kit' and 'instrument' config parameters are ignored because 'instrumentUrl' is explicitly set."
+        "Soundfont: 'kit' and 'instrument' config parameters are ignored because 'instrumentUrl' is explicitly set.",
       );
     }
   }
@@ -252,7 +210,7 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
   if (config.loadLoopData && config.instrument && !config.loopDataUrl) {
     config.loopDataUrl = getGoldstSoundfontLoopsUrl(
       config.instrument,
-      config.kit
+      config.kit,
     );
   }
 

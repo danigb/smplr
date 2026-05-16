@@ -10,10 +10,7 @@ jest.mock("./load-audio", () => ({
   loadAudioBuffer: jest.fn(),
 }));
 
-import {
-  findFirstSupportedFormat,
-  loadAudioBuffer,
-} from "./load-audio";
+import { findFirstSupportedFormat, loadAudioBuffer } from "./load-audio";
 
 const mockFindFormat = findFirstSupportedFormat as jest.Mock;
 const mockLoadBuffer = loadAudioBuffer as jest.Mock;
@@ -62,7 +59,7 @@ describe("URL resolution", () => {
     expect(mockLoadBuffer).toHaveBeenCalledWith(
       expect.anything(),
       "https://example.com/samples/C4.ogg",
-      expect.anything()
+      expect.anything(),
     );
   });
 
@@ -74,13 +71,13 @@ describe("URL resolution", () => {
           baseUrl: "https://example.com/samples/",
           formats: ["ogg"],
         },
-      })
+      }),
     );
 
     expect(mockLoadBuffer).toHaveBeenCalledWith(
       expect.anything(),
       "https://example.com/samples/C4.ogg",
-      expect.anything()
+      expect.anything(),
     );
   });
 
@@ -93,13 +90,13 @@ describe("URL resolution", () => {
           formats: ["ogg"],
           map: { C4: "piano/C4v1" },
         },
-      })
+      }),
     );
 
     expect(mockLoadBuffer).toHaveBeenCalledWith(
       expect.anything(),
       "https://example.com/samples/piano/C4v1.ogg",
-      expect.anything()
+      expect.anything(),
     );
   });
 
@@ -112,13 +109,13 @@ describe("URL resolution", () => {
           formats: ["ogg"],
           map: { D4: "piano/D4v1" }, // C4 not in map
         },
-      })
+      }),
     );
 
     expect(mockLoadBuffer).toHaveBeenCalledWith(
       expect.anything(),
       "https://example.com/samples/C4.ogg",
-      expect.anything()
+      expect.anything(),
     );
   });
 });
@@ -136,7 +133,7 @@ describe("format selection", () => {
     expect(mockLoadBuffer).toHaveBeenCalledWith(
       expect.anything(),
       "https://example.com/samples/C4.mp3",
-      expect.anything()
+      expect.anything(),
     );
   });
 
@@ -144,13 +141,18 @@ describe("format selection", () => {
     mockFindFormat.mockReturnValue(null);
     const loader = new SampleLoader(makeContext());
     await loader.load(
-      makeJson({ samples: { baseUrl: "https://example.com/samples", formats: ["mp3", "ogg"] } })
+      makeJson({
+        samples: {
+          baseUrl: "https://example.com/samples",
+          formats: ["mp3", "ogg"],
+        },
+      }),
     );
 
     expect(mockLoadBuffer).toHaveBeenCalledWith(
       expect.anything(),
       "https://example.com/samples/C4.mp3",
-      expect.anything()
+      expect.anything(),
     );
   });
 
@@ -158,13 +160,15 @@ describe("format selection", () => {
     mockFindFormat.mockReturnValue(null);
     const loader = new SampleLoader(makeContext());
     await loader.load(
-      makeJson({ samples: { baseUrl: "https://example.com/samples", formats: [] } })
+      makeJson({
+        samples: { baseUrl: "https://example.com/samples", formats: [] },
+      }),
     );
 
     expect(mockLoadBuffer).toHaveBeenCalledWith(
       expect.anything(),
       "https://example.com/samples/C4.ogg",
-      expect.anything()
+      expect.anything(),
     );
   });
 });
@@ -194,13 +198,11 @@ describe("result map", () => {
   it("includes only samples that loaded successfully", async () => {
     const json: SmplrJson = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
-      groups: [
-        { regions: [{ sample: "C4" }, { sample: "D4" }] },
-      ],
+      groups: [{ regions: [{ sample: "C4" }, { sample: "D4" }] }],
     };
     const bufC4 = makeBuffer("C4");
     mockLoadBuffer
-      .mockResolvedValueOnce(bufC4)   // C4 succeeds
+      .mockResolvedValueOnce(bufC4) // C4 succeeds
       .mockResolvedValueOnce(undefined); // D4 fails
 
     const loader = new SampleLoader(makeContext());
@@ -234,9 +236,7 @@ describe("deduplication", () => {
   it("loads distinct sample names separately", async () => {
     const json: SmplrJson = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
-      groups: [
-        { regions: [{ sample: "C4" }, { sample: "D4" }] },
-      ],
+      groups: [{ regions: [{ sample: "C4" }, { sample: "D4" }] }],
     };
 
     const loader = new SampleLoader(makeContext());
@@ -276,8 +276,12 @@ describe("caching", () => {
   it("cache is keyed by resolved URL, so different baseUrls are fetched separately", async () => {
     const loader = new SampleLoader(makeContext());
 
-    await loader.load(makeJson({ samples: { baseUrl: "https://a.com", formats: ["ogg"] } }));
-    await loader.load(makeJson({ samples: { baseUrl: "https://b.com", formats: ["ogg"] } }));
+    await loader.load(
+      makeJson({ samples: { baseUrl: "https://a.com", formats: ["ogg"] } }),
+    );
+    await loader.load(
+      makeJson({ samples: { baseUrl: "https://b.com", formats: ["ogg"] } }),
+    );
 
     expect(mockLoadBuffer).toHaveBeenCalledTimes(2);
   });
@@ -311,7 +315,9 @@ describe("onProgress callback", () => {
     await loader.load(makeJson()); // fills cache
 
     const calls: [number, number][] = [];
-    await loader.load(makeJson(), (loaded, total) => calls.push([loaded, total]));
+    await loader.load(makeJson(), (loaded, total) =>
+      calls.push([loaded, total]),
+    );
 
     expect(calls).toHaveLength(1);
     expect(calls[0]).toEqual([1, 1]);
@@ -321,7 +327,9 @@ describe("onProgress callback", () => {
     mockLoadBuffer.mockResolvedValue(undefined);
     const calls: [number, number][] = [];
     const loader = new SampleLoader(makeContext());
-    await loader.load(makeJson(), (loaded, total) => calls.push([loaded, total]));
+    await loader.load(makeJson(), (loaded, total) =>
+      calls.push([loaded, total]),
+    );
 
     expect(calls).toHaveLength(1);
     expect(calls[0]).toEqual([1, 1]);

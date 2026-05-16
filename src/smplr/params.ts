@@ -64,7 +64,7 @@ export function resolveParams(
   region: SmplrRegion,
   midi: number,
   velocity: number,
-  overrides?: NoteOverrides
+  overrides?: NoteOverrides,
 ): VoiceParams {
   // Merge: hardcoded defaults → json.defaults → group → region
   const merged: Required<PlaybackParams> = {

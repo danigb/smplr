@@ -1,7 +1,12 @@
-import { OutputChannel } from "../smplr/channel";
 import { HttpStorage, Storage } from "../storage";
-import { Smplr, SmplrOptions } from "../smplr";
-import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "../smplr/types";
+import { Instrument } from "../smplr";
+import {
+  LoadProgress,
+  NoteEvent,
+  SmplrGroup,
+  SmplrJson,
+  StopFn,
+} from "../smplr/types";
 import {
   DrumMachineInstrument,
   EMPTY_INSTRUMENT,
@@ -55,84 +60,55 @@ function getConfig(options?: DrumMachineOptions): DrumMachineConfig {
   return config;
 }
 
-export class DrumMachine {
-  #smplr: Smplr;
-  #instrument = EMPTY_INSTRUMENT;
-  readonly load: Promise<this>;
-  readonly output: OutputChannel;
+type DrumMachineExtras = {
+  getSampleNames(): string[];
+  getGroupNames(): string[];
+  getSampleNamesForGroup(groupName: string): string[];
+  start(event: NoteEvent): StopFn;
+};
 
-  constructor(context: AudioContext, options?: DrumMachineOptions) {
+export const DrumMachine = Instrument(
+  (ctx: BaseAudioContext, options: DrumMachineOptions = {}, smplr) => {
     const config = getConfig(options);
 
-    const smplrOptions: SmplrOptions = {
-      destination: options?.destination,
-      volume: options?.volume,
-      pan: options?.pan,
-      velocity: options?.velocity,
-      storage: config.storage,
-      onLoadProgress: options?.onLoadProgress,
+    // Mutable closure state — extras read this; the load promise populates it.
+    let instrument: DrumMachineInstrument = EMPTY_INSTRUMENT;
+
+    // Capture the base `start` *before* Object.assign(smplr, extras) shadows
+    // it — otherwise the override below would recurse into itself.
+    const baseStart = smplr.start.bind(smplr);
+
+    const extras: DrumMachineExtras = {
+      getSampleNames: () => instrument.samples.slice(),
+      getGroupNames: () => instrument.groupNames.slice(),
+      getSampleNamesForGroup: (groupName) =>
+        instrument.sampleGroupVariations[groupName] ?? [],
+
+      // Override start() to inject stopId so re-triggering the same drum
+      // cuts the previous voice (one-shot-per-drum semantic).
+      start: (sample) => {
+        const s = typeof sample === "object" ? sample : { note: sample };
+        return baseStart({
+          ...s,
+          stopId:
+            (s as { stopId?: string | number; note: string | number }).stopId ??
+            s.note,
+        });
+      },
     };
-    this.#smplr = new Smplr(context, smplrOptions);
-    this.output = this.#smplr.output;
 
     const instrumentPromise = isDrumMachineInstrument(config.instrument)
       ? Promise.resolve(config.instrument)
       : fetchDrumMachineInstrument(config.url, config.storage);
 
-    this.load = instrumentPromise
-      .then((inst) => {
-        this.#instrument = inst;
-        return this.#smplr.loadInstrument(drumMachineToSmplrJson(inst));
-      })
-      .then(() => this);
-  }
-
-  getSampleNames(): string[] {
-    return this.#instrument.samples.slice();
-  }
-
-  getGroupNames(): string[] {
-    return this.#instrument.groupNames.slice();
-  }
-
-  getSampleNamesForGroup(groupName: string): string[] {
-    return this.#instrument.sampleGroupVariations[groupName] ?? [];
-  }
-
-  start(sample: NoteEvent) {
-    const s = typeof sample === "object" ? sample : { note: sample };
-    return this.#smplr.start({
-      ...s,
-      stopId: (s as { stopId?: string | number; note: string | number }).stopId ?? s.note,
+    const ready = instrumentPromise.then((inst) => {
+      instrument = inst;
+      return smplr.loadInstrument(drumMachineToSmplrJson(inst));
     });
-  }
 
-  stop(sample?: StopTarget) {
-    return this.#smplr.stop(sample);
-  }
-
-  disconnect() {
-    return this.#smplr.disconnect();
-  }
-
-  /** @deprecated */
-  async loaded() {
-    console.warn("deprecated: use load instead");
-    return this.load;
-  }
-
-  /** @deprecated */
-  get sampleNames(): string[] {
-    console.log("deprecated: Use getGroupNames instead");
-    return this.#instrument.groupNames.slice();
-  }
-
-  /** @deprecated */
-  getVariations(groupName: string): string[] {
-    console.warn("deprecated: use getSampleNamesForGroup");
-    return this.#instrument.sampleGroupVariations[groupName] ?? [];
-  }
-}
+    return { extras, ready };
+  },
+);
 
 // ---------------------------------------------------------------------------
 // drumMachineToSmplrJson — pure converter function
@@ -146,7 +122,7 @@ export class DrumMachine {
  * name ("kick") so both forms work with Smplr.start({ note: "kick" }).
  */
 export function drumMachineToSmplrJson(
-  instrument: DrumMachineInstrument
+  instrument: DrumMachineInstrument,
 ): SmplrJson {
   const aliases: Record<string, number> = {};
   const regions: SmplrGroup["regions"] = [];
@@ -168,7 +144,7 @@ export function drumMachineToSmplrJson(
 
   // Group name aliases: "kick" → first sample MIDI
   for (const [groupName, firstSample] of Object.entries(
-    instrument.nameToSampleName
+    instrument.nameToSampleName,
   )) {
     if (firstSample) {
       const idx = instrument.samples.indexOf(firstSample);

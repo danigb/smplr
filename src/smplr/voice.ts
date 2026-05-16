@@ -20,7 +20,7 @@ export class Voice {
     destination: AudioNode,
     stopId: string | number,
     group?: number,
-    startTime?: number
+    startTime?: number,
   ) {
     this.#context = context;
     this.stopId = stopId;

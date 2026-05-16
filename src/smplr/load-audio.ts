@@ -7,13 +7,13 @@ export type AudioBuffers = Record<string | number, AudioBuffer | undefined>;
  */
 export type AudioBuffersLoader = (
   context: BaseAudioContext,
-  buffers: AudioBuffers
+  buffers: AudioBuffers,
 ) => Promise<void>;
 
 export async function loadAudioBuffer(
   context: BaseAudioContext,
   url: string,
-  storage: Storage
+  storage: Storage,
 ): Promise<AudioBuffer | undefined> {
   url = url
     .replace(/#/g, "%23")
@@ -24,7 +24,7 @@ export async function loadAudioBuffer(
     console.warn(
       "Error loading buffer. Invalid status: ",
       response.status,
-      url
+      url,
     );
     return;
   }
@@ -41,7 +41,9 @@ export async function loadAudioBuffer(
 function isSafari(): boolean {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent;
-  return ua.includes("Safari") && !ua.includes("Chrome") && !ua.includes("Chromium");
+  return (
+    ua.includes("Safari") && !ua.includes("Chrome") && !ua.includes("Chromium")
+  );
 }
 
 export function findFirstSupportedFormat(formats: string[]): string | null {

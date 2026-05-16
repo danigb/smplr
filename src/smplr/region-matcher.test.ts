@@ -13,12 +13,14 @@ function json(groups: SmplrGroup[]): SmplrJson {
 
 function group(
   regions: SmplrRegion[],
-  params: Partial<Omit<SmplrGroup, "regions">> = {}
+  params: Partial<Omit<SmplrGroup, "regions">> = {},
 ): SmplrGroup {
   return { regions, ...params };
 }
 
-function region(params: Partial<SmplrRegion> & { sample?: string } = {}): SmplrRegion {
+function region(
+  params: Partial<SmplrRegion> & { sample?: string } = {},
+): SmplrRegion {
   return { sample: "s", ...params };
 }
 
@@ -36,7 +38,7 @@ describe("key matching", () => {
 
   it("region.keyRange — inclusive bounds match, outside bounds do not", () => {
     const matcher = new RegionMatcher(
-      json([group([region({ keyRange: [48, 72], pitch: 60 })])])
+      json([group([region({ keyRange: [48, 72], pitch: 60 })])]),
     );
     expect(matcher.match(48, 64, NO_CC)).toHaveLength(1);
     expect(matcher.match(60, 64, NO_CC)).toHaveLength(1);
@@ -60,7 +62,7 @@ describe("key matching", () => {
 
   it("group.keyRange filters before region matching", () => {
     const matcher = new RegionMatcher(
-      json([group([region()], { keyRange: [48, 72] })])
+      json([group([region()], { keyRange: [48, 72] })]),
     );
     expect(matcher.match(60, 64, NO_CC)).toHaveLength(1);
     expect(matcher.match(47, 64, NO_CC)).toHaveLength(0);
@@ -77,7 +79,7 @@ describe("velocity matching", () => {
 
   it("region.velRange — inclusive bounds", () => {
     const matcher = new RegionMatcher(
-      json([group([region({ velRange: [64, 100] })])])
+      json([group([region({ velRange: [64, 100] })])]),
     );
     expect(matcher.match(60, 64, NO_CC)).toHaveLength(1);
     expect(matcher.match(60, 100, NO_CC)).toHaveLength(1);
@@ -98,7 +100,7 @@ describe("velocity matching", () => {
 
   it("group.velRange filters before region matching", () => {
     const matcher = new RegionMatcher(
-      json([group([region()], { velRange: [64, 127] })])
+      json([group([region()], { velRange: [64, 127] })]),
     );
     expect(matcher.match(60, 80, NO_CC)).toHaveLength(1);
     expect(matcher.match(60, 63, NO_CC)).toHaveLength(0);
@@ -133,7 +135,7 @@ describe("round-robin", () => {
   function rrGroup(samples: string[]): SmplrGroup {
     return group(
       samples.map((s, i) => region({ sample: s, seqPosition: i + 1 })),
-      { seqLength: samples.length }
+      { seqLength: samples.length },
     );
   }
 
@@ -148,7 +150,9 @@ describe("round-robin", () => {
   it("returns nothing when no region matches the current seqPosition", () => {
     // seqLength: 2 but only seqPosition 1 defined
     const matcher = new RegionMatcher(
-      json([group([region({ sample: "only", seqPosition: 1 })], { seqLength: 2 })])
+      json([
+        group([region({ sample: "only", seqPosition: 1 })], { seqLength: 2 }),
+      ]),
     );
     expect(matcher.match(60, 64, NO_CC)).toHaveLength(1); // counter=0, pos 0 → match
     expect(matcher.match(60, 64, NO_CC)).toHaveLength(0); // counter=1, pos 1 → no match
@@ -180,7 +184,7 @@ describe("round-robin", () => {
         region({ sample: "rr1", seqPosition: 1 }),
         region({ sample: "rr3", seqPosition: 3 }),
       ],
-      { seqLength: 3 }
+      { seqLength: 3 },
     );
     const matcher = new RegionMatcher(json([g]));
 
@@ -196,7 +200,7 @@ describe("round-robin", () => {
         region({ sample: "rr1", seqPosition: 1 }),
         region({ sample: "rr2", seqPosition: 2 }),
       ],
-      { keyRange: [60, 60], seqLength: 2 }
+      { keyRange: [60, 60], seqLength: 2 },
     );
     const matcher = new RegionMatcher(json([g]));
 
@@ -286,13 +290,19 @@ describe("CC range", () => {
     const r = region({ ccRange: { "64": [64, 127], "1": [0, 63] } });
     const matcher = new RegionMatcher(json([group([r])]));
 
-    const both = new Map([[64, 127], [1, 50]]);
+    const both = new Map([
+      [64, 127],
+      [1, 50],
+    ]);
     expect(matcher.match(60, 64, both)).toHaveLength(1);
 
     const onlyOne = new Map([[64, 127]]); // CC1 defaults to 0 → in [0,63] → still matches
     expect(matcher.match(60, 64, onlyOne)).toHaveLength(1);
 
-    const fail = new Map([[64, 127], [1, 100]]); // CC1=100 outside [0,63]
+    const fail = new Map([
+      [64, 127],
+      [1, 100],
+    ]); // CC1=100 outside [0,63]
     expect(matcher.match(60, 64, fail)).toHaveLength(0);
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "smplr",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "homepage": "https://github.com/danigb/smplr#readme",
   "description": "A Sampled collection of instruments",
   "main": "dist/index.js",
@@ -43,6 +43,8 @@
     "test": "npm run test:unit && npm run test:types",
     "test:unit": "jest",
     "test:types": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "publish": "npm run build && npm run test"
   },
   "engines": {

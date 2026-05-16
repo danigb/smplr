@@ -1,6 +1,6 @@
 import { HttpStorage, Storage } from "./storage";
-import { Smplr } from "./smplr";
-import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "./smplr/types";
+import { Instrument } from "./smplr";
+import { LoadProgress, SmplrGroup, SmplrJson } from "./smplr/types";
 import { spreadKeyRanges } from "./smplr/utils";
 
 /**
@@ -30,65 +30,25 @@ export type SplendidGrandPianoConfig = {
   };
 };
 
-const BASE_URL = "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples";
+const BASE_URL =
+  "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples";
 
-export class SplendidGrandPiano {
-  #smplr: Smplr;
-  readonly load: Promise<this>;
+const DEFAULTS: SplendidGrandPianoConfig = {
+  baseUrl: BASE_URL,
+  storage: HttpStorage,
+  detune: 0,
+  volume: 100,
+  velocity: 100,
+  decayTime: 0.5,
+};
 
-  constructor(
-    public readonly context: AudioContext,
-    options?: Partial<SplendidGrandPianoConfig>
-  ) {
-    const opts: SplendidGrandPianoConfig = {
-      baseUrl: BASE_URL,
-      storage: HttpStorage,
-      detune: 0,
-      volume: 100,
-      velocity: 100,
-      decayTime: 0.5,
-      ...options,
-    };
-
-    const json = pianoToSmplrJson(opts);
-
-    this.#smplr = new Smplr(context, json, {
-      storage: opts.storage,
-      destination: opts.destination,
-      volume: opts.volume,
-      velocity: opts.velocity,
-      onLoadProgress: opts.onLoadProgress,
-    });
-
-    this.load = this.#smplr.load.then(() => this);
-  }
-
-  get output() {
-    return this.#smplr.output;
-  }
-
-  get loadProgress() {
-    return this.#smplr.loadProgress;
-  }
-
-  /** @deprecated Use `load` instead. */
-  async loaded() {
-    console.warn("deprecated: use load instead");
-    return this.load;
-  }
-
-  start(event: NoteEvent) {
-    return this.#smplr.start(event);
-  }
-
-  stop(target?: StopTarget) {
-    return this.#smplr.stop(target);
-  }
-
-  disconnect() {
-    return this.#smplr.disconnect();
-  }
-}
+export const SplendidGrandPiano = Instrument(
+  (
+    ctx: BaseAudioContext,
+    options: Partial<SplendidGrandPianoConfig> = {},
+    smplr,
+  ) => smplr.loadInstrument(pianoToSmplrJson({ ...DEFAULTS, ...options })),
+);
 
 // ---------------------------------------------------------------------------
 // pianoToSmplrJson — pure function, independently testable
@@ -117,7 +77,7 @@ export function pianoToSmplrJson(options: PianoJsonOptions): SmplrJson {
     ? LAYERS.filter(
         (layer) =>
           layer.vel_range[0] <= notesToLoad.velocityRange[1] &&
-          layer.vel_range[1] >= notesToLoad.velocityRange[0]
+          layer.vel_range[1] >= notesToLoad.velocityRange[0],
       )
     : LAYERS;
 
@@ -126,16 +86,18 @@ export function pianoToSmplrJson(options: PianoJsonOptions): SmplrJson {
     const samples = (
       notesToLoad
         ? layer.samples.filter(([midi]) =>
-            notesToLoad.notes.includes(midi as number)
+            notesToLoad.notes.includes(midi as number),
           )
         : layer.samples
     ) as [number, string][];
 
-    const regions = spreadKeyRanges(samples).map(({ keyRange, pitch, sample }) => ({
-      keyRange,
-      pitch,
-      sample,
-    }));
+    const regions = spreadKeyRanges(samples).map(
+      ({ keyRange, pitch, sample }) => ({
+        keyRange,
+        pitch,
+        sample,
+      }),
+    );
 
     const group: SmplrGroup = {
       velRange: layer.vel_range as [number, number],

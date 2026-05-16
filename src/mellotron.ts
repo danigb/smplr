@@ -1,7 +1,7 @@
 import { toMidi } from "./smplr/midi";
-import { HttpStorage, Storage } from "./storage";
-import { Smplr, SmplrOptions } from "./smplr";
-import { LoadProgress, NoteEvent, SmplrGroup, SmplrJson, StopTarget } from "./smplr/types";
+import { Storage } from "./storage";
+import { Instrument } from "./smplr";
+import { LoadProgress, SmplrGroup, SmplrJson } from "./smplr/types";
 import { spreadKeyRanges } from "./smplr/utils";
 
 const INSTRUMENT_VARIATIONS: Record<string, [string, string]> = {
@@ -63,71 +63,25 @@ export type MellotronOptions = Partial<
   }
 >;
 
-export class Mellotron {
-  #smplr: Smplr;
-  readonly load: Promise<this>;
-
-  constructor(
-    public readonly context: BaseAudioContext,
-    options: MellotronOptions = {}
-  ) {
-    const config = getMellotronConfig(options);
-
-    const smplrOptions: SmplrOptions = {
-      destination: options.destination,
-      volume: options.volume,
-      velocity: options.velocity,
-      storage: config.storage,
-      onLoadProgress: options.onLoadProgress,
-    };
-    this.#smplr = new Smplr(context as AudioContext, smplrOptions);
-
-    const variation = INSTRUMENT_VARIATIONS[config.instrument];
-    const instrumentName = variation ? variation[0] : config.instrument;
+export const Mellotron = Instrument(
+  (ctx: BaseAudioContext, options: MellotronOptions = {}, smplr) => {
+    const instrument = options.instrument ?? "MKII VIOLINS";
+    const variation = INSTRUMENT_VARIATIONS[instrument];
+    const instrumentName = variation ? variation[0] : instrument;
     const baseUrl = `https://smpldsnds.github.io/archiveorg-mellotron/${instrumentName}/`;
 
-    this.load = fetch(baseUrl + "files.json")
+    return fetch(baseUrl + "files.json")
       .then((r) => r.json() as Promise<string[]>)
       .then((names) =>
-        this.#smplr.loadInstrument(
+        smplr.loadInstrument(
           mellotronToSmplrJson(names, {
             instrument: instrumentName,
             variation: variation?.[1],
-          })
-        )
-      )
-      .then(() => this);
-  }
-
-  get output() {
-    return this.#smplr.output;
-  }
-
-  get loadProgress() {
-    return this.#smplr.loadProgress;
-  }
-
-  start(sample: NoteEvent | string | number) {
-    return this.#smplr.start(
-      typeof sample === "object" ? sample : { note: sample }
-    );
-  }
-
-  stop(target?: StopTarget) {
-    return this.#smplr.stop(target);
-  }
-
-  disconnect() {
-    return this.#smplr.disconnect();
-  }
-}
-
-function getMellotronConfig(options: MellotronOptions): MellotronConfig {
-  return {
-    instrument: options.instrument ?? "MKII VIOLINS",
-    storage: options.storage ?? HttpStorage,
-  };
-}
+          }),
+        ),
+      );
+  },
+);
 
 // ---------------------------------------------------------------------------
 // mellotronToSmplrJson — pure converter function
@@ -148,7 +102,7 @@ type MellotronJsonConfig = {
  */
 export function mellotronToSmplrJson(
   sampleNames: string[],
-  config: MellotronJsonConfig
+  config: MellotronJsonConfig,
 ): SmplrJson {
   const entries: [number, string][] = [];
 
@@ -171,7 +125,7 @@ export function mellotronToSmplrJson(
       keyRange,
       pitch,
       loopAuto: { startRatio: 0.1, endRatio: 0.9 },
-    })
+    }),
   );
 
   return {

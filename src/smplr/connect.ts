@@ -25,7 +25,7 @@ export function connectSerial(nodes: (AudioNode | AudioInsert | undefined)[]) {
 export function connectAudioBus(
   node: AudioNode,
   destination: AudioNode,
-  gain: number
+  gain: number,
 ) {
   const mix = node.context.createGain();
   mix.gain.value = gain;

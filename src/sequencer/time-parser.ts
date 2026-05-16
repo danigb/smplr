@@ -20,7 +20,7 @@
 export function parseTicks(
   time: string | number,
   ppq: number,
-  timeSignature: number
+  timeSignature: number,
 ): number {
   if (typeof time === "number") return time;
 
@@ -49,7 +49,8 @@ export function parseTicks(
   }
 
   // Position: "bar:beat" or "bar:beat:tick" (all 1-indexed, can be fractional)
-  const posMatch = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)(?::(\d+(?:\.\d+)?))?$/.exec(t);
+  const posMatch =
+    /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)(?::(\d+(?:\.\d+)?))?$/.exec(t);
   if (posMatch) {
     const bar = parseFloat(posMatch[1]);
     const beat = parseFloat(posMatch[2]);

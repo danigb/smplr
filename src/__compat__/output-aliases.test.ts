@@ -1,0 +1,31 @@
+/**
+ * B5 — `output.setVolume`, `output.sendEffect`, `output.addEffect`,
+ * `output.addInsert` continue to be callable on the OutputChannel.
+ *
+ * The Channel implementation isn't touched in this release — these tests
+ * exist as a mechanism-level tripwire so a future refactor can't silently
+ * remove or rename one of them without lighting up here first.
+ */
+import { SplendidGrandPiano } from "../splendid-grand-piano";
+import { createAudioContextMock } from "../test-helpers";
+
+describe("B5 — output channel aliases stay callable", () => {
+  it("output exposes setVolume, sendEffect, addEffect, addInsert", () => {
+    const ctx = createAudioContextMock();
+    const piano = new SplendidGrandPiano(ctx as any);
+    piano.load.catch(() => {});
+
+    expect(typeof piano.output.setVolume).toBe("function");
+    expect(typeof piano.output.sendEffect).toBe("function");
+    expect(typeof piano.output.addEffect).toBe("function");
+    expect(typeof piano.output.addInsert).toBe("function");
+  });
+
+  it("setVolume accepts a number without throwing", () => {
+    const ctx = createAudioContextMock();
+    const piano = new SplendidGrandPiano(ctx as any);
+    piano.load.catch(() => {});
+
+    expect(() => piano.output.setVolume(80)).not.toThrow();
+  });
+});

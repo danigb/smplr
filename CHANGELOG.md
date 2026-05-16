@@ -1,5 +1,101 @@
 # smplr
 
+## 0.21.0
+
+smplr 0.21.0 is the **1.0 candidate**: it ships the public authoring API and the `Smplr` interface, but holds the formal 1.0 stability commitment until a coordinated set of sibling tickets lands (narrow `loader`/`scheduler` public interfaces, metadata-as-standalone-functions, `OutputChannel` cleanup, `SmplrJson` versioning). **Every code example in the README continues to work unmodified** — including all `new X(ctx, opts)` constructor patterns, `await new X(ctx).load` returning the instrument, `output.setVolume`, `output.sendEffect`, and every instrument-specific extra method.
+
+If you only ever followed the README, **no migration is required**. Upgrade and keep going.
+
+### New: defining instruments with `Instrument(...)`
+
+The `Instrument` builder is the supported way to define an instrument from now on — both for the first-party instruments (already migrated internally) and for third-party packages.
+
+```ts
+import { Instrument } from "smplr";
+
+export const MySynth = Instrument((ctx, opts, smplr) => {
+  return loadSamples(opts).then(({ json, buffers }) => {
+    smplr.loadInstrument(json, buffers);
+  });
+});
+```
+
+See the new [Defining an instrument](./AUTHORING.md) guide for the full third-party authoring story, including the sync vs async patterns and the `SmplrPlugin<O, E>` type for extracting plugins to named variables.
+
+### New: `Smplr` as a TypeScript interface
+
+`Smplr` is now exported as a TypeScript **interface** describing an instrument instance:
+
+```ts
+import type { Smplr } from "smplr";
+
+function playChord(inst: Smplr, notes: string[]) {
+  /* … */
+}
+```
+
+Use it in function signatures, generic helpers, and JSDoc. It is not a class and cannot be constructed.
+
+### New: factories are callable without `new`
+
+Every first-party factory (`SplendidGrandPiano`, `Soundfont`, `DrumMachine`, `ElectricPiano`, `Mallet`, `Mellotron`, `Smolken`, `Versilian`, `Sampler`, `Soundfont2Sampler`) supports both `X(ctx, opts)` and `new X(ctx, opts)`. The call form is the documented one going forward; the `new` form is preserved and marked `@deprecated` at the TypeScript level so editors steer new code toward the call form.
+
+### New: `instrument.ready` field
+
+Every instrument now exposes a `readonly ready: Promise<void>` that resolves when the instrument is loaded. Prefer it over `.load` in new code:
+
+```ts
+const piano = SplendidGrandPiano(context);
+await piano.ready;
+piano.start({ note: "C4" });
+```
+
+`.load` is kept as a deprecated alias that still resolves to the instrument (`await new X(ctx).load` works unchanged).
+
+### Removed
+
+- **`Smplr` (class)** — was exported from `smplr` but never documented. `new Smplr(...)` produces a TypeScript error and a runtime error. See the migration recipe below if you were using it.
+- **Deprecated runtime aliases on first-party instruments** — `Sampler.loaded()`, `SplendidGrandPiano.loaded()`, `Soundfont.loaded()`, `DrumMachine.loaded()`, `DrumMachine.sampleNames` getter, `DrumMachine.getVariations()`. All printed a deprecation warning and were unreachable from the README. Use `.load` / `.ready` and the documented extras (`getGroupNames`, `getSampleNamesForGroup`) instead.
+- **Undocumented fields** — `Soundfont.config`, `Soundfont.hasLoops`, `Soundfont2Sampler.options`, `Soundfont2Sampler.soundfont`. All were internal state that leaked into the public type; none are referenced by the README, the demo site, or any test.
+
+### Deprecated (still works in 0.21.x and 1.x)
+
+- **`new X(ctx, opts)` on any first-party factory** — `@deprecated` at the TypeScript level only. Runtime behavior is unchanged: `new SplendidGrandPiano(ctx)` still returns a fully constructed instance. Editors will steer you toward the call form `SplendidGrandPiano(ctx)`.
+- **`instrument.load`** — `@deprecated` in TSDoc. Use `await instrument.ready` to await load completion (resolves to `void`); the `load` getter still resolves to the instrument for compatibility with `const piano = await new SplendidGrandPiano(ctx).load`.
+- **`instrument.output.setVolume(n)` and `instrument.output.sendEffect(name, mix)`** — both continue to work with no runtime warning and no TSDoc deprecation tag yet. They will be marked `@deprecated` once the replacement APIs (`output.volume = n`, `output.setEffectMix(name, mix)`) ship under the upcoming OutputChannel cleanup.
+
+### Migrating `new Smplr(...)`
+
+If you reached for the (undocumented) `Smplr` class export — for example to author a custom instrument inline — switch to `Instrument(...)`:
+
+```ts
+// Before:
+import { Smplr } from "smplr";
+const inst = new Smplr(ctx, jsonInstrument);
+await inst.load;
+
+// After:
+import { Instrument } from "smplr";
+const Custom = Instrument((ctx, _opts, smplr) =>
+  smplr.loadInstrument(jsonInstrument),
+);
+const inst = Custom(ctx, {});
+await inst.ready;
+```
+
+For the typical case (an instrument you want to use *now*, not export as a reusable factory), `Sampler` covers the inline-instrument use case.
+
+### Stability — 1.0 candidate
+
+Everything documented in [README.md](./README.md), in [AUTHORING.md](./AUTHORING.md), and in the public TypeScript surface (`dist/index.d.ts`) is intended to ship unchanged into 1.0. The remaining 1.0 work is a coordinated set of sibling tickets:
+
+- narrow public interfaces for `loader` and `scheduler` (currently concrete classes)
+- metadata exports (`getSoundfontNames` etc.) as tree-shakable standalone functions
+- `OutputChannel` cleanup: `output.volume` getter/setter, `output.setEffectMix(name, mix)` rename
+- forward-compatible `SmplrJson` schema with a `version` field and validator
+
+When those four ship, the next release bumps to 1.0.0 and the deprecation tags on `setVolume`/`sendEffect` land alongside their replacements.
+
 ## 0.20.0
 
 ### Export Audio (offline rendering)

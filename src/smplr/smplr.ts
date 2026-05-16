@@ -1,4 +1,5 @@
 import { Channel, OutputChannel } from "./channel";
+import type { Smplr } from "./instrument";
 import { toMidi } from "./midi";
 import { Storage } from "../storage";
 import { resolveParams } from "./params";
@@ -63,9 +64,13 @@ type NormalizedNoteEvent = {
 
 function compose<T>(
   a: ((e: T) => void) | undefined,
-  b: ((e: T) => void) | undefined
+  b: ((e: T) => void) | undefined,
 ): ((e: T) => void) | undefined {
-  if (a && b) return (e) => { a(e); b(e); };
+  if (a && b)
+    return (e) => {
+      a(e);
+      b(e);
+    };
   return a ?? b;
 }
 
@@ -89,23 +94,32 @@ function isSmplrJson(x: unknown): x is SmplrJson {
 }
 
 /**
- * The main sampler class. Loads samples described by a SmplrJson descriptor,
- * matches notes to regions, and plays them through a Channel.
+ * Internal smplr implementation. Loads samples described by a SmplrJson
+ * descriptor, matches notes to regions, and plays them through a Channel.
  *
- * Multiple Smplr instances can share a SampleLoader (shared cache) and/or a
- * Scheduler (coordinated timing) by passing them via SmplrOptions.
+ * Not exported from the package barrel — third-party plugins receive an
+ * instance typed as {@link PluginSmplr} via the {@link Instrument} builder.
  *
  * Pattern A — json provided at construction:
- *   `new Smplr(context, json, options?)`
+ *   `new SmplrImpl(context, json, options?)`
  *
  * Pattern B — json loaded later via loadInstrument():
- *   `new Smplr(context, options?)`  then  `smplr.loadInstrument(json)`
+ *   `new SmplrImpl(context, options?)`  then  `smplr.loadInstrument(json)`
  */
-export class Smplr {
-  /** Resolves with `this` once all sample buffers are loaded. */
-  readonly load: Promise<Smplr>;
+export class SmplrImpl implements Smplr {
   /** The AudioContext (or OfflineAudioContext) passed to the constructor. */
   readonly context: BaseAudioContext;
+  /** Shared SampleLoader. Read-only on the public surface; injectable via SmplrOptions.loader. */
+  readonly loader: SampleLoader;
+  /** Shared Scheduler. Read-only on the public surface; injectable via SmplrOptions.scheduler. */
+  readonly scheduler: Scheduler;
+
+  /**
+   * Resolves when the instrument is ready to play. For Pattern A this tracks
+   * the constructor-time load; for Pattern B it starts resolved and may be
+   * replaced by the {@link Instrument} builder via {@link _setReady}.
+   */
+  ready: Promise<void>;
 
   #loadProgress: LoadProgress = { loaded: 0, total: 0 };
   #buffers: Map<string, AudioBuffer> = new Map();
@@ -115,20 +129,22 @@ export class Smplr {
   #aliases: Map<string, number> | undefined;
   #matcher: RegionMatcher;
   #voices: VoiceManager;
-  #scheduler: Scheduler;
   #channel: Channel;
-  #loader: SampleLoader;
   #onLoadProgress: ((progress: LoadProgress) => void) | undefined;
   #onStart: ((event: NoteEvent) => void) | undefined;
   #onEnded: ((event: NoteEvent) => void) | undefined;
   #ccState: Map<number, number> = new Map();
 
-  constructor(context: BaseAudioContext, json: SmplrJson, options?: SmplrOptions);
+  constructor(
+    context: BaseAudioContext,
+    json: SmplrJson,
+    options?: SmplrOptions,
+  );
   constructor(context: BaseAudioContext, options?: SmplrOptions);
   constructor(
     context: BaseAudioContext,
     jsonOrOptions?: SmplrJson | SmplrOptions,
-    maybeOptions?: SmplrOptions
+    maybeOptions?: SmplrOptions,
   ) {
     const json = isSmplrJson(jsonOrOptions) ? jsonOrOptions : undefined;
     const options = isSmplrJson(jsonOrOptions)
@@ -155,7 +171,7 @@ export class Smplr {
     });
 
     // 2. Scheduler — shared or private
-    this.#scheduler = options?.scheduler ?? new Scheduler(context);
+    this.scheduler = options?.scheduler ?? new Scheduler(context);
 
     // 3. Region matcher — pre-processes groups/regions once
     this.#matcher = new RegionMatcher(json ?? EMPTY_JSON);
@@ -164,24 +180,40 @@ export class Smplr {
     this.#voices = new VoiceManager();
 
     // 5. Sample loader — shared or private
-    this.#loader =
-      options?.loader ?? new SampleLoader(context, { storage: options?.storage });
+    this.loader =
+      options?.loader ??
+      new SampleLoader(context, { storage: options?.storage });
 
     if (json) {
       // Pattern A: load immediately
-      this.load = this.#loader
+      this.ready = this.loader
         .load(json, (loaded, total) => {
           this.#loadProgress = { loaded, total };
           this.#onLoadProgress?.({ loaded, total });
         })
         .then((buffers) => {
           this.#buffers = buffers;
-          return this;
         });
     } else {
       // Pattern B: resolve immediately; caller will call loadInstrument()
-      this.load = Promise.resolve(this);
+      this.ready = Promise.resolve();
     }
+  }
+
+  /**
+   * @deprecated Use {@link ready} instead. Returns a Promise that resolves
+   * to this instance for compatibility with `const x = await new X(ctx).load`.
+   */
+  get load(): Promise<this> {
+    return this.ready.then(() => this);
+  }
+
+  /**
+   * @internal — only the {@link Instrument} builder should call this. Replaces
+   * the `ready` promise after plugin setup completes.
+   */
+  _setReady(p: Promise<void>): void {
+    this.ready = p;
   }
 
   /**
@@ -193,7 +225,7 @@ export class Smplr {
    */
   loadInstrument(
     json: SmplrJson,
-    buffers?: Map<string, AudioBuffer>
+    buffers?: Map<string, AudioBuffer>,
   ): Promise<void> {
     this.#defaults = json.defaults;
     this.#aliases = json.aliases
@@ -201,7 +233,7 @@ export class Smplr {
       : undefined;
     this.#matcher = new RegionMatcher(json);
 
-    return this.#loader
+    return this.loader
       .load(json, {
         buffers,
         onProgress: (loaded, total) => {
@@ -239,9 +271,9 @@ export class Smplr {
   start(event: NoteEvent): StopFn {
     const normalized = this.#normalizeNoteEvent(event);
 
-    const schedulerStop = this.#scheduler.schedule(
+    const schedulerStop = this.scheduler.schedule(
       normalized as NoteEvent,
-      (e) => this.#playNote(e as NormalizedNoteEvent)
+      (e) => this.#playNote(e as NormalizedNoteEvent),
     );
 
     return (time?: number) => {
@@ -279,7 +311,7 @@ export class Smplr {
   disconnect(): void {
     this.#voices.stopAll();
     this.#channel.disconnect();
-    this.#scheduler.stop();
+    this.scheduler.stop();
   }
 
   #getBuffer(sample: string, reverse: boolean): AudioBuffer | undefined {
@@ -291,7 +323,7 @@ export class Smplr {
     const reversed = this.context.createBuffer(
       original.numberOfChannels,
       original.length,
-      original.sampleRate
+      original.sampleRate,
     );
     for (let ch = 0; ch < original.numberOfChannels; ch++) {
       const data = original.getChannelData(ch).slice().reverse();
@@ -302,8 +334,20 @@ export class Smplr {
   }
 
   #playNote(event: NormalizedNoteEvent): void {
-    const { midi, velocity, time, stopId, duration, detune, lpfCutoffHz, loop, ampRelease, reverse, onStart, onEnded } =
-      event;
+    const {
+      midi,
+      velocity,
+      time,
+      stopId,
+      duration,
+      detune,
+      lpfCutoffHz,
+      loop,
+      ampRelease,
+      reverse,
+      onStart,
+      onEnded,
+    } = event;
 
     const matches = this.#matcher.match(midi, velocity, this.#ccState);
 
@@ -326,7 +370,7 @@ export class Smplr {
         match.regionRef,
         midi,
         velocity,
-        { detune, lpfCutoffHz, loop, ampRelease, reverse }
+        { detune, lpfCutoffHz, loop, ampRelease, reverse },
       );
 
       const voice = new Voice(
@@ -336,7 +380,7 @@ export class Smplr {
         this.#channel.input,
         stopId,
         match.group,
-        time
+        time,
       );
 
       this.#voices.add(voice);
@@ -364,8 +408,7 @@ export class Smplr {
 
   #normalizeNoteEvent(event: NoteEvent): NormalizedNoteEvent {
     if (typeof event === "string" || typeof event === "number") {
-      const midi =
-        toMidi(event) ?? this.#aliases?.get(String(event)) ?? 0;
+      const midi = toMidi(event) ?? this.#aliases?.get(String(event)) ?? 0;
       return {
         note: event,
         midi,

@@ -36,7 +36,7 @@ export class Channel {
 
   constructor(
     public readonly context: BaseAudioContext,
-    options?: Partial<ChannelConfig>
+    options?: Partial<ChannelConfig>,
   ) {
     this.#config = {
       destination: options?.destination ?? context.destination,
@@ -91,7 +91,7 @@ export class Channel {
   addEffect(
     name: string,
     effect: AudioNode | { input: AudioNode },
-    mixValue: number
+    mixValue: number,
   ) {
     if (this.#disconnected) {
       throw Error("Can't add effect to disconnected channel");

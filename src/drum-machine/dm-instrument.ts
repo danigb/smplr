@@ -1,7 +1,7 @@
 import { Storage } from "../storage";
 
 export function isDrumMachineInstrument(
-  instrument: any
+  instrument: any,
 ): instrument is DrumMachineInstrument {
   return (
     typeof instrument === "object" &&
@@ -33,7 +33,7 @@ export const EMPTY_INSTRUMENT: DrumMachineInstrument = {
 
 export async function fetchDrumMachineInstrument(
   url: string,
-  storage: Storage
+  storage: Storage,
 ): Promise<DrumMachineInstrument> {
   const res = await storage.fetch(url);
   const json = await res.json();

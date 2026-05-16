@@ -42,7 +42,7 @@ class DattorroReverb extends AudioWorkletProcessor {
           minValue: x[2],
           maxValue: x[3],
           automationRate: x[4],
-        })
+        }),
     );
   }
 
@@ -71,7 +71,7 @@ class DattorroReverb extends AudioWorkletProcessor {
         0.006283391, 0.035818689, 0.011861161, 0.121870905, 0.041262054,
         0.08981553, 0.070931756, 0.011256342, 0.004065724,
       ],
-      (x) => Math.round(x * sampleRate)
+      (x) => Math.round(x * sampleRate),
     );
   }
 
@@ -113,7 +113,7 @@ class DattorroReverb extends AudioWorkletProcessor {
   process(
     inputs: Float32Array[][],
     outputs: Float32Array[][],
-    parameters: any
+    parameters: any,
   ) {
     const pd = ~~parameters.preDelay[0],
       bw = parameters.bandwidth[0],
@@ -161,15 +161,15 @@ class DattorroReverb extends AudioWorkletProcessor {
       let pre = this.writeDelay(0, this._lp1 - fi * this.readDelay(0));
       pre = this.writeDelay(
         1,
-        fi * (pre - this.readDelay(1)) + this.readDelay(0)
+        fi * (pre - this.readDelay(1)) + this.readDelay(0),
       );
       pre = this.writeDelay(
         2,
-        fi * pre + this.readDelay(1) - si * this.readDelay(2)
+        fi * pre + this.readDelay(1) - si * this.readDelay(2),
       );
       pre = this.writeDelay(
         3,
-        si * (pre - this.readDelay(3)) + this.readDelay(2)
+        si * (pre - this.readDelay(3)) + this.readDelay(2),
       );
 
       let split = si * pre + this.readDelay(3);
@@ -182,7 +182,7 @@ class DattorroReverb extends AudioWorkletProcessor {
       // left loop
       let temp = this.writeDelay(
         4,
-        split + dc * this.readDelay(11) + ft * this.readDelayCAt(4, exc)
+        split + dc * this.readDelay(11) + ft * this.readDelayCAt(4, exc),
       ); // tank diffuse 1
       this.writeDelay(5, this.readDelayCAt(4, exc) - ft * temp); // long delay 1
       this._lp2 += dp * (this.readDelay(5) - this._lp2); // damp 1
@@ -191,7 +191,7 @@ class DattorroReverb extends AudioWorkletProcessor {
       // right loop
       temp = this.writeDelay(
         8,
-        split + dc * this.readDelay(7) + ft * this.readDelayCAt(8, exc2)
+        split + dc * this.readDelay(7) + ft * this.readDelayCAt(8, exc2),
       ); // tank diffuse 3
       this.writeDelay(9, this.readDelayCAt(8, exc2) - ft * temp); // long delay 3
       this._lp3 += dp * (this.readDelay(9) - this._lp3); // damp 2

@@ -120,7 +120,9 @@ export class TransportClock {
   resume(): void {
     if (this._state !== "paused") return;
     const audioTime = this._context.currentTime;
-    this._checkpoints = [{ tick: this._pausedAtTick, audioTime, bpm: this._bpm }];
+    this._checkpoints = [
+      { tick: this._pausedAtTick, audioTime, bpm: this._bpm },
+    ];
     this._state = "playing";
   }
 
@@ -164,7 +166,9 @@ export class TransportClock {
     for (const cp of this._checkpoints) {
       if (cp.audioTime <= audioTime) bpm = cp.bpm;
     }
-    this._checkpoints = this._checkpoints.filter((cp) => cp.audioTime < audioTime);
+    this._checkpoints = this._checkpoints.filter(
+      (cp) => cp.audioTime < audioTime,
+    );
     this._checkpoints.push({ tick, audioTime, bpm });
   }
 

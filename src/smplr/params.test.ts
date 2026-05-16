@@ -5,14 +5,22 @@ function group(params: Partial<SmplrGroup> = {}): SmplrGroup {
   return { regions: [], ...params };
 }
 
-function region(params: Partial<SmplrRegion> & { sample?: string } = {}): SmplrRegion {
+function region(
+  params: Partial<SmplrRegion> & { sample?: string } = {},
+): SmplrRegion {
   return { sample: "test", ...params };
 }
 
 describe("resolveParams", () => {
   describe("inheritance cascade", () => {
     it("applies PARAM_DEFAULTS when nothing overrides", () => {
-      const result = resolveParams(undefined, group(), region({ key: 60 }), 60, 100);
+      const result = resolveParams(
+        undefined,
+        group(),
+        region({ key: 60 }),
+        60,
+        100,
+      );
       expect(result.volume).toBe(0);
       expect(result.ampRelease).toBe(PARAM_DEFAULTS.ampRelease);
       expect(result.lpfCutoffHz).toBe(PARAM_DEFAULTS.lpfCutoffHz);
@@ -24,7 +32,13 @@ describe("resolveParams", () => {
 
     it("json defaults override PARAM_DEFAULTS", () => {
       const defaults: PlaybackParams = { ampRelease: 1.0, volume: -6 };
-      const result = resolveParams(defaults, group(), region({ key: 60 }), 60, 100);
+      const result = resolveParams(
+        defaults,
+        group(),
+        region({ key: 60 }),
+        60,
+        100,
+      );
       expect(result.ampRelease).toBe(1.0);
       expect(result.volume).toBe(-6);
     });
@@ -46,7 +60,12 @@ describe("resolveParams", () => {
     });
 
     it("noteOverrides override region params", () => {
-      const r = region({ key: 60, ampRelease: 2.0, lpfCutoffHz: 4000, loop: true });
+      const r = region({
+        key: 60,
+        ampRelease: 2.0,
+        lpfCutoffHz: 4000,
+        loop: true,
+      });
       const result = resolveParams(undefined, group(), r, 60, 100, {
         ampRelease: 0.1,
         lpfCutoffHz: 1000,
@@ -58,7 +77,11 @@ describe("resolveParams", () => {
     });
 
     it("ignores non-PlaybackParams fields from group (keyRange, velRange, etc.)", () => {
-      const g = group({ keyRange: [48, 72], velRange: [64, 127], ampRelease: 0.8 });
+      const g = group({
+        keyRange: [48, 72],
+        velRange: [64, 127],
+        ampRelease: 0.8,
+      });
       const result = resolveParams(undefined, g, region({ key: 60 }), 60, 100);
       expect(result.ampRelease).toBe(0.8);
       expect((result as Record<string, unknown>).keyRange).toBeUndefined();
@@ -68,19 +91,37 @@ describe("resolveParams", () => {
 
   describe("detune calculation", () => {
     it("played note matches region pitch → 0 cents detune", () => {
-      const result = resolveParams(undefined, group(), region({ key: 60 }), 60, 100);
+      const result = resolveParams(
+        undefined,
+        group(),
+        region({ key: 60 }),
+        60,
+        100,
+      );
       expect(result.detune).toBe(0);
     });
 
     it("played note above region pitch → positive cents", () => {
       // C4 (60) sample, play D4 (62): +2 semitones = +200 cents
-      const result = resolveParams(undefined, group(), region({ key: 60 }), 62, 100);
+      const result = resolveParams(
+        undefined,
+        group(),
+        region({ key: 60 }),
+        62,
+        100,
+      );
       expect(result.detune).toBe(200);
     });
 
     it("played note below region pitch → negative cents", () => {
       // C4 (60) sample, play Bb3 (58): -2 semitones = -200 cents
-      const result = resolveParams(undefined, group(), region({ key: 60 }), 58, 100);
+      const result = resolveParams(
+        undefined,
+        group(),
+        region({ key: 60 }),
+        58,
+        100,
+      );
       expect(result.detune).toBe(-200);
     });
 
@@ -120,9 +161,16 @@ describe("resolveParams", () => {
 
     it("noteOverrides.detune adds to computed detune", () => {
       // play 62, pitch 60 → 200 cents; noteOverrides.detune = -50
-      const result = resolveParams(undefined, group(), region({ key: 60 }), 62, 100, {
-        detune: -50,
-      });
+      const result = resolveParams(
+        undefined,
+        group(),
+        region({ key: 60 }),
+        62,
+        100,
+        {
+          detune: -50,
+        },
+      );
       expect(result.detune).toBe(150);
     });
 
@@ -136,7 +184,13 @@ describe("resolveParams", () => {
 
   describe("velocity", () => {
     it("passes velocity through unchanged", () => {
-      const result = resolveParams(undefined, group(), region({ key: 60 }), 60, 80);
+      const result = resolveParams(
+        undefined,
+        group(),
+        region({ key: 60 }),
+        60,
+        80,
+      );
       expect(result.velocity).toBe(80);
     });
   });
@@ -149,7 +203,13 @@ describe("resolveParams", () => {
     });
 
     it("is undefined when region has no ampVelCurve", () => {
-      const result = resolveParams(undefined, group(), region({ key: 60 }), 60, 100);
+      const result = resolveParams(
+        undefined,
+        group(),
+        region({ key: 60 }),
+        60,
+        100,
+      );
       expect(result.ampVelCurve).toBeUndefined();
     });
   });

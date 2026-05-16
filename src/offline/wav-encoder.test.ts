@@ -1,9 +1,6 @@
 import { audioBufferToWav, audioBufferToWav16 } from "./wav-encoder";
 
-function makeBuffer(
-  data: Float32Array[],
-  sampleRate = 48000
-): AudioBuffer {
+function makeBuffer(data: Float32Array[], sampleRate = 48000): AudioBuffer {
   const length = data[0].length;
   const numberOfChannels = data.length;
   const buffer = {
@@ -34,9 +31,23 @@ describe("audioBufferToWav (32-bit float)", () => {
     const view = await readHeader(blob);
 
     // RIFF
-    expect(String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3))).toBe("RIFF");
+    expect(
+      String.fromCharCode(
+        view.getUint8(0),
+        view.getUint8(1),
+        view.getUint8(2),
+        view.getUint8(3),
+      ),
+    ).toBe("RIFF");
     // WAVE
-    expect(String.fromCharCode(view.getUint8(8), view.getUint8(9), view.getUint8(10), view.getUint8(11))).toBe("WAVE");
+    expect(
+      String.fromCharCode(
+        view.getUint8(8),
+        view.getUint8(9),
+        view.getUint8(10),
+        view.getUint8(11),
+      ),
+    ).toBe("WAVE");
     // format = IEEE float (3)
     expect(view.getUint16(20, true)).toBe(3);
     // channels
@@ -93,9 +104,9 @@ describe("audioBufferToWav16 (16-bit integer)", () => {
     const ab = await blob.arrayBuffer();
     const view = new DataView(ab);
 
-    expect(view.getInt16(44, true)).toBe(0);          // 0
-    expect(view.getInt16(46, true)).toBe(0x7fff);     // +1.0 → 32767
-    expect(view.getInt16(48, true)).toBe(-0x8000);    // -1.0 → -32768
+    expect(view.getInt16(44, true)).toBe(0); // 0
+    expect(view.getInt16(46, true)).toBe(0x7fff); // +1.0 → 32767
+    expect(view.getInt16(48, true)).toBe(-0x8000); // -1.0 → -32768
     expect(view.getInt16(50, true)).toBeCloseTo(0x7fff * 0.5, -1); // ~16383
   });
 

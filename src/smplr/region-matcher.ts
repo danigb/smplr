@@ -103,7 +103,7 @@ function processGroup(group: SmplrGroup): ProcessedGroup {
 
 function matchesCc(
   ccState: Map<number, number>,
-  ccRange?: Record<string, [number, number]>
+  ccRange?: Record<string, [number, number]>,
 ): boolean {
   if (!ccRange) return true;
   for (const [ccStr, [low, high]] of Object.entries(ccRange)) {
@@ -140,7 +140,7 @@ export class RegionMatcher {
   match(
     midi: number,
     velocity: number,
-    ccState: Map<number, number>
+    ccState: Map<number, number>,
   ): MatchedRegion[] {
     const results: MatchedRegion[] = [];
 
