@@ -69,6 +69,28 @@ class StereoPannerMock extends NodeMock {
   }
 }
 
+class ChannelSplitterMock extends NodeMock {
+  constructor(context: AudioContextMock, public numberOfOutputs: number) {
+    super(context);
+  }
+}
+
+class ChannelMergerMock extends NodeMock {
+  constructor(context: AudioContextMock, public numberOfInputs: number) {
+    super(context);
+  }
+}
+
+class OscillatorMock extends NodeMock {
+  type = "sine";
+  frequency = { value: 0 };
+  constructor(context: AudioContextMock) {
+    super(context);
+  }
+  start() {}
+  stop() {}
+}
+
 export class AudioContextMock {
   gains: GainNodeMock[] = [];
   bufferSources: BufferSourceMock[] = [];
@@ -108,6 +130,18 @@ export class AudioContextMock {
 
   createBufferSource() {
     return add(new BufferSourceMock(this), this.bufferSources);
+  }
+
+  createChannelSplitter(numberOfOutputs: number) {
+    return new ChannelSplitterMock(this, numberOfOutputs);
+  }
+
+  createChannelMerger(numberOfInputs: number) {
+    return new ChannelMergerMock(this, numberOfInputs);
+  }
+
+  createOscillator() {
+    return new OscillatorMock(this);
   }
 }
 

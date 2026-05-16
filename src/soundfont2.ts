@@ -88,6 +88,11 @@ export const Soundfont2Sampler = Instrument(
     let soundfont: Sf2 | undefined = undefined;
     let instrumentNamesList: string[] = [];
 
+    // Capture the base `loadInstrument(json, buffers)` *before* the extras
+    // below shadow it on the instance — otherwise the call inside the
+    // override would recurse into itself with the wrong arity.
+    const baseLoadInstrument = smplr.loadInstrument.bind(smplr);
+
     const extras: Soundfont2SamplerExtras = {
       get instrumentNames(): string[] {
         return instrumentNamesList;
@@ -98,7 +103,7 @@ export const Soundfont2Sampler = Instrument(
         );
         if (!sf2inst) return undefined;
         const { json, buffers } = sf2InstrumentToSmplrJson(sf2inst, ctx);
-        return smplr.loadInstrument(json, buffers);
+        return baseLoadInstrument(json, buffers);
       },
     };
 

@@ -163,6 +163,20 @@ function isPromise(x: unknown): x is Promise<unknown> {
 }
 
 /**
+ * Merge each own property of `extras` onto `target`, preserving property
+ * descriptors (so getters stay live). `Object.assign` would *invoke* each
+ * getter and copy the result as a data property — that snapshot would lose
+ * the closure-captured state plugins use for extras like
+ * `Soundfont2Sampler.instrumentNames`.
+ */
+function mergeExtras(target: object, extras: object): void {
+  for (const key of Object.getOwnPropertyNames(extras)) {
+    const desc = Object.getOwnPropertyDescriptor(extras, key);
+    if (desc) Object.defineProperty(target, key, desc);
+  }
+}
+
+/**
  * Builder for smplr instruments. Wraps a plugin function into a dual
  * call/construct factory that produces ready-to-play {@link Smplr} instances
  * augmented with plugin extras.
@@ -199,7 +213,7 @@ export function Instrument<O, E extends object = {}>(
         readyPromise = result as Promise<void>;
       } else if (typeof result === "object") {
         const maybe = result as { extras?: object; ready?: Promise<void> };
-        if (maybe.extras) Object.assign(smplr, maybe.extras);
+        if (maybe.extras) mergeExtras(smplr, maybe.extras);
         if (isPromise(maybe.ready)) readyPromise = maybe.ready;
       }
     }
