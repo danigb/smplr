@@ -1,4 +1,4 @@
-import { Smplr } from "./smplr";
+import { SmplrImpl } from "./smplr";
 import { SmplrJson } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -122,14 +122,14 @@ afterEach(() => {
 describe("load", () => {
   it("resolves with the Smplr instance", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     const result = await smplr.load;
     expect(result).toBe(smplr);
   });
 
   it("load is a Promise", () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     expect(smplr.load).toBeInstanceOf(Promise);
   });
 });
@@ -143,14 +143,14 @@ describe("loadProgress", () => {
     // Make loadAudioBuffer never resolve during this check
     mockLoadBuffer.mockReturnValue(new Promise(() => {}));
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     expect(smplr.loadProgress).toEqual({ loaded: 0, total: 0 });
   });
 
   it("updates as each buffer loads", async () => {
     const ctx = makeContext();
     const snapshots: { loaded: number; total: number }[] = [];
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
       onLoadProgress: (p) => snapshots.push({ ...p }),
     });
     await smplr.load;
@@ -160,7 +160,7 @@ describe("loadProgress", () => {
 
   it("reflects latest progress after load", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
     expect(smplr.loadProgress).toEqual({ loaded: 1, total: 1 });
   });
@@ -179,7 +179,7 @@ describe("loadProgress", () => {
     };
     const ctx = makeContext();
     const calls: number[] = [];
-    const smplr = new Smplr(ctx as unknown as AudioContext, json, {
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, json, {
       onLoadProgress: ({ loaded }) => calls.push(loaded),
     });
     await smplr.load;
@@ -195,7 +195,7 @@ describe("loadProgress", () => {
 describe("output", () => {
   it("exposes an output channel with setVolume", () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     expect(typeof smplr.output.setVolume).toBe("function");
   });
 });
@@ -207,7 +207,7 @@ describe("output", () => {
 describe("start()", () => {
   it("creates an AudioBufferSourceNode when the note matches a region", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start({ note: "C4" });
@@ -217,7 +217,7 @@ describe("start()", () => {
 
   it("starts the source node", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start({ note: "C4" });
@@ -227,7 +227,7 @@ describe("start()", () => {
 
   it("accepts a bare note name string", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start("C4");
@@ -237,7 +237,7 @@ describe("start()", () => {
 
   it("accepts a bare MIDI number", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start(60);
@@ -248,7 +248,7 @@ describe("start()", () => {
   it("does not create a voice if no buffer is loaded for the sample", async () => {
     mockLoadBuffer.mockResolvedValue(undefined);
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start({ note: "C4" });
@@ -258,7 +258,7 @@ describe("start()", () => {
 
   it("does not create a voice when note doesn't match any region", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start({ note: "G9" }); // MIDI 127+, out of range key=60
@@ -268,7 +268,7 @@ describe("start()", () => {
 
   it("returns a StopFn", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     const stop = smplr.start({ note: "C4" });
@@ -278,7 +278,7 @@ describe("start()", () => {
 
   it("StopFn stops the voice", async () => {
     const ctx = makeContext() as FakeContext;
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     const stop = smplr.start({ note: "C4" });
@@ -296,7 +296,7 @@ describe("start()", () => {
 describe("start() with future time", () => {
   it("does not create a voice immediately for a future-timed note", async () => {
     const ctx = makeContext(0) as any;
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start({ note: "C4", time: 1.0 }); // 1 second in the future
@@ -306,7 +306,7 @@ describe("start() with future time", () => {
 
   it("StopFn cancels a queued note before it plays", async () => {
     const ctx = makeContext(0) as any;
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     const stop = smplr.start({ note: "C4", time: 1.0 });
@@ -326,7 +326,7 @@ describe("start() with future time", () => {
 describe("stop()", () => {
   it("stop() with no args stops all active voices", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start({ note: "C4" });
@@ -350,7 +350,7 @@ describe("stop()", () => {
       ],
     };
     mockLoadBuffer.mockResolvedValue(makeBuffer());
-    const smplr = new Smplr(ctx as unknown as AudioContext, json);
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, json);
     await smplr.load;
 
     smplr.start({ note: "C4", stopId: "C4" });
@@ -364,7 +364,7 @@ describe("stop()", () => {
 
   it("stop({ stopId, time }) stops by id at a future time", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start({ note: "C4", stopId: "myNote" });
@@ -376,7 +376,7 @@ describe("stop()", () => {
 
   it("stop({ time }) with no stopId stops all voices", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start({ note: "C4" });
@@ -387,7 +387,7 @@ describe("stop()", () => {
 
   it("stop() is safe when no voices are active", () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     expect(() => smplr.stop()).not.toThrow();
   });
 });
@@ -399,7 +399,7 @@ describe("stop()", () => {
 describe("disconnect()", () => {
   it("stops all active voices", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start({ note: "C4" });
@@ -410,7 +410,7 @@ describe("disconnect()", () => {
 
   it("is safe to call when no voices are active", () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     expect(() => smplr.disconnect()).not.toThrow();
   });
 });
@@ -426,13 +426,13 @@ describe("shared SampleLoader", () => {
     const loader = new SampleLoader(ctx as unknown as BaseAudioContext);
 
     // Load smplr1 first to warm the cache
-    const smplr1 = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+    const smplr1 = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
       loader,
     });
     await smplr1.load;
 
     // smplr2 uses the same loader — cache is already warm
-    const smplr2 = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+    const smplr2 = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
       loader,
     });
     await smplr2.load;
@@ -450,7 +450,7 @@ describe("duration", () => {
   it("auto-stops the voice after the specified duration", async () => {
     jest.useRealTimers(); // use real timers for this test
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start({ note: "C4", duration: 0.01 });
@@ -468,7 +468,7 @@ describe("onStart", () => {
   it("global onStart is called when a note is dispatched", async () => {
     const ctx = makeContext();
     const onStart = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
       onStart,
     });
     await smplr.load;
@@ -480,7 +480,7 @@ describe("onStart", () => {
 
   it("per-note onStart is called", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     const onStart = jest.fn();
@@ -493,7 +493,7 @@ describe("onStart", () => {
     const ctx = makeContext();
     const globalOnStart = jest.fn();
     const perNoteOnStart = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
       onStart: globalOnStart,
     });
     await smplr.load;
@@ -518,7 +518,9 @@ describe("onStart", () => {
     });
     mockLoadBuffer.mockResolvedValue(makeBuffer());
     const onStart = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, json, { onStart });
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, json, {
+      onStart,
+    });
     await smplr.load;
 
     smplr.start({ note: "C4" });
@@ -529,7 +531,7 @@ describe("onStart", () => {
   it("onStart receives the note event", async () => {
     const ctx = makeContext();
     const onStart = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
       onStart,
     });
     await smplr.load;
@@ -544,7 +546,7 @@ describe("onStart", () => {
   it("onStart is not called when no region matches", async () => {
     const ctx = makeContext();
     const onStart = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
       onStart,
     });
     await smplr.load;
@@ -559,7 +561,7 @@ describe("onEnded", () => {
   it("global onEnded is called when a voice ends", async () => {
     const ctx = makeContext();
     const onEnded = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
       onEnded,
     });
     await smplr.load;
@@ -572,7 +574,7 @@ describe("onEnded", () => {
 
   it("per-note onEnded is called when the voice ends", async () => {
     const ctx = makeContext();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson());
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     const onEnded = jest.fn();
@@ -586,7 +588,7 @@ describe("onEnded", () => {
     const ctx = makeContext();
     const globalOnEnded = jest.fn();
     const perNoteOnEnded = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
       onEnded: globalOnEnded,
     });
     await smplr.load;
@@ -612,7 +614,9 @@ describe("onEnded", () => {
     });
     mockLoadBuffer.mockResolvedValue(makeBuffer());
     const onEnded = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, json, { onEnded });
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, json, {
+      onEnded,
+    });
     await smplr.load;
 
     smplr.start({ note: "C4" });
@@ -625,7 +629,7 @@ describe("onEnded", () => {
   it("onEnded is not called before the voice ends", async () => {
     const ctx = makeContext();
     const onEnded = jest.fn();
-    const smplr = new Smplr(ctx as unknown as AudioContext, makeJson(), {
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
       onEnded,
     });
     await smplr.load;
