@@ -44,6 +44,7 @@
     "test:unit": "jest",
     "test:types": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "publish": "npm run build && npm run test"
   },
   "engines": {
