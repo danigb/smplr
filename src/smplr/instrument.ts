@@ -72,18 +72,17 @@ export interface PluginSmplr extends Smplr {
  *
  * - `void` — sync plugin, no async load, no extras
  * - `Promise<void>` — async load, no extras
- * - `E` — sync extras, no async load
  * - `{ extras: E; ready: Promise<void> }` — sync extras + async load
  * - `{ ready: Promise<void> }` — async load, no extras (explicit form)
  *
  * Extras keys are merged onto the smplr instance via `Object.assign` and
  * may shadow base {@link Smplr} methods (e.g. DrumMachine overrides `start`
- * to inject `stopId: sample.note`).
+ * to inject `stopId: sample.note`). For sync extras with no async load,
+ * use `{ extras, ready: Promise.resolve() }`.
  */
 export type SmplrPluginResult<E extends object> =
   | void
   | Promise<void>
-  | E
   | { extras: E; ready: Promise<void> }
   | { ready: Promise<void> };
 
@@ -103,14 +102,28 @@ export type SmplrPlugin<O, E extends object = {}> = (
  * without `new` (preferred) or with `new` (kept for compatibility with
  * pre-1.0 examples).
  */
+/**
+ * The full instance type produced by an {@link InstrumentFactory} — a Smplr
+ * with its plugin extras, plus a `load` Promise refined to resolve back to
+ * the same intersection (so `await x.load` preserves the extras shape).
+ */
+export type InstrumentInstance<E extends object = {}> = Smplr &
+  E & { readonly load: Promise<Smplr & E> };
+
 export type InstrumentFactory<O, E extends object = {}> = {
-  (ctx: BaseAudioContext, options?: O & Partial<SmplrOptions>): Smplr & E;
+  (
+    ctx: BaseAudioContext,
+    options?: O & Partial<SmplrOptions>
+  ): InstrumentInstance<E>;
 
   /**
    * @deprecated Call as a function: `MyInstrument(ctx, opts)` instead of
    * `new MyInstrument(...)`. Kept for compatibility with pre-1.0 examples.
    */
-  new (ctx: BaseAudioContext, options?: O & Partial<SmplrOptions>): Smplr & E;
+  new (
+    ctx: BaseAudioContext,
+    options?: O & Partial<SmplrOptions>
+  ): InstrumentInstance<E>;
 };
 
 const SMPLR_OPTION_KEYS = [
@@ -172,7 +185,7 @@ export function Instrument<O, E extends object = {}>(
   function factory(
     ctx: BaseAudioContext,
     options?: O & Partial<SmplrOptions>
-  ): Smplr & E {
+  ): InstrumentInstance<E> {
     const { smplrOpts, pluginOpts } = splitOptions(
       (options ?? {}) as O & Partial<SmplrOptions>
     );
@@ -183,25 +196,16 @@ export function Instrument<O, E extends object = {}>(
 
     if (result != null) {
       if (isPromise(result)) {
-        readyPromise = result.then((resolved: unknown) => {
-          if (resolved && typeof resolved === "object") {
-            Object.assign(smplr, resolved);
-          }
-        });
+        readyPromise = result as Promise<void>;
       } else if (typeof result === "object") {
         const maybe = result as { extras?: object; ready?: Promise<void> };
-        if (isPromise(maybe.ready)) {
-          if (maybe.extras) Object.assign(smplr, maybe.extras);
-          readyPromise = maybe.ready;
-        } else {
-          // Plain sync extras (E)
-          Object.assign(smplr, result);
-        }
+        if (maybe.extras) Object.assign(smplr, maybe.extras);
+        if (isPromise(maybe.ready)) readyPromise = maybe.ready;
       }
     }
 
     smplr._setReady(readyPromise);
-    return smplr as unknown as Smplr & E;
+    return smplr as unknown as InstrumentInstance<E>;
   }
 
   return factory as unknown as InstrumentFactory<O, E>;
