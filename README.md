@@ -6,6 +6,8 @@
 
 Examples:
 
+**Play a note from a General MIDI soundfont:**
+
 ```js
 import { Soundfont } from "smplr";
 
@@ -14,22 +16,43 @@ const marimba = Soundfont(context, { instrument: "marimba" });
 marimba.start({ note: 60, velocity: 80 });
 ```
 
-```js
-import { DrumMachine } from "smplr";
-
-const context = new AudioContext();
-const dm = DrumMachine(context);
-dm.start({ note: "kick" });
-```
+**Sequence a beat with a drum machine and a piano on the same clock:**
 
 ```js
-import { SplendidGrandPiano, Reverb } from "smplr";
+import { Sequencer, SplendidGrandPiano, DrumMachine } from "smplr";
 
 const context = new AudioContext();
 const piano = SplendidGrandPiano(context);
-piano.output.addEffect("reverb", new Reverb(context), 0.2);
+const drums = DrumMachine(context, { instrument: "TR-808" });
 
-piano.start({ note: "C4" });
+const seq = new Sequencer(context, { bpm: 110, loop: true });
+seq.addTrack(piano, [
+  { note: "C4", at: "1:1", duration: "4n" },
+  { note: "E4", at: "1:2", duration: "4n" },
+  { note: "G4", at: "1:3", duration: "4n" },
+]);
+seq.addTrack(drums, [
+  { note: "kick", at: "1:1" },
+  { note: "snare", at: "1:2" },
+  { note: "kick", at: "1:3" },
+  { note: "snare", at: "1:4" },
+]);
+seq.start();
+```
+
+**Render an arpeggio with reverb to a WAV file — offline, no speakers needed:**
+
+```js
+import { SplendidGrandPiano, Reverb, renderOffline } from "smplr";
+
+const wav = await renderOffline(async (context) => {
+  const piano = await SplendidGrandPiano(context).load;
+  piano.output.addEffect("reverb", new Reverb(context), 0.3);
+  ["C4", "E4", "G4", "C5"].forEach((note, i) => {
+    piano.start({ note, time: i * 0.4, duration: 0.4 });
+  });
+});
+wav.downloadWav("arpeggio.wav");
 ```
 
 See demo: https://danigb.github.io/smplr/
