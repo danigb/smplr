@@ -1,8 +1,8 @@
 import { AudioBuffers, AudioBuffersLoader, loadAudioBuffer } from "./smplr/load-audio";
 import { toMidi } from "./smplr/midi";
 import { HttpStorage, Storage } from "./storage";
-import { Smplr, SmplrOptions } from "./smplr";
-import { LoadProgress, NoteEvent, SmplrJson, StopTarget } from "./smplr/types";
+import { Instrument } from "./smplr";
+import { LoadProgress, SmplrJson } from "./smplr/types";
 import { spreadKeyRanges } from "./smplr/utils";
 
 export type SamplerConfig = {
@@ -20,68 +20,28 @@ export type SamplerConfig = {
 };
 
 /**
- * A Sampler instrument
+ * A Sampler instrument.
  */
-export class Sampler {
-  #smplr: Smplr;
-  readonly load: Promise<this>;
-
-  constructor(
-    public readonly context: AudioContext,
-    options: Partial<SamplerConfig> = {}
-  ) {
-    const smplrOptions: SmplrOptions = {
-      destination: options.destination,
-      volume: options.volume,
-      velocity: options.velocity,
-      storage: options.storage,
-      onLoadProgress: options.onLoadProgress,
-    };
-    this.#smplr = new Smplr(context, smplrOptions);
-
-    const rawSource = options.buffers ?? {};
+export const Sampler = Instrument(
+  (ctx: BaseAudioContext, options: Partial<SamplerConfig> = {}, smplr) => {
     const storage = options.storage ?? HttpStorage;
-
-    const getSource = (): Promise<Record<string | number, string | AudioBuffer>> => {
-      if (typeof rawSource === "function") {
-        const ab: AudioBuffers = {};
-        return (rawSource as AudioBuffersLoader)(context, ab).then(
-          () => ab as Record<string | number, string | AudioBuffer>
-        );
-      }
-      return Promise.resolve(rawSource as Record<string | number, string | AudioBuffer>);
-    };
-
-    this.load = getSource()
-      .then((source) => buildSamplerBuffers(source, context, storage, options))
-      .then(({ json, buffers }) => this.#smplr.loadInstrument(json, buffers))
-      .then(() => this);
+    return getSource(ctx, options.buffers ?? {})
+      .then((source) => buildSamplerBuffers(source, ctx, storage, options))
+      .then(({ json, buffers }) => smplr.loadInstrument(json, buffers));
   }
+);
 
-  async loaded() {
-    console.warn("deprecated: use load instead");
-    return this.load;
-  }
-
-  get output() {
-    return this.#smplr.output;
-  }
-
-  start(sample: NoteEvent | string | number) {
-    return this.#smplr.start(
-      typeof sample === "object" ? sample : { note: sample }
+function getSource(
+  ctx: BaseAudioContext,
+  raw: NonNullable<Partial<SamplerConfig>["buffers"]>
+): Promise<Record<string | number, string | AudioBuffer>> {
+  if (typeof raw === "function") {
+    const ab: AudioBuffers = {};
+    return (raw as AudioBuffersLoader)(ctx, ab).then(
+      () => ab as Record<string | number, string | AudioBuffer>
     );
   }
-
-  stop(sample?: StopTarget | string | number) {
-    return this.#smplr.stop(
-      sample === undefined ? undefined : sample
-    );
-  }
-
-  disconnect() {
-    return this.#smplr.disconnect();
-  }
+  return Promise.resolve(raw as Record<string | number, string | AudioBuffer>);
 }
 
 // ---------------------------------------------------------------------------
@@ -106,7 +66,7 @@ type ConvertResult = {
  */
 async function buildSamplerBuffers(
   source: Record<string | number, string | AudioBuffer>,
-  context: AudioContext,
+  context: BaseAudioContext,
   storage: Storage,
   options: Partial<SamplerJsonOptions>
 ): Promise<ConvertResult> {

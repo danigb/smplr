@@ -1,17 +1,17 @@
-import { Versilian, VersilianOptions } from "./versilian";
+import { Instrument } from "./smplr";
+import { loadVersilianInstrument, VersilianOptions } from "./versilian";
 
 export function getMalletNames() {
   return Object.keys(NAME_TO_PATH) as MalletName[];
 }
 
-export class Mallet extends Versilian {
-  constructor(context: AudioContext, options: VersilianOptions) {
-    super(context, {
+export const Mallet = Instrument(
+  (ctx: BaseAudioContext, options: VersilianOptions = {}, smplr) =>
+    loadVersilianInstrument(smplr, {
       ...options,
       instrument: NAME_TO_PATH[options.instrument ?? ""],
-    });
-  }
-}
+    })
+);
 
 type MalletName = keyof typeof NAME_TO_PATH;
 
