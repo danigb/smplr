@@ -23,25 +23,23 @@ export function SoundfontExample({ className }: { className?: string }) {
   function loadSoundfont(kit: string, instrument: string) {
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const soundfont = new Soundfont(context, {
+    const soundfont = Soundfont(context, {
       kit,
       instrument,
       loadLoopData: true,
       onLoadProgress,
     });
     soundfont.output.addEffect("reverb", reverb, 0.0);
-    soundfont.load
-      .then((instrument) => {
+    soundfont.ready
+      .then(() => {
         setStatus("ready");
         setInstrument((prevInstrument) => {
           if (prevInstrument) {
-            prevInstrument.disconnect();
+            prevInstrument.dispose();
           }
-          return instrument;
+          return soundfont;
         });
-        if (instrument.hasLoops) {
-          setLoopStatus("loop");
-        }
+        setLoopStatus("loop");
       })
       .catch((err) => {
         setStatus("error");
@@ -148,7 +146,7 @@ export function SoundfontExample({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              instrument?.output.setVolume(volume);
+              if (instrument) instrument.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -161,7 +159,7 @@ export function SoundfontExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              instrument?.output.sendEffect("reverb", mix);
+              instrument?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />

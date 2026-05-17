@@ -62,6 +62,9 @@ export const Soundfont = Instrument(
   },
 );
 
+/** Instance type returned by the {@link Soundfont} factory. */
+export type Soundfont = ReturnType<typeof Soundfont>;
+
 // ---------------------------------------------------------------------------
 // loadSoundfontData — async loader for base64-encoded MIDI.js files
 // ---------------------------------------------------------------------------

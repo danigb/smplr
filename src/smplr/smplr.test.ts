@@ -393,17 +393,17 @@ describe("stop()", () => {
 });
 
 // ---------------------------------------------------------------------------
-// disconnect()
+// dispose()
 // ---------------------------------------------------------------------------
 
-describe("disconnect()", () => {
+describe("dispose()", () => {
   it("stops all active voices", async () => {
     const ctx = makeContext();
     const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
     await smplr.load;
 
     smplr.start({ note: "C4" });
-    smplr.disconnect();
+    smplr.dispose();
 
     expect(ctx._sources[0].stop).toHaveBeenCalled();
   });
@@ -411,7 +411,24 @@ describe("disconnect()", () => {
   it("is safe to call when no voices are active", () => {
     const ctx = makeContext();
     const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
-    expect(() => smplr.disconnect()).not.toThrow();
+    expect(() => smplr.dispose()).not.toThrow();
+  });
+
+  it("is idempotent — calling dispose() twice is a no-op", () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
+    smplr.dispose();
+    expect(() => smplr.dispose()).not.toThrow();
+  });
+
+  it("disconnect() alias delegates to the same teardown", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
+    const stopSpy = jest.spyOn(smplr.scheduler, "stop");
+    await smplr.load;
+
+    smplr.disconnect();
+    expect(stopSpy).toHaveBeenCalled();
   });
 });
 
@@ -637,5 +654,62 @@ describe("onEnded", () => {
     smplr.start({ note: "C4" });
 
     expect(onEnded).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pattern B: new SmplrImpl(ctx, opts) + loadInstrument(json)
+// ---------------------------------------------------------------------------
+
+describe("Pattern B: new SmplrImpl(ctx, opts) + loadInstrument(json)", () => {
+  it("constructs with options only; ready resolves immediately", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, { volume: 80 });
+    await expect(smplr.ready).resolves.toBeUndefined();
+    expect(smplr.loadProgress.total).toBe(0);
+  });
+
+  it("loadInstrument populates the instrument data", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext);
+    await smplr.loadInstrument(makeJson());
+    expect(smplr.loadProgress.total).toBeGreaterThan(0);
+
+    const stop = smplr.start({ note: "C4" });
+    expect(typeof stop).toBe("function");
+  });
+
+  it("loadInstrument can be called multiple times to replace the instrument data", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext);
+    await smplr.loadInstrument(makeJson());
+    await smplr.loadInstrument(makeJson());
+    expect(smplr.loadProgress.total).toBeGreaterThan(0);
+  });
+
+  it("loadInstrument with buffers map uses provided buffers", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext);
+    const buffer = makeBuffer();
+    const buffers = new Map<string, AudioBuffer>([["C4", buffer]]);
+    await smplr.loadInstrument(makeJson(), buffers);
+
+    const stop = smplr.start({ note: "C4" });
+    expect(typeof stop).toBe("function");
+  });
+
+  it("setCC before loadInstrument is preserved after load", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext);
+    smplr.setCC(64, 100);
+    await smplr.loadInstrument(makeJson());
+    expect(smplr.getCC(64)).toBe(100);
+  });
+
+  it("start() before loadInstrument is a safe no-op", () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext);
+    const stop = smplr.start({ note: "C4" });
+    expect(typeof stop).toBe("function");
   });
 });

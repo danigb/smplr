@@ -50,3 +50,6 @@ export const Smolken = Instrument(
       );
   },
 );
+
+/** Instance type returned by the {@link Smolken} factory. */
+export type Smolken = ReturnType<typeof Smolken>;

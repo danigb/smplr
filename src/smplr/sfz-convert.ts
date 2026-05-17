@@ -22,6 +22,8 @@ export type SfzConvertOptions = {
  *
  * Fixes the "dropped final region" bug present in sfz2.ts by ensuring
  * the last scope is always closed.
+ *
+ * @internal Not part of the public 1.0 API surface.
  */
 export function sfzToSmplrJson(
   sfzText: string,

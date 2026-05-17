@@ -106,3 +106,6 @@ export const ElectricPiano = Instrument(
     return { extras: { tremolo }, ready };
   },
 );
+
+/** Instance type returned by the {@link ElectricPiano} factory. */
+export type ElectricPiano = ReturnType<typeof ElectricPiano>;

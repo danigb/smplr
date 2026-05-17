@@ -208,3 +208,6 @@ export function samplerToSmplrJson(
 
   return { json, urlMap, preloaded };
 }
+
+/** Instance type returned by the {@link Sampler} factory. */
+export type Sampler = ReturnType<typeof Sampler>;

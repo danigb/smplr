@@ -20,11 +20,11 @@ export function ElectricPianoExample({ className }: { className?: string }) {
   const [volume, setVolume] = useState(100);
 
   function loadPiano(instrument: string) {
-    if (piano) piano.disconnect();
+    if (piano) piano.dispose();
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const newPiano = new ElectricPiano(context, { instrument, volume, onLoadProgress, formats: [format] });
+    const newPiano = ElectricPiano(context, { instrument, volume, onLoadProgress, formats: [format] });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
     newPiano.load.then(() => {
@@ -82,7 +82,7 @@ export function ElectricPianoExample({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              piano?.output.setVolume(volume);
+              if (piano) piano.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -108,7 +108,7 @@ export function ElectricPianoExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              piano?.output.sendEffect("reverb", mix);
+              piano?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />

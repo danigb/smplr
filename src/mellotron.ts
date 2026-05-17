@@ -83,6 +83,9 @@ export const Mellotron = Instrument(
   },
 );
 
+/** Instance type returned by the {@link Mellotron} factory. */
+export type Mellotron = ReturnType<typeof Mellotron>;
+
 // ---------------------------------------------------------------------------
 // mellotronToSmplrJson — pure converter function
 // ---------------------------------------------------------------------------

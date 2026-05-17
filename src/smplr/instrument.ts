@@ -43,6 +43,22 @@ export interface Smplr {
   start(event: NoteEvent): StopFn;
   stop(target?: StopTarget): void;
   setCC(cc: number, value: number): void;
+
+  /**
+   * Read the latest value set via `setCC`. Returns `0` for any CC that has
+   * not been set (matches MIDI's "undefined controller defaults to 0" convention).
+   */
+  getCC(cc: number): number;
+
+  /**
+   * Stop all voices, dispose the output channel, and stop the scheduler.
+   * The instance must not be used after this call — subsequent `start`/`stop`/
+   * `setCC`/`getCC`/`setControlValue`/`loadInstrument` calls throw. Subsequent
+   * `dispose()` calls are no-ops.
+   */
+  dispose(): void;
+
+  /** @deprecated Use `dispose()` instead. */
   disconnect(): void;
 }
 
