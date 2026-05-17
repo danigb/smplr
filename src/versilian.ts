@@ -41,6 +41,9 @@ export const Versilian = Instrument(
     loadVersilianInstrument(smplr, options),
 );
 
+/** Instance type returned by the {@link Versilian} factory. */
+export type Versilian = ReturnType<typeof Versilian>;
+
 /**
  * Fetch the SFZ for a VCSL instrument and load it into `smplr`. Shared by
  * the {@link Versilian} and {@link Mallet} factories — not exported from the

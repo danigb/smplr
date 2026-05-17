@@ -30,18 +30,16 @@ export function SoundfontExample({ className }: { className?: string }) {
       onLoadProgress,
     });
     soundfont.output.addEffect("reverb", reverb, 0.0);
-    soundfont.load
-      .then((instrument) => {
+    soundfont.ready
+      .then(() => {
         setStatus("ready");
         setInstrument((prevInstrument) => {
           if (prevInstrument) {
             prevInstrument.dispose();
           }
-          return instrument;
+          return soundfont;
         });
-        if (instrument.hasLoops) {
-          setLoopStatus("loop");
-        }
+        setLoopStatus("loop");
       })
       .catch((err) => {
         setStatus("error");

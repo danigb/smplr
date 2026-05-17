@@ -125,6 +125,9 @@ export const Soundfont2Sampler = Instrument(
   },
 );
 
+/** Instance type returned by the {@link Soundfont2Sampler} factory. */
+export type Soundfont2Sampler = ReturnType<typeof Soundfont2Sampler>;
+
 async function loadSoundfont(options: Soundfont2Options) {
   const buffer = await fetch(options.url).then((res) => res.arrayBuffer());
   const data = new Uint8Array(buffer);

@@ -56,10 +56,10 @@ export function Soundfont2Example({ className }: { className?: string }) {
     newSampler.output.addEffect("reverb", reverb, reverbMix);
     setSampler(newSampler);
 
-    newSampler.load.then((sampler) => {
-      const instrumentName = sampler.instrumentNames[0];
+    newSampler.ready.then(() => {
+      const instrumentName = newSampler.instrumentNames[0];
       setInstrumentName(instrumentName);
-      sampler.loadInstrument(instrumentName);
+      newSampler.loadInstrument(instrumentName);
       setStatus("ready");
     });
   }

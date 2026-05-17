@@ -13,6 +13,9 @@ export const Mallet = Instrument(
     }),
 );
 
+/** Instance type returned by the {@link Mallet} factory. */
+export type Mallet = ReturnType<typeof Mallet>;
+
 type MalletName = keyof typeof NAME_TO_PATH;
 
 export const NAME_TO_PATH: Record<string, string | undefined> = {

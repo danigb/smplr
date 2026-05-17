@@ -110,6 +110,9 @@ export const DrumMachine = Instrument(
   },
 );
 
+/** Instance type returned by the {@link DrumMachine} factory. */
+export type DrumMachine = ReturnType<typeof DrumMachine>;
+
 // ---------------------------------------------------------------------------
 // drumMachineToSmplrJson — pure converter function
 // ---------------------------------------------------------------------------

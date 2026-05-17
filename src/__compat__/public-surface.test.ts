@@ -122,6 +122,32 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
     }
   });
 
+  it("declares a same-named instance type alongside each factory", () => {
+    // Dual export: `const X` (factory) + `type X = ReturnType<typeof X>`. Lets
+    // users write `useState<Sampler | undefined>()` without reaching for
+    // `ReturnType<typeof Sampler>`. TS collapses dual value+type exports into
+    // one entry in the export block, so we assert on the declaration directly.
+    for (const name of [
+      "Sampler",
+      "Soundfont",
+      "SplendidGrandPiano",
+      "DrumMachine",
+      "ElectricPiano",
+      "Mallet",
+      "Mellotron",
+      "Smolken",
+      "Versilian",
+      "Soundfont2Sampler",
+    ]) {
+      expect(dts).toMatch(
+        new RegExp(`^type ${name}\\s*=\\s*ReturnType<typeof ${name}>`, "m"),
+      );
+      // Factory must still be a value export (already covered by the previous
+      // test, but re-asserted here so the failure message is self-contained).
+      expect(valueExports.has(name)).toBe(true);
+    }
+  });
+
   it("does not export internal spread utilities", () => {
     expect(valueExports.has("spreadKeyRanges")).toBe(false);
     expect(typeExports.has("SpreadResult")).toBe(false);

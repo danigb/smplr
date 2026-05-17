@@ -50,6 +50,9 @@ export const SplendidGrandPiano = Instrument(
   ) => smplr.loadInstrument(pianoToSmplrJson({ ...DEFAULTS, ...options })),
 );
 
+/** Instance type returned by the {@link SplendidGrandPiano} factory. */
+export type SplendidGrandPiano = ReturnType<typeof SplendidGrandPiano>;
+
 // ---------------------------------------------------------------------------
 // pianoToSmplrJson — pure function, independently testable
 // ---------------------------------------------------------------------------

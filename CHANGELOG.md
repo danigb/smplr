@@ -22,6 +22,13 @@ If you only ever followed the README, **no migration is required**.
   clear error instead of silently no-opping.
 - **`SmplrJson.smplr?: "1.0"`** — optional schema version field on the JSON
   descriptor. Reserved for future migrations; safe to omit.
+- **Same-named instance types for every factory** — each of `Sampler`,
+  `Soundfont`, `SplendidGrandPiano`, `DrumMachine`, `ElectricPiano`, `Mallet`,
+  `Mellotron`, `Smolken`, `Versilian`, `Soundfont2Sampler` is now exported as
+  both a value (the factory) and a TypeScript type (the instance). This
+  restores the pre-0.21 ergonomic of writing
+  `useState<Sampler | undefined>(undefined)` without reaching for
+  `ReturnType<typeof Sampler>`.
 
 ### Deprecated (still works in 1.x)
 
