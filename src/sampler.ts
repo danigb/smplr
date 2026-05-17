@@ -9,31 +9,83 @@ import { Instrument } from "./smplr";
 import { LoadProgress, SmplrJson } from "./smplr/types";
 import { spreadKeyRanges } from "./smplr/utils";
 
-export type SamplerConfig = {
+type SamplerBase = {
   storage?: Storage;
-  detune: number;
-  volume: number;
-  velocity: number;
+  detune?: number;
+  volume?: number;
+  velocity?: number;
   decayTime?: number;
   lpfCutoffHz?: number;
-  destination: AudioNode;
-
-  buffers:
-    | Record<string | number, string | AudioBuffer | AudioBuffers>
-    | AudioBuffersLoader;
-  volumeToGain: (volume: number) => number;
+  destination?: AudioNode;
+  volumeToGain?: (volume: number) => number;
   onLoadProgress?: (progress: LoadProgress) => void;
 };
 
+type SamplerBuffers =
+  | Record<string | number, string | AudioBuffer | AudioBuffers>
+  | AudioBuffersLoader;
+
+type SamplerBuffersInput = {
+  buffers?: SamplerBuffers;
+  json?: never;
+};
+
+type SamplerJsonInput = {
+  json: SmplrJson;
+  buffers?: never;
+};
+
+export type SamplerConfig = SamplerBase &
+  (SamplerBuffersInput | SamplerJsonInput);
+
+/** Input accepted by {@link Sampler.reload}: a `SmplrJson` schema or a flat buffers record/loader. */
+export type SamplerReloadInput = SmplrJson | SamplerBuffers;
+
+type SamplerExtras = {
+  reload: (input: SamplerReloadInput) => Promise<void>;
+};
+
+function isSmplrJsonInput(x: unknown): x is SmplrJson {
+  return (
+    typeof x === "object" &&
+    x !== null &&
+    "groups" in x &&
+    Array.isArray((x as SmplrJson).groups)
+  );
+}
+
 /**
- * A Sampler instrument.
+ * A Sampler instrument. Accepts either a flat record of samples
+ * (`{ buffers: { C4: "url" } }`) or a full `SmplrJson` schema
+ * (`{ json: { samples, groups, ... } }`) for advanced use cases including
+ * per-region pitch/velocity/round-robin control.
+ *
+ * Use `sampler.reload(input)` to swap content at runtime. `reload` accepts
+ * either shape (flat record or `SmplrJson`), regardless of which mode was
+ * used at construction.
  */
-export const Sampler = Instrument(
-  (ctx: BaseAudioContext, options: Partial<SamplerConfig> = {}, smplr) => {
+export const Sampler = Instrument<SamplerConfig, SamplerExtras>(
+  (ctx: BaseAudioContext, options: SamplerConfig = {}, smplr) => {
     const storage = options.storage ?? HttpStorage;
-    return getSource(ctx, options.buffers ?? {})
-      .then((source) => buildSamplerBuffers(source, ctx, storage, options))
-      .then(({ json, buffers }) => smplr.loadInstrument(json, buffers));
+
+    const loadFromInput = (input: SamplerReloadInput): Promise<void> => {
+      if (isSmplrJsonInput(input)) {
+        return smplr.loadInstrument(input);
+      }
+      return getSource(ctx, input)
+        .then((source) => buildSamplerBuffers(source, ctx, storage, options))
+        .then(({ json, buffers }) => smplr.loadInstrument(json, buffers));
+    };
+
+    const initialInput: SamplerReloadInput =
+      "json" in options && options.json
+        ? options.json
+        : ((options as SamplerBuffersInput).buffers ?? {});
+
+    return {
+      extras: { reload: loadFromInput },
+      ready: loadFromInput(initialInput),
+    };
   },
 );
 

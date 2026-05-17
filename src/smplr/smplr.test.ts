@@ -712,4 +712,144 @@ describe("Pattern B: new SmplrImpl(ctx, opts) + loadInstrument(json)", () => {
     const stop = smplr.start({ note: "C4" });
     expect(typeof stop).toBe("function");
   });
+
+  it("loadInstrument concurrent calls: latest wins regardless of resolution order", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext);
+    const bufferA = makeBuffer();
+    const bufferB = makeBuffer();
+
+    const jsonA: SmplrJson = {
+      samples: { baseUrl: "https://example.com", formats: ["ogg"] },
+      groups: [{ regions: [{ sample: "A", key: 60 }] }],
+    };
+    const jsonB: SmplrJson = {
+      samples: { baseUrl: "https://example.com", formats: ["ogg"] },
+      groups: [{ regions: [{ sample: "B", key: 62 }] }],
+    };
+
+    // Resolve order matches call order (A first, then B); B is the latest call
+    // and should be the active instrument afterwards.
+    mockLoadBuffer.mockImplementation((_ctx: unknown, url: string) => {
+      if (url.includes("/A.")) return Promise.resolve(bufferA);
+      if (url.includes("/B.")) return Promise.resolve(bufferB);
+      return Promise.resolve(makeBuffer());
+    });
+
+    const p1 = smplr.loadInstrument(jsonA);
+    const p2 = smplr.loadInstrument(jsonB);
+    await Promise.all([p1, p2]);
+
+    // Active instrument is B: matching B's region (MIDI 62) creates a voice.
+    smplr.start({ note: 62 });
+    expect(ctx._sources).toHaveLength(1);
+    expect(ctx._sources[0].buffer).toBe(bufferB);
+
+    // A's region (MIDI 60) is no longer matched.
+    smplr.start({ note: 60 });
+    expect(ctx._sources).toHaveLength(1);
+  });
+
+  it("loadInstrument state swap is atomic: start() during load uses previous instrument", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext);
+    const bufferA = makeBuffer();
+    const bufferB = makeBuffer();
+
+    const jsonA: SmplrJson = {
+      samples: { baseUrl: "https://example.com", formats: ["ogg"] },
+      groups: [{ regions: [{ sample: "A", key: 60 }] }],
+    };
+    const jsonB: SmplrJson = {
+      samples: { baseUrl: "https://example.com", formats: ["ogg"] },
+      groups: [{ regions: [{ sample: "B", key: 60 }] }],
+    };
+
+    mockLoadBuffer.mockImplementation((_ctx: unknown, url: string) => {
+      if (url.includes("/A.")) return Promise.resolve(bufferA);
+      if (url.includes("/B.")) return Promise.resolve(bufferB);
+      return Promise.resolve(makeBuffer());
+    });
+
+    await smplr.loadInstrument(jsonA);
+
+    // Defer B's load so we can observe the in-flight state.
+    let resolveB: (b: AudioBuffer) => void = () => {};
+    mockLoadBuffer.mockImplementation((_ctx: unknown, url: string) => {
+      if (url.includes("/B.")) {
+        return new Promise<AudioBuffer>((resolve) => {
+          resolveB = resolve;
+        });
+      }
+      return Promise.resolve(makeBuffer());
+    });
+    const loadPromise = smplr.loadInstrument(jsonB);
+
+    // Before B resolves: matcher still serves A's region with A's buffer.
+    smplr.start({ note: 60 });
+    expect(ctx._sources).toHaveLength(1);
+    expect(ctx._sources[0].buffer).toBe(bufferA);
+
+    resolveB(bufferB);
+    await loadPromise;
+
+    // After B resolves: new voice uses B's buffer.
+    smplr.start({ note: 60 });
+    expect(ctx._sources).toHaveLength(2);
+    expect(ctx._sources[1].buffer).toBe(bufferB);
+  });
+
+  it("loadInstrument clears reversed-buffer cache on swap", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext);
+
+    const originalA = {
+      numberOfChannels: 1,
+      length: 4,
+      sampleRate: 44100,
+      getChannelData: jest.fn(() => new Float32Array([1, 2, 3, 4])),
+    } as unknown as AudioBuffer;
+    const originalB = {
+      numberOfChannels: 1,
+      length: 4,
+      sampleRate: 44100,
+      getChannelData: jest.fn(() => new Float32Array([5, 6, 7, 8])),
+    } as unknown as AudioBuffer;
+
+    const ctxWithCreate = ctx as unknown as {
+      createBuffer: jest.Mock;
+    };
+    ctxWithCreate.createBuffer = jest.fn(
+      (channels: number, length: number, sampleRate: number) => {
+        const data: Float32Array[] = [];
+        return {
+          numberOfChannels: channels,
+          length,
+          sampleRate,
+          copyToChannel: (arr: Float32Array, ch: number) => {
+            data[ch] = arr;
+          },
+          getChannelData: (ch: number) => data[ch],
+        } as unknown as AudioBuffer;
+      },
+    );
+
+    const jsonReverse: SmplrJson = {
+      samples: { baseUrl: "https://example.com", formats: ["ogg"] },
+      groups: [{ regions: [{ sample: "kick", key: 60 }] }],
+    };
+
+    // Pre-load buffers directly to bypass the SampleLoader's URL cache —
+    // we want to simulate the same sample name resolving to different content.
+    await smplr.loadInstrument(jsonReverse, new Map([["kick", originalA]]));
+
+    smplr.start({ note: 60, reverse: true });
+    expect(ctxWithCreate.createBuffer).toHaveBeenCalledTimes(1);
+
+    await smplr.loadInstrument(jsonReverse, new Map([["kick", originalB]]));
+
+    // Cache cleared → next reverse playback regenerates against new content.
+    smplr.start({ note: 60, reverse: true });
+    expect(ctxWithCreate.createBuffer).toHaveBeenCalledTimes(2);
+  });
 });
