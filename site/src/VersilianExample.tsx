@@ -38,12 +38,12 @@ export function VersilianExample({ className }: { className?: string }) {
   }, []);
 
   function loadVersilian(instrumentName: string) {
-    if (instrument) instrument.disconnect();
+    if (instrument) instrument.dispose();
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
     storage ??= new CacheStorage("smolken");
-    const newInstrument = new Versilian(context, {
+    const newInstrument = Versilian(context, {
       instrument: instrumentName,
       volume,
       onLoadProgress,
@@ -109,7 +109,7 @@ export function VersilianExample({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              instrument?.output.setVolume(volume);
+              if (instrument) instrument.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -122,7 +122,7 @@ export function VersilianExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              instrument?.output.sendEffect("reverb", mix);
+              instrument?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />

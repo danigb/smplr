@@ -39,7 +39,7 @@ export function SamplerExample({ className }: { className?: string }) {
       },
       {} as Record<string, string>
     );
-    const sampler = new Sampler(context, { buffers, onLoadProgress });
+    const sampler = Sampler(context, { buffers, onLoadProgress });
     sampler.output.addEffect("reverb", reverb, reverbMix);
 
     sampler.load
@@ -78,7 +78,7 @@ export function SamplerExample({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              sampler?.output.setVolume(volume);
+              if (sampler) sampler.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -91,7 +91,7 @@ export function SamplerExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              sampler?.output.sendEffect("reverb", mix);
+              sampler?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />

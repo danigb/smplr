@@ -26,7 +26,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const drums = new DrumMachine(context, { instrument, onLoadProgress });
+    const drums = DrumMachine(context, { instrument, onLoadProgress });
     drums.output.addEffect("reverb", reverb, reverbMix);
 
     drums.load
@@ -82,7 +82,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              drums?.output.setVolume(volume);
+              if (drums) drums.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -95,7 +95,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              drums?.output.sendEffect("reverb", mix);
+              drums?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />

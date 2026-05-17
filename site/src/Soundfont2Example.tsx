@@ -41,7 +41,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
   );
 
   function loadSampler(nameOrUrl: string) {
-    if (sampler) sampler.disconnect();
+    if (sampler) sampler.dispose();
     setStatus("loading");
     const context = getAudioContext();
     const isUrl = nameOrUrl.startsWith("http");
@@ -49,7 +49,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
 
     reverb ??= new Reverb(context);
     const url = isUrl ? nameOrUrl : SF2_INSTRUMENTS[nameOrUrl];
-    const newSampler = new Soundfont2Sampler(context, {
+    const newSampler = Soundfont2Sampler(context, {
       url,
       createSoundfont: (data) => new SoundFont2(data),
     });
@@ -156,7 +156,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              sampler?.output.setVolume(volume);
+              if (sampler) sampler.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -169,7 +169,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              sampler?.output.sendEffect("reverb", mix);
+              sampler?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />

@@ -22,11 +22,11 @@ export function MellotronExample({ className }: { className?: string }) {
   const [volume, setVolume] = useState(100);
 
   function loadMellotron(instrumentName: string) {
-    if (instrument) instrument.disconnect();
+    if (instrument) instrument.dispose();
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= new Reverb(context);
-    const newInstrument = new Mellotron(context, {
+    const newInstrument = Mellotron(context, {
       instrument: instrumentName,
       volume,
       onLoadProgress,
@@ -87,7 +87,7 @@ export function MellotronExample({ className }: { className?: string }) {
             value={volume}
             onChange={(e) => {
               const volume = e.target.valueAsNumber;
-              instrument?.output.setVolume(volume);
+              if (instrument) instrument.output.volume = volume;
               setVolume(volume);
             }}
           />
@@ -100,7 +100,7 @@ export function MellotronExample({ className }: { className?: string }) {
             value={reverbMix}
             onChange={(e) => {
               const mix = e.target.valueAsNumber;
-              instrument?.output.sendEffect("reverb", mix);
+              instrument?.output.setEffectMix("reverb", mix);
               setReverbMix(mix);
             }}
           />
