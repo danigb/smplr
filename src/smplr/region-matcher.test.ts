@@ -1,5 +1,5 @@
 import { RegionMatcher } from "./region-matcher";
-import { SmplrGroup, SmplrJson, SmplrRegion } from "./types";
+import { SmplrGroup, SmplrPreset, SmplrRegion } from "./types";
 
 const NO_CC = new Map<number, number>();
 
@@ -7,7 +7,7 @@ const NO_CC = new Map<number, number>();
 // Builders
 // ---------------------------------------------------------------------------
 
-function json(groups: SmplrGroup[]): SmplrJson {
+function json(groups: SmplrGroup[]): SmplrPreset {
   return { samples: { baseUrl: "", formats: ["ogg"] }, groups };
 }
 

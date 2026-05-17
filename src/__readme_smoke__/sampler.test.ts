@@ -16,7 +16,7 @@ jest.mock("../smplr/load-audio", () => ({
 }));
 
 import { Sampler } from "../";
-import type { SmplrJson } from "../smplr/types";
+import type { SmplrPreset } from "../smplr/types";
 import { makeContext } from "./helpers";
 
 describe("README — Sampler", () => {
@@ -38,40 +38,40 @@ describe("README — Sampler", () => {
     expect(() => sampler.start({ note: "kick" })).not.toThrow();
   });
 
-  it("constructs from SmplrJson directly via `{ json }`", async () => {
-    const json: SmplrJson = {
+  it("constructs from SmplrPreset directly via `{ preset }`", async () => {
+    const preset: SmplrPreset = {
       samples: { baseUrl: "https://example.com/", formats: ["ogg"] },
       groups: [
         { regions: [{ sample: "kick", keyRange: [60, 60], pitch: 60 }] },
       ],
     };
-    const sampler = await new Sampler(makeContext(), { json }).load;
+    const sampler = await new Sampler(makeContext(), { preset }).load;
     const stop = sampler.start({ note: 60 });
     expect(typeof stop).toBe("function");
   });
 
-  it("rejects passing both buffers and json at the type level", () => {
+  it("rejects passing both buffers and preset at the type level", () => {
     const ctx = makeContext();
     Sampler(ctx, {
       buffers: { C4: "url" },
       // @ts-expect-error — discriminated union forbids both keys.
-      json: {
+      preset: {
         samples: { baseUrl: "", formats: ["ogg"] },
         groups: [],
-      } as SmplrJson,
+      } as SmplrPreset,
     });
   });
 
-  it("reload swaps content via SmplrJson", async () => {
-    const kitA: SmplrJson = {
+  it("reload swaps content via SmplrPreset", async () => {
+    const kitA: SmplrPreset = {
       samples: { baseUrl: "https://example.com/", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "a", keyRange: [60, 60], pitch: 60 }] }],
     };
-    const kitB: SmplrJson = {
+    const kitB: SmplrPreset = {
       samples: { baseUrl: "https://example.com/", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "b", keyRange: [62, 62], pitch: 62 }] }],
     };
-    const sampler = await new Sampler(makeContext(), { json: kitA }).load;
+    const sampler = await new Sampler(makeContext(), { preset: kitA }).load;
     await sampler.reload(kitB);
     const stop = sampler.start({ note: 62 });
     expect(typeof stop).toBe("function");
@@ -87,11 +87,11 @@ describe("README — Sampler", () => {
   });
 
   it("reload during concurrent calls serializes via latest-wins", async () => {
-    const kitA: SmplrJson = {
+    const kitA: SmplrPreset = {
       samples: { baseUrl: "https://example.com/", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "a", keyRange: [60, 60], pitch: 60 }] }],
     };
-    const kitB: SmplrJson = {
+    const kitB: SmplrPreset = {
       samples: { baseUrl: "https://example.com/", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "b", keyRange: [62, 62], pitch: 62 }] }],
     };

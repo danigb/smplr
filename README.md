@@ -713,12 +713,12 @@ sampler.start({ note: "kick" });
 
 #### Advanced mode
 
-For advanced use cases (per-region pitch/velocity/round-robin, SFZ-like multi-sample instruments, runtime swaps), pass a `SmplrJson` schema directly:
+For advanced use cases (per-region pitch/velocity/round-robin, SFZ-like multi-sample instruments, runtime swaps), pass a `SmplrPreset` directly:
 
 ```ts
-import { Sampler, type SmplrJson } from "smplr";
+import { Sampler, type SmplrPreset } from "smplr";
 
-const kitA: SmplrJson = {
+const kitA: SmplrPreset = {
   samples: { baseUrl: "https://cdn.example.com/", formats: ["ogg"] },
   groups: [
     {
@@ -730,7 +730,7 @@ const kitA: SmplrJson = {
   ],
 };
 
-const sampler = Sampler(new AudioContext(), { json: kitA });
+const sampler = Sampler(new AudioContext(), { preset: kitA });
 await sampler.ready;
 sampler.start({ note: 60 });
 
@@ -738,9 +738,9 @@ sampler.start({ note: 60 });
 await sampler.reload(kitB);
 ```
 
-The full `SmplrJson` schema is documented in [SMPLR_JSON.md](./SMPLR_JSON.md). Note: `buffers` and `json` are mutually exclusive on construction — pass exactly one.
+The full `SmplrPreset` schema is documented in [SMPLR_PRESET.md](./SMPLR_PRESET.md). Note: `buffers` and `preset` are mutually exclusive on construction — pass exactly one.
 
-`sampler.reload(input)` accepts either shape (flat buffers record or full `SmplrJson`), regardless of which mode was used at construction.
+`sampler.reload(input)` accepts either shape (flat buffers record or full `SmplrPreset`), regardless of which mode was used at construction.
 
 ### Soundfont
 

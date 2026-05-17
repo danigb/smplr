@@ -1,6 +1,6 @@
 import { spreadKeyRanges } from "./smplr/utils";
 import {
-  pianoToSmplrJson,
+  pianoToPreset,
   LAYERS,
   SplendidGrandPiano,
 } from "./splendid-grand-piano";
@@ -168,10 +168,10 @@ describe("spreadKeyRanges", () => {
 });
 
 // ---------------------------------------------------------------------------
-// pianoToSmplrJson
+// pianoToPreset
 // ---------------------------------------------------------------------------
 
-describe("pianoToSmplrJson", () => {
+describe("pianoToPreset", () => {
   const BASE_OPTS = {
     baseUrl: "https://example.com/piano",
     detune: 0,
@@ -179,51 +179,51 @@ describe("pianoToSmplrJson", () => {
   };
 
   it("produces one group per layer (5 total)", () => {
-    const json = pianoToSmplrJson(BASE_OPTS);
+    const json = pianoToPreset(BASE_OPTS);
     expect(json.groups).toHaveLength(5);
   });
 
   it("groups have the correct velRanges matching LAYERS", () => {
-    const json = pianoToSmplrJson(BASE_OPTS);
+    const json = pianoToPreset(BASE_OPTS);
     LAYERS.forEach((layer, i) => {
       expect(json.groups[i].velRange).toEqual(layer.vel_range);
     });
   });
 
   it("PPP group has lpfCutoffHz = 1000", () => {
-    const json = pianoToSmplrJson(BASE_OPTS);
+    const json = pianoToPreset(BASE_OPTS);
     expect(json.groups[0].lpfCutoffHz).toBe(1000);
   });
 
   it("other groups do not have lpfCutoffHz", () => {
-    const json = pianoToSmplrJson(BASE_OPTS);
+    const json = pianoToPreset(BASE_OPTS);
     for (let i = 1; i < json.groups.length; i++) {
       expect(json.groups[i].lpfCutoffHz).toBeUndefined();
     }
   });
 
   it("sets defaults.ampRelease from decayTime", () => {
-    const json = pianoToSmplrJson({ ...BASE_OPTS, decayTime: 1.2 });
+    const json = pianoToPreset({ ...BASE_OPTS, decayTime: 1.2 });
     expect(json.defaults?.ampRelease).toBe(1.2);
   });
 
   it("sets defaults.detune from detune option", () => {
-    const json = pianoToSmplrJson({ ...BASE_OPTS, detune: 50 });
+    const json = pianoToPreset({ ...BASE_OPTS, detune: 50 });
     expect(json.defaults?.detune).toBe(50);
   });
 
   it("sets samples.baseUrl", () => {
-    const json = pianoToSmplrJson(BASE_OPTS);
+    const json = pianoToPreset(BASE_OPTS);
     expect(json.samples.baseUrl).toBe("https://example.com/piano");
   });
 
   it("sets samples.formats to ['ogg', 'm4a']", () => {
-    const json = pianoToSmplrJson(BASE_OPTS);
+    const json = pianoToPreset(BASE_OPTS);
     expect(json.samples.formats).toEqual(["ogg", "m4a"]);
   });
 
   it("each group has one region per sample with keyRange, pitch, sample", () => {
-    const json = pianoToSmplrJson(BASE_OPTS);
+    const json = pianoToPreset(BASE_OPTS);
     for (const group of json.groups) {
       for (const region of group.regions) {
         expect(region.keyRange).toBeDefined();
@@ -234,7 +234,7 @@ describe("pianoToSmplrJson", () => {
   });
 
   it("regions in each group collectively cover [0, 127]", () => {
-    const json = pianoToSmplrJson(BASE_OPTS);
+    const json = pianoToPreset(BASE_OPTS);
     for (const group of json.groups) {
       const sorted = [...group.regions].sort(
         (a, b) => a.keyRange![0] - b.keyRange![0],
@@ -246,7 +246,7 @@ describe("pianoToSmplrJson", () => {
 
   describe("notesToLoad filtering", () => {
     it("filters to the layers matching the velocity range", () => {
-      const json = pianoToSmplrJson({
+      const json = pianoToPreset({
         ...BASE_OPTS,
         notesToLoad: { notes: [60], velocityRange: [105, 127] },
       });
@@ -256,7 +256,7 @@ describe("pianoToSmplrJson", () => {
     });
 
     it("includes multiple layers when the range spans them", () => {
-      const json = pianoToSmplrJson({
+      const json = pianoToPreset({
         ...BASE_OPTS,
         notesToLoad: { notes: [60], velocityRange: [1, 127] },
       });
@@ -264,7 +264,7 @@ describe("pianoToSmplrJson", () => {
     });
 
     it("filters regions to only the requested MIDI notes", () => {
-      const json = pianoToSmplrJson({
+      const json = pianoToPreset({
         ...BASE_OPTS,
         notesToLoad: { notes: [60, 72], velocityRange: [105, 127] },
       });
@@ -275,7 +275,7 @@ describe("pianoToSmplrJson", () => {
     });
 
     it("filtered regions still cover [0, 127] via spreadKeyRanges", () => {
-      const json = pianoToSmplrJson({
+      const json = pianoToPreset({
         ...BASE_OPTS,
         notesToLoad: { notes: [60, 72], velocityRange: [105, 127] },
       });

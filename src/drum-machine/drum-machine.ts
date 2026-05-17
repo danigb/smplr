@@ -4,7 +4,7 @@ import {
   LoadProgress,
   NoteEvent,
   SmplrGroup,
-  SmplrJson,
+  SmplrPreset,
   StopFn,
 } from "../smplr/types";
 import {
@@ -103,7 +103,7 @@ export const DrumMachine = Instrument(
 
     const ready = instrumentPromise.then((inst) => {
       instrument = inst;
-      return smplr.loadInstrument(drumMachineToSmplrJson(inst));
+      return smplr.loadInstrument(drumMachineToPreset(inst));
     });
 
     return { extras, ready };
@@ -114,19 +114,19 @@ export const DrumMachine = Instrument(
 export type DrumMachine = ReturnType<typeof DrumMachine>;
 
 // ---------------------------------------------------------------------------
-// drumMachineToSmplrJson — pure converter function
+// drumMachineToPreset — pure converter function
 // ---------------------------------------------------------------------------
 
 /**
- * Convert a DrumMachineInstrument to a SmplrJson descriptor.
+ * Convert a DrumMachineInstrument to a SmplrPreset descriptor.
  *
  * Each sample gets a sequential MIDI number starting at 36 (GM drum map base).
  * Aliases are created for both the full sample name ("kick/1") and the group
  * name ("kick") so both forms work with Smplr.start({ note: "kick" }).
  */
-export function drumMachineToSmplrJson(
+export function drumMachineToPreset(
   instrument: DrumMachineInstrument,
-): SmplrJson {
+): SmplrPreset {
   const aliases: Record<string, number> = {};
   const regions: SmplrGroup["regions"] = [];
 

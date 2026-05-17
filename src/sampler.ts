@@ -6,7 +6,7 @@ import {
 import { toMidi } from "./smplr/midi";
 import { HttpStorage, Storage } from "./storage";
 import { Instrument } from "./smplr";
-import { LoadProgress, SmplrJson } from "./smplr/types";
+import { LoadProgress, SmplrPreset } from "./smplr/types";
 import { spreadKeyRanges } from "./smplr/utils";
 
 type SamplerBase = {
@@ -27,41 +27,41 @@ type SamplerBuffers =
 
 type SamplerBuffersInput = {
   buffers?: SamplerBuffers;
-  json?: never;
+  preset?: never;
 };
 
-type SamplerJsonInput = {
-  json: SmplrJson;
+type SamplerPresetInput = {
+  preset: SmplrPreset;
   buffers?: never;
 };
 
 export type SamplerConfig = SamplerBase &
-  (SamplerBuffersInput | SamplerJsonInput);
+  (SamplerBuffersInput | SamplerPresetInput);
 
-/** Input accepted by {@link Sampler.reload}: a `SmplrJson` schema or a flat buffers record/loader. */
-export type SamplerReloadInput = SmplrJson | SamplerBuffers;
+/** Input accepted by {@link Sampler.reload}: a `SmplrPreset` schema or a flat buffers record/loader. */
+export type SamplerReloadInput = SmplrPreset | SamplerBuffers;
 
 type SamplerExtras = {
   reload: (input: SamplerReloadInput) => Promise<void>;
 };
 
-function isSmplrJsonInput(x: unknown): x is SmplrJson {
+function isSmplrPreset(x: unknown): x is SmplrPreset {
   return (
     typeof x === "object" &&
     x !== null &&
     "groups" in x &&
-    Array.isArray((x as SmplrJson).groups)
+    Array.isArray((x as SmplrPreset).groups)
   );
 }
 
 /**
  * A Sampler instrument. Accepts either a flat record of samples
- * (`{ buffers: { C4: "url" } }`) or a full `SmplrJson` schema
- * (`{ json: { samples, groups, ... } }`) for advanced use cases including
+ * (`{ buffers: { C4: "url" } }`) or a full `SmplrPreset`
+ * (`{ preset: { samples, groups, ... } }`) for advanced use cases including
  * per-region pitch/velocity/round-robin control.
  *
  * Use `sampler.reload(input)` to swap content at runtime. `reload` accepts
- * either shape (flat record or `SmplrJson`), regardless of which mode was
+ * either shape (flat record or `SmplrPreset`), regardless of which mode was
  * used at construction.
  */
 export const Sampler = Instrument<SamplerConfig, SamplerExtras>(
@@ -69,7 +69,7 @@ export const Sampler = Instrument<SamplerConfig, SamplerExtras>(
     const storage = options.storage ?? HttpStorage;
 
     const loadFromInput = (input: SamplerReloadInput): Promise<void> => {
-      if (isSmplrJsonInput(input)) {
+      if (isSmplrPreset(input)) {
         return smplr.loadInstrument(input);
       }
       return getSource(ctx, input)
@@ -78,8 +78,8 @@ export const Sampler = Instrument<SamplerConfig, SamplerExtras>(
     };
 
     const initialInput: SamplerReloadInput =
-      "json" in options && options.json
-        ? options.json
+      "preset" in options && options.preset
+        ? options.preset
         : ((options as SamplerBuffersInput).buffers ?? {});
 
     return {
@@ -103,7 +103,7 @@ function getSource(
 }
 
 // ---------------------------------------------------------------------------
-// samplerToSmplrJson — pure converter function (no async)
+// samplerToPreset — pure converter function (no async)
 // ---------------------------------------------------------------------------
 
 type SamplerJsonOptions = Pick<
@@ -112,13 +112,13 @@ type SamplerJsonOptions = Pick<
 >;
 
 type ConvertResult = {
-  json: SmplrJson;
+  json: SmplrPreset;
   /** Resolved AudioBuffer instances, including URL-fetched ones. */
   buffers: Map<string, AudioBuffer>;
 };
 
 /**
- * Load all URL samples and build a SmplrJson + pre-loaded buffers map.
+ * Load all URL samples and build a SmplrPreset + pre-loaded buffers map.
  * All samples (URL-fetched and pre-provided AudioBuffers) are passed as
  * pre-loaded, so SampleLoader never makes network requests.
  */
@@ -128,7 +128,7 @@ async function buildSamplerBuffers(
   storage: Storage,
   options: Partial<SamplerJsonOptions>,
 ): Promise<ConvertResult> {
-  const { json, urlMap, preloaded } = samplerToSmplrJson(source, options);
+  const { json, urlMap, preloaded } = samplerToPreset(source, options);
 
   // Fetch URL-based samples
   await Promise.all(
@@ -142,13 +142,13 @@ async function buildSamplerBuffers(
 }
 
 type InternalConvertResult = {
-  json: SmplrJson;
+  json: SmplrPreset;
   urlMap: Record<string, string>;
   preloaded: Map<string, AudioBuffer>;
 };
 
 /**
- * Convert a flat source Record to SmplrJson + separated URL map + pre-loaded buffers.
+ * Convert a flat source Record to SmplrPreset + separated URL map + pre-loaded buffers.
  *
  * - Keys that are valid MIDI names/numbers → MIDI-mapped regions.
  *   If ALL keys are MIDI-parseable, spread key ranges (pitch-shifting).
@@ -157,7 +157,7 @@ type InternalConvertResult = {
  * - AudioBuffer values → pre-loaded map (no fetch).
  * - String URL values → urlMap (fetched asynchronously by caller).
  */
-export function samplerToSmplrJson(
+export function samplerToPreset(
   source: Record<string | number, string | AudioBuffer>,
   options: Partial<SamplerJsonOptions> = {},
 ): InternalConvertResult {
@@ -238,7 +238,7 @@ export function samplerToSmplrJson(
     }
   }
 
-  const json: SmplrJson = {
+  const json: SmplrPreset = {
     // baseUrl doesn't matter: all samples will be pre-loaded
     samples: { baseUrl: "", formats: ["ogg"] },
     groups: [

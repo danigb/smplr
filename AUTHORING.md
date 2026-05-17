@@ -123,12 +123,12 @@ function playChord(inst: Smplr, notes: string[], duration = 1) {
 }
 ```
 
-The interface lists the shared surface: `start`, `stop`, `setCC`, `getCC`, `dispose`, `output`, `loader`, `scheduler`, `ready`, `load`, `loadProgress`, `context`. Instrument-specific extras (`tremolo`, `getSampleNames`, `loadInstrument(name)`, …) are *not* on `Smplr` itself — accept the specific instrument type when you need them.
+The interface lists the shared surface: `start`, `stop`, `setCC`, `getCC`, `dispose`, `output`, `loader`, `scheduler`, `ready`, `load`, `loadProgress`, `context`. Instrument-specific extras (`tremolo`, `getSampleNames`, `loadInstrument(name)`, …) are _not_ on `Smplr` itself — accept the specific instrument type when you need them.
 
 `Smplr` is a type, not a class — `new Smplr(...)` won't compile. Use `Instrument(...)` to author an instrument; use the factories `SplendidGrandPiano(ctx)`, `Soundfont(ctx, opts)`, etc. to create one.
 
-## SmplrJson schema
+## SmplrPreset schema
 
-`SmplrJson` is the JSON descriptor that drives sample selection, region matching, and playback. See [SMPLR_JSON.md](./SMPLR_JSON.md) for the full schema reference (top-level shape, `PlaybackParams`, `SmplrGroup`, `SmplrRegion`, inheritance rules, and worked examples).
+`SmplrPreset` is the descriptor that drives sample selection, region matching, and playback. See [SMPLR_PRESET.md](./SMPLR_PRESET.md) for the full schema reference (top-level shape, `PlaybackParams`, `SmplrGroup`, `SmplrRegion`, inheritance rules, and worked examples).
 
 The canonical type definition lives in `src/smplr/types.ts`.

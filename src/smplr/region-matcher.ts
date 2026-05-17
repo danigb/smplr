@@ -1,4 +1,4 @@
-import { SmplrGroup, SmplrJson, SmplrRegion } from "./types";
+import { SmplrGroup, SmplrPreset, SmplrRegion } from "./types";
 
 /**
  * A region that matched a note event. Carries resolved identity fields and references
@@ -122,7 +122,7 @@ export class RegionMatcher {
   #groups: ProcessedGroup[];
   #seqCounters: Map<number, number>; // groupIndex → call count
 
-  constructor(json: SmplrJson) {
+  constructor(json: SmplrPreset) {
     this.#groups = json.groups.map(processGroup);
     this.#seqCounters = new Map();
   }

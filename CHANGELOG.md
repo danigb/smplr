@@ -1,19 +1,30 @@
 # smplr
 
-## Unreleased
+## 0.23.0
+
+### Changed (breaking)
+
+- **`SmplrJson` renamed to `SmplrPreset`.** The type re-export from the
+  package barrel uses the new name; the old name is not aliased. Update
+  imports: `import { type SmplrPreset } from "smplr"`.
+- **Public converters renamed: `*ToSmplrJson` → `*ToPreset`.** Affects
+  `samplerToSmplrJson`, `pianoToSmplrJson`, `drumMachineToSmplrJson`,
+  `mellotronToSmplrJson`, `sf2InstrumentToSmplrJson`,
+  `soundfontToSmplrJson`. All drop the `Smplr` prefix in addition.
+  Mechanical rename: `samplerToSmplrJson` → `samplerToPreset`, etc.
 
 ### Added
 
-- **`Sampler` accepts `{ json: SmplrJson }`** as an alternate construction
-  mode for full-schema input — per-region pitch/velocity/round-robin support
-  without leaving the `Sampler` factory.
-- **`sampler.reload(input)`** swaps content at runtime. Accepts either a flat
-  buffers record (same shape as the construction `buffers` field) or a
-  `SmplrJson` schema. Useful for drum-machine / step-sequencer consumers that
+- **`Sampler` accepts `{ preset: SmplrPreset }`** as an alternate
+  construction mode for full-schema input — per-region pitch/velocity/
+  round-robin support without leaving the `Sampler` factory.
+- **`sampler.reload(input)`** swaps content at runtime. Accepts either a
+  flat buffers record (same shape as the construction `buffers` field) or a
+  `SmplrPreset`. Useful for drum-machine / step-sequencer consumers that
   mutate samples in response to UI changes.
 - **`SamplerReloadInput`** type exported for typing reload-input variables.
-- **`SMPLR_JSON.md`** reference doc covering the full `SmplrJson` schema
-  (top-level shape, `PlaybackParams`, `SmplrGroup`, `SmplrRegion`,
+- **`SMPLR_PRESET.md`** reference doc covering the full `SmplrPreset`
+  schema (top-level shape, `PlaybackParams`, `SmplrGroup`, `SmplrRegion`,
   inheritance rules, worked examples). AUTHORING.md's schema section now
   links here instead of duplicating the table.
 

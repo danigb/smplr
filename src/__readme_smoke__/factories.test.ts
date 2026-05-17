@@ -53,7 +53,7 @@ describe("README — single-line factory examples", () => {
 
   it("L796: `await new Smolken(ctx, { instrument: 'Arco' }).load` returns the instrument", () => {
     // Verifying the type/shape of the chain. We don't `await` because fetch
-    // returns empty text and sfzToSmplrJson would parse to an empty json.
+    // returns empty text and sfzToPreset would parse to an empty json.
     const instruments = getSmolkenNames();
     expect(instruments).toEqual(expect.arrayContaining(["Arco"]));
     const smolken = new Smolken(makeContext(), { instrument: "Arco" });

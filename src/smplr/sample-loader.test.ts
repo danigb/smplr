@@ -1,5 +1,5 @@
 import { SampleLoader } from "./sample-loader";
-import { SmplrJson } from "./types";
+import { SmplrPreset } from "./types";
 
 // ---------------------------------------------------------------------------
 // Mock load-audio so tests run without real HTTP or Web Audio
@@ -23,8 +23,8 @@ function makeContext(): BaseAudioContext {
   return {} as BaseAudioContext;
 }
 
-/** Minimal SmplrJson with one group and one region. */
-function makeJson(overrides?: Partial<SmplrJson>): SmplrJson {
+/** Minimal SmplrPreset with one group and one region. */
+function makeJson(overrides?: Partial<SmplrPreset>): SmplrPreset {
   return {
     samples: {
       baseUrl: "https://example.com/samples",
@@ -196,7 +196,7 @@ describe("result map", () => {
   });
 
   it("includes only samples that loaded successfully", async () => {
-    const json: SmplrJson = {
+    const json: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "C4" }, { sample: "D4" }] }],
     };
@@ -219,7 +219,7 @@ describe("result map", () => {
 
 describe("deduplication", () => {
   it("loads each unique sample name only once even if it appears in multiple regions", async () => {
-    const json: SmplrJson = {
+    const json: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [
         { regions: [{ sample: "C4" }, { sample: "C4" }] },
@@ -234,7 +234,7 @@ describe("deduplication", () => {
   });
 
   it("loads distinct sample names separately", async () => {
-    const json: SmplrJson = {
+    const json: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "C4" }, { sample: "D4" }] }],
     };
@@ -293,7 +293,7 @@ describe("caching", () => {
 
 describe("onProgress callback", () => {
   it("is called once per sample with increasing loaded count", async () => {
-    const json: SmplrJson = {
+    const json: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "C4" }, { sample: "D4" }] }],
     };
@@ -336,7 +336,7 @@ describe("onProgress callback", () => {
   });
 
   it("total equals number of unique sample names, not total regions", async () => {
-    const json: SmplrJson = {
+    const json: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [
         { regions: [{ sample: "C4" }, { sample: "C4" }, { sample: "D4" }] },

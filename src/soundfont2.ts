@@ -1,5 +1,5 @@
 import { Instrument } from "./smplr";
-import { SmplrGroup, SmplrJson } from "./smplr/types";
+import { SmplrGroup, SmplrPreset } from "./smplr/types";
 
 type Sf2 = {
   instruments: Sf2Instrument[];
@@ -39,10 +39,10 @@ export type Soundfont2Options = {
   velocity?: number;
 };
 
-export function sf2InstrumentToSmplrJson(
+export function sf2InstrumentToPreset(
   sf2Instrument: Sf2Instrument,
   context: BaseAudioContext,
-): { json: SmplrJson; buffers: Map<string, AudioBuffer> } {
+): { json: SmplrPreset; buffers: Map<string, AudioBuffer> } {
   const buffers = new Map<string, AudioBuffer>();
   const regions: SmplrGroup["regions"] = [];
 
@@ -109,7 +109,7 @@ export const Soundfont2Sampler = Instrument(
           (inst: Sf2Instrument) => inst.header.name === instrumentName,
         );
         if (!sf2inst) return undefined;
-        const { json, buffers } = sf2InstrumentToSmplrJson(sf2inst, ctx);
+        const { json, buffers } = sf2InstrumentToPreset(sf2inst, ctx);
         return baseLoadInstrument(json, buffers);
       },
     };

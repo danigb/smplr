@@ -1,9 +1,9 @@
 import { findFirstSupportedFormat, loadAudioBuffer } from "./load-audio";
 import { HttpStorage, Storage } from "../storage";
-import { SmplrJson } from "./types";
+import { SmplrPreset } from "./types";
 
 /**
- * Loads and caches AudioBuffers for all samples referenced in a SmplrJson.
+ * Loads and caches AudioBuffers for all samples referenced in a SmplrPreset.
  *
  * The cache is keyed by resolved URL, so the same audio file is never fetched
  * or decoded twice. Multiple Smplr instances can share one SampleLoader by
@@ -28,7 +28,7 @@ export class SampleLoader {
    * - All samples load in parallel. Failed samples are silently omitted.
    */
   async load(
-    json: SmplrJson,
+    json: SmplrPreset,
     onProgressOrOptions?:
       | ((loaded: number, total: number) => void)
       | {
@@ -99,7 +99,7 @@ export class SampleLoader {
 }
 
 /** Collect all unique region.sample names across all groups. */
-function collectSampleNames(json: SmplrJson): string[] {
+function collectSampleNames(json: SmplrPreset): string[] {
   const seen = new Set<string>();
   for (const group of json.groups) {
     for (const region of group.regions) {

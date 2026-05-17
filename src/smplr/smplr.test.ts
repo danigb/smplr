@@ -1,5 +1,5 @@
 import { SmplrImpl } from "./smplr";
-import { SmplrJson } from "./types";
+import { SmplrPreset } from "./types";
 
 // ---------------------------------------------------------------------------
 // Mock load-audio (no real HTTP or Web Audio decoding)
@@ -96,8 +96,8 @@ function makeBuffer(): AudioBuffer {
 // Shared test fixture
 // ---------------------------------------------------------------------------
 
-/** SmplrJson with one group, one region keyed to MIDI 60 (C4). */
-function makeJson(overrides?: Partial<SmplrJson>): SmplrJson {
+/** SmplrPreset with one group, one region keyed to MIDI 60 (C4). */
+function makeJson(overrides?: Partial<SmplrPreset>): SmplrPreset {
   return {
     samples: { baseUrl: "https://example.com", formats: ["ogg"] },
     groups: [{ regions: [{ sample: "C4", key: 60 }] }],
@@ -166,7 +166,7 @@ describe("loadProgress", () => {
   });
 
   it("calls onLoadProgress for each unique sample", async () => {
-    const json: SmplrJson = {
+    const json: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [
         {
@@ -338,7 +338,7 @@ describe("stop()", () => {
 
   it("stop(string) stops voices matching that stopId", async () => {
     const ctx = makeContext();
-    const json: SmplrJson = {
+    const json: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [
         {
@@ -719,11 +719,11 @@ describe("Pattern B: new SmplrImpl(ctx, opts) + loadInstrument(json)", () => {
     const bufferA = makeBuffer();
     const bufferB = makeBuffer();
 
-    const jsonA: SmplrJson = {
+    const jsonA: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "A", key: 60 }] }],
     };
-    const jsonB: SmplrJson = {
+    const jsonB: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "B", key: 62 }] }],
     };
@@ -756,11 +756,11 @@ describe("Pattern B: new SmplrImpl(ctx, opts) + loadInstrument(json)", () => {
     const bufferA = makeBuffer();
     const bufferB = makeBuffer();
 
-    const jsonA: SmplrJson = {
+    const jsonA: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "A", key: 60 }] }],
     };
-    const jsonB: SmplrJson = {
+    const jsonB: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "B", key: 60 }] }],
     };
@@ -834,7 +834,7 @@ describe("Pattern B: new SmplrImpl(ctx, opts) + loadInstrument(json)", () => {
       },
     );
 
-    const jsonReverse: SmplrJson = {
+    const jsonReverse: SmplrPreset = {
       samples: { baseUrl: "https://example.com", formats: ["ogg"] },
       groups: [{ regions: [{ sample: "kick", key: 60 }] }],
     };

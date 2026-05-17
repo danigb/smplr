@@ -10,7 +10,7 @@ import {
   LoadProgress,
   NoteEvent,
   PlaybackParams,
-  SmplrJson,
+  SmplrPreset,
   StopFn,
   StopTarget,
 } from "./types";
@@ -75,26 +75,26 @@ function compose<T>(
 }
 
 /** Empty RegionMatcher used before loadInstrument() is called. */
-const EMPTY_JSON: SmplrJson = {
+const EMPTY_JSON: SmplrPreset = {
   samples: { baseUrl: "", formats: [] },
   groups: [],
 };
 
 /**
- * Detect whether an argument is a SmplrJson descriptor.
- * SmplrJson always has a `groups` array; SmplrOptions does not.
+ * Detect whether an argument is a SmplrPreset descriptor.
+ * SmplrPreset always has a `groups` array; SmplrOptions does not.
  */
-function isSmplrJson(x: unknown): x is SmplrJson {
+function isSmplrJson(x: unknown): x is SmplrPreset {
   return (
     typeof x === "object" &&
     x !== null &&
     "groups" in x &&
-    Array.isArray((x as SmplrJson).groups)
+    Array.isArray((x as SmplrPreset).groups)
   );
 }
 
 /**
- * Internal smplr implementation. Loads samples described by a SmplrJson
+ * Internal smplr implementation. Loads samples described by a SmplrPreset
  * descriptor, matches notes to regions, and plays them through a Channel.
  *
  * Not exported from the package barrel — third-party plugins receive an
@@ -145,13 +145,13 @@ export class SmplrImpl implements Smplr {
 
   constructor(
     context: BaseAudioContext,
-    json: SmplrJson,
+    json: SmplrPreset,
     options?: SmplrOptions,
   );
   constructor(context: BaseAudioContext, options?: SmplrOptions);
   constructor(
     context: BaseAudioContext,
-    jsonOrOptions?: SmplrJson | SmplrOptions,
+    jsonOrOptions?: SmplrPreset | SmplrOptions,
     maybeOptions?: SmplrOptions,
   ) {
     const json = isSmplrJson(jsonOrOptions) ? jsonOrOptions : undefined;
@@ -235,7 +235,7 @@ export class SmplrImpl implements Smplr {
    * parameter — those skip the fetch step.
    */
   loadInstrument(
-    json: SmplrJson,
+    json: SmplrPreset,
     buffers?: Map<string, AudioBuffer>,
   ): Promise<void> {
     this.#assertNotDisposed("load an instrument");
