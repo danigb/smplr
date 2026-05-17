@@ -1,7 +1,7 @@
 import { Storage } from "./storage";
 import { Instrument } from "./smplr";
 import { LoadProgress } from "./smplr/types";
-import { sfzToSmplrJson } from "./smplr/sfz-convert";
+import { sfzToPreset } from "./smplr/sfz-convert";
 import { createControl } from "./smplr/signals";
 import { midiVelToGain } from "./smplr/volume";
 import { createTremolo } from "./tremolo";
@@ -95,7 +95,7 @@ export const ElectricPiano = Instrument(
       .then((r) => r.text())
       .then((sfzText) =>
         smplr.loadInstrument(
-          sfzToSmplrJson(sfzText, {
+          sfzToPreset(sfzText, {
             baseUrl: config.baseUrl,
             pathFromSampleName: config.pathFromSampleName,
             formats: options.formats ?? ["ogg", "m4a"],

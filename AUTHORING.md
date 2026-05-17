@@ -86,8 +86,11 @@ const plugin: SmplrPlugin<MyInstrumentOptions, MyInstrumentExtras> = (
   smplr,
 ) => {
   // Inside the plugin, `smplr.loadInstrument(json, buffers?)` is available.
-  // The instance your users receive does *not* expose this method — they
-  // call your factory and you do the loading internally.
+  // The instance your users receive does *not* expose this method by default —
+  // they call your factory and you do the loading internally. Factories that
+  // want to support runtime content swaps add a method via extras (see
+  // `Sampler.reload` and `Soundfont2Sampler.loadInstrument` for the two
+  // existing examples).
   // …
 };
 
@@ -120,23 +123,12 @@ function playChord(inst: Smplr, notes: string[], duration = 1) {
 }
 ```
 
-The interface lists the shared surface: `start`, `stop`, `setCC`, `getCC`, `dispose`, `output`, `loader`, `scheduler`, `ready`, `load`, `loadProgress`, `context`. Instrument-specific extras (`tremolo`, `getSampleNames`, `loadInstrument(name)`, …) are *not* on `Smplr` itself — accept the specific instrument type when you need them.
+The interface lists the shared surface: `start`, `stop`, `setCC`, `getCC`, `dispose`, `output`, `loader`, `scheduler`, `ready`, `load`, `loadProgress`, `context`. Instrument-specific extras (`tremolo`, `getSampleNames`, `loadInstrument(name)`, …) are _not_ on `Smplr` itself — accept the specific instrument type when you need them.
 
 `Smplr` is a type, not a class — `new Smplr(...)` won't compile. Use `Instrument(...)` to author an instrument; use the factories `SplendidGrandPiano(ctx)`, `Soundfont(ctx, opts)`, etc. to create one.
 
-## SmplrJson schema
+## SmplrPreset schema
 
-The `SmplrJson` type at `src/smplr/types.ts` describes the JSON descriptor that drives sample selection, region matching, and playback. Top-level fields:
+`SmplrPreset` is the descriptor that drives sample selection, region matching, and playback. See [SMPLR_PRESET.md](./SMPLR_PRESET.md) for the full schema reference (top-level shape, `PlaybackParams`, `SmplrGroup`, `SmplrRegion`, inheritance rules, and worked examples).
 
-| Field | Type | Description |
-|---|---|---|
-| `smplr` | `"1.0"` (optional) | Schema version. Omit for the current format; reserved for future migrations. |
-| `meta` | object (optional) | Display metadata (`name`, `description`, `license`, `source`, `tags`). |
-| `samples` | `SmplrSamples` | Sample manifest (`baseUrl`, `formats`, optional `map`). |
-| `defaults` | `PlaybackParams` (optional) | Playback defaults applied to every region. |
-| `groups` | `SmplrGroup[]` | Region groups (velocity layers, round-robin, key/CC ranges). |
-| `aliases` | `Record<string, number>` (optional) | Note-name → MIDI number overrides. |
-
-The `smplr?: "1.0"` field is the schema-version field. It is optional and currently informational — future format revisions will use it to offer migrations.
-
-For the full shape of `PlaybackParams`, `SmplrSamples`, `SmplrGroup`, and `SmplrRegion`, see `src/smplr/types.ts` directly — these types are public and intended to ship unchanged into 1.0.
+The canonical type definition lives in `src/smplr/types.ts`.

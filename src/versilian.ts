@@ -2,7 +2,7 @@ import { Storage } from "./storage";
 import { Instrument } from "./smplr";
 import type { PluginSmplr } from "./smplr/instrument";
 import { LoadProgress } from "./smplr/types";
-import { sfzToSmplrJson } from "./smplr/sfz-convert";
+import { sfzToPreset } from "./smplr/sfz-convert";
 
 const VCSL_BASE_URL = "https://smpldsnds.github.io/sgossner-vcsl";
 
@@ -62,7 +62,7 @@ export function loadVersilianInstrument(
     .then((r) => r.text())
     .then((sfzText) =>
       smplr.loadInstrument(
-        sfzToSmplrJson(sfzText, {
+        sfzToPreset(sfzText, {
           baseUrl: sampleBaseUrl,
           pathFromSampleName: (name) => name.replace(/\.wav$/i, ""),
           formats: ["ogg", "m4a"],

@@ -254,7 +254,7 @@ Or stop the specified one. The argument is a `stopId` — by default the same va
 
 ```js
 piano.stop("C4"); // stop the note(s) started with `note: "C4"`
-piano.stop(60);   // stop the note(s) started with `note: 60`
+piano.stop(60); // stop the note(s) started with `note: 60`
 ```
 
 #### Schedule notes
@@ -308,8 +308,8 @@ Set and read MIDI Control Change values on the instrument:
 
 ```js
 piano.setCC(64, 127); // sustain pedal on
-piano.getCC(64);      // => 127
-piano.setCC(64, 0);   // sustain pedal off
+piano.getCC(64); // => 127
+piano.setCC(64, 0); // sustain pedal off
 ```
 
 Unset CCs default to `0` (matches MIDI's "undefined controller defaults to 0" convention).
@@ -677,21 +677,23 @@ This will download a WAV file you can attach to your issue or pull request.
 
 Each instrument family exposes a synchronous helper that returns the names you can pass to its factory:
 
-| Factory | Names helper |
-|---|---|
-| `Soundfont` | `getSoundfontNames(): string[]` |
-| `ElectricPiano` | `getElectricPianoNames(): string[]` |
-| `Mallet` | `getMalletNames(): string[]` |
-| `Mellotron` | `getMellotronNames(): string[]` |
-| `DrumMachine` | `getDrumMachineNames(): string[]` |
-| `Smolken` | `getSmolkenNames(): string[]` |
-| `Versilian` | `getVersilianInstruments(): Promise<string[]>` |
+| Factory         | Names helper                                   |
+| --------------- | ---------------------------------------------- |
+| `Soundfont`     | `getSoundfontNames(): string[]`                |
+| `ElectricPiano` | `getElectricPianoNames(): string[]`            |
+| `Mallet`        | `getMalletNames(): string[]`                   |
+| `Mellotron`     | `getMellotronNames(): string[]`                |
+| `DrumMachine`   | `getDrumMachineNames(): string[]`              |
+| `Smolken`       | `getSmolkenNames(): string[]`                  |
+| `Versilian`     | `getVersilianInstruments(): Promise<string[]>` |
 
 `getVersilianInstruments` is async because the catalog is fetched from the network on first call (cached thereafter).
 
 ### Sampler
 
 An audio buffer sampler. Pass a `buffers` object with the files to be load:
+
+#### Buffers mode
 
 ```js
 import { Sampler } from "smplr";
@@ -708,6 +710,37 @@ And then use the name of the buffer as note name:
 ```js
 sampler.start({ note: "kick" });
 ```
+
+#### Advanced mode
+
+For advanced use cases (per-region pitch/velocity/round-robin, SFZ-like multi-sample instruments, runtime swaps), pass a `SmplrPreset` directly:
+
+```ts
+import { Sampler, type SmplrPreset } from "smplr";
+
+const kitA: SmplrPreset = {
+  samples: { baseUrl: "https://cdn.example.com/", formats: ["ogg"] },
+  groups: [
+    {
+      regions: [
+        { sample: "kick", keyRange: [60, 60], pitch: 60 },
+        { sample: "snare", keyRange: [62, 62], pitch: 62 },
+      ],
+    },
+  ],
+};
+
+const sampler = Sampler(new AudioContext(), { preset: kitA });
+await sampler.ready;
+sampler.start({ note: 60 });
+
+// Swap content at runtime
+await sampler.reload(kitB);
+```
+
+The full `SmplrPreset` schema is documented in [SMPLR_PRESET.md](./SMPLR_PRESET.md). Note: `buffers` and `preset` are mutually exclusive on construction — pass exactly one.
+
+`sampler.reload(input)` accepts either shape (flat buffers record or full `SmplrPreset`), regardless of which mode was used at construction.
 
 ### Soundfont
 

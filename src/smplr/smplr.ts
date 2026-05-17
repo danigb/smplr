@@ -10,7 +10,7 @@ import {
   LoadProgress,
   NoteEvent,
   PlaybackParams,
-  SmplrJson,
+  SmplrPreset,
   StopFn,
   StopTarget,
 } from "./types";
@@ -75,26 +75,26 @@ function compose<T>(
 }
 
 /** Empty RegionMatcher used before loadInstrument() is called. */
-const EMPTY_JSON: SmplrJson = {
+const EMPTY_JSON: SmplrPreset = {
   samples: { baseUrl: "", formats: [] },
   groups: [],
 };
 
 /**
- * Detect whether an argument is a SmplrJson descriptor.
- * SmplrJson always has a `groups` array; SmplrOptions does not.
+ * Detect whether an argument is a SmplrPreset descriptor.
+ * SmplrPreset always has a `groups` array; SmplrOptions does not.
  */
-function isSmplrJson(x: unknown): x is SmplrJson {
+function isSmplrJson(x: unknown): x is SmplrPreset {
   return (
     typeof x === "object" &&
     x !== null &&
     "groups" in x &&
-    Array.isArray((x as SmplrJson).groups)
+    Array.isArray((x as SmplrPreset).groups)
   );
 }
 
 /**
- * Internal smplr implementation. Loads samples described by a SmplrJson
+ * Internal smplr implementation. Loads samples described by a SmplrPreset
  * descriptor, matches notes to regions, and plays them through a Channel.
  *
  * Not exported from the package barrel — third-party plugins receive an
@@ -122,6 +122,7 @@ export class SmplrImpl implements Smplr {
   ready: Promise<void>;
 
   #loadProgress: LoadProgress = { loaded: 0, total: 0 };
+  #loadToken = 0;
   #buffers: Map<string, AudioBuffer> = new Map();
   #reversedBuffers: Map<string, AudioBuffer> = new Map();
   #defaults: PlaybackParams | undefined;
@@ -144,13 +145,13 @@ export class SmplrImpl implements Smplr {
 
   constructor(
     context: BaseAudioContext,
-    json: SmplrJson,
+    json: SmplrPreset,
     options?: SmplrOptions,
   );
   constructor(context: BaseAudioContext, options?: SmplrOptions);
   constructor(
     context: BaseAudioContext,
-    jsonOrOptions?: SmplrJson | SmplrOptions,
+    jsonOrOptions?: SmplrPreset | SmplrOptions,
     maybeOptions?: SmplrOptions,
   ) {
     const json = isSmplrJson(jsonOrOptions) ? jsonOrOptions : undefined;
@@ -224,22 +225,21 @@ export class SmplrImpl implements Smplr {
   }
 
   /**
-   * Load (or replace) the instrument descriptor. Creates a new RegionMatcher
-   * and fetches all sample buffers. Pre-loaded buffers (e.g. base64-decoded)
-   * can be passed via the `buffers` parameter — those skip the fetch step.
+   * Load (or replace) the instrument descriptor. All state (matcher, defaults,
+   * aliases, reversed-buffer cache, sample buffers) swaps atomically when the
+   * load resolves. Concurrent calls are serialized: only the latest call's
+   * result is committed; earlier in-flight calls resolve but do not mutate
+   * state.
    *
-   * Returns a Promise that resolves when all samples are ready.
+   * Pre-loaded buffers (e.g. base64-decoded) can be passed via the `buffers`
+   * parameter — those skip the fetch step.
    */
   loadInstrument(
-    json: SmplrJson,
+    json: SmplrPreset,
     buffers?: Map<string, AudioBuffer>,
   ): Promise<void> {
     this.#assertNotDisposed("load an instrument");
-    this.#defaults = json.defaults;
-    this.#aliases = json.aliases
-      ? new Map(Object.entries(json.aliases))
-      : undefined;
-    this.#matcher = new RegionMatcher(json);
+    const token = ++this.#loadToken;
 
     return this.loader
       .load(json, {
@@ -250,6 +250,13 @@ export class SmplrImpl implements Smplr {
         },
       })
       .then((newBuffers) => {
+        if (token !== this.#loadToken) return;
+        this.#defaults = json.defaults;
+        this.#aliases = json.aliases
+          ? new Map(Object.entries(json.aliases))
+          : undefined;
+        this.#matcher = new RegionMatcher(json);
+        this.#reversedBuffers = new Map();
         this.#buffers = newBuffers;
       });
   }

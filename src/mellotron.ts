@@ -1,7 +1,7 @@
 import { toMidi } from "./smplr/midi";
 import { Storage } from "./storage";
 import { Instrument } from "./smplr";
-import { LoadProgress, SmplrGroup, SmplrJson } from "./smplr/types";
+import { LoadProgress, SmplrGroup, SmplrPreset } from "./smplr/types";
 import { spreadKeyRanges } from "./smplr/utils";
 
 const INSTRUMENT_VARIATIONS: Record<string, [string, string]> = {
@@ -74,7 +74,7 @@ export const Mellotron = Instrument(
       .then((r) => r.json() as Promise<string[]>)
       .then((names) =>
         smplr.loadInstrument(
-          mellotronToSmplrJson(names, {
+          mellotronToPreset(names, {
             instrument: instrumentName,
             variation: variation?.[1],
           }),
@@ -87,7 +87,7 @@ export const Mellotron = Instrument(
 export type Mellotron = ReturnType<typeof Mellotron>;
 
 // ---------------------------------------------------------------------------
-// mellotronToSmplrJson — pure converter function
+// mellotronToPreset — pure converter function
 // ---------------------------------------------------------------------------
 
 type MellotronJsonConfig = {
@@ -96,17 +96,17 @@ type MellotronJsonConfig = {
 };
 
 /**
- * Convert a Mellotron files.json sample list to SmplrJson.
+ * Convert a Mellotron files.json sample list to SmplrPreset.
  *
  * - Filters by variation string if provided.
  * - Extracts MIDI from the first word of each sample name.
  * - Uses spreadKeyRanges so nearby notes pitch-shift to the nearest sample.
  * - All regions get loopAuto to produce tape-loop playback.
  */
-export function mellotronToSmplrJson(
+export function mellotronToPreset(
   sampleNames: string[],
   config: MellotronJsonConfig,
-): SmplrJson {
+): SmplrPreset {
   const entries: [number, string][] = [];
 
   for (const sampleName of sampleNames) {

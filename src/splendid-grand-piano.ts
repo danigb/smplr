@@ -1,6 +1,6 @@
 import { HttpStorage, Storage } from "./storage";
 import { Instrument } from "./smplr";
-import { LoadProgress, SmplrGroup, SmplrJson } from "./smplr/types";
+import { LoadProgress, SmplrGroup, SmplrPreset } from "./smplr/types";
 import { spreadKeyRanges } from "./smplr/utils";
 
 /**
@@ -13,7 +13,7 @@ export type SplendidGrandPianoConfig = {
   detune: number;
   /** Default velocity (0–127) when not specified per note. */
   velocity: number;
-  /** Release time in seconds. Maps to SmplrJson defaults.ampRelease. */
+  /** Release time in seconds. Maps to SmplrPreset defaults.ampRelease. */
   decayTime: number;
   /** Destination audio node. Defaults to context.destination. */
   destination?: AudioNode;
@@ -47,14 +47,14 @@ export const SplendidGrandPiano = Instrument(
     ctx: BaseAudioContext,
     options: Partial<SplendidGrandPianoConfig> = {},
     smplr,
-  ) => smplr.loadInstrument(pianoToSmplrJson({ ...DEFAULTS, ...options })),
+  ) => smplr.loadInstrument(pianoToPreset({ ...DEFAULTS, ...options })),
 );
 
 /** Instance type returned by the {@link SplendidGrandPiano} factory. */
 export type SplendidGrandPiano = ReturnType<typeof SplendidGrandPiano>;
 
 // ---------------------------------------------------------------------------
-// pianoToSmplrJson — pure function, independently testable
+// pianoToPreset — pure function, independently testable
 // ---------------------------------------------------------------------------
 
 type PianoJsonOptions = Pick<
@@ -63,7 +63,7 @@ type PianoJsonOptions = Pick<
 >;
 
 /**
- * Convert the LAYERS array and user options into a SmplrJson descriptor.
+ * Convert the LAYERS array and user options into a SmplrPreset descriptor.
  *
  * Each layer becomes a SmplrGroup with its velRange. If `notesToLoad` is
  * specified, layers and samples are filtered accordingly. The PPP layer
@@ -72,7 +72,7 @@ type PianoJsonOptions = Pick<
  * `spreadKeyRanges` is used to pre-compute which key range each sample
  * covers, replacing the old on-the-fly `findNearestMidiInLayer` logic.
  */
-export function pianoToSmplrJson(options: PianoJsonOptions): SmplrJson {
+export function pianoToPreset(options: PianoJsonOptions): SmplrPreset {
   const { notesToLoad } = options;
 
   // Filter layers by requested velocity range

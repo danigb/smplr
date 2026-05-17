@@ -62,7 +62,7 @@ export type SmplrSamples = {
 /**
  * The top-level smplr.json descriptor. Passed to the Smplr constructor.
  */
-export type SmplrJson = {
+export type SmplrPreset = {
   /** Schema version. Omit for the current format. Reserved for future migrations. */
   smplr?: "1.0";
   meta?: {

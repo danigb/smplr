@@ -4,7 +4,7 @@ export type { SmplrOptions } from "./smplr";
 export { Scheduler } from "./scheduler";
 export { SampleLoader } from "./sample-loader";
 export type {
-  SmplrJson,
+  SmplrPreset,
   SmplrSamples,
   SmplrGroup,
   SmplrRegion,

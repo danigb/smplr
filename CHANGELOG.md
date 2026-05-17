@@ -1,5 +1,45 @@
 # smplr
 
+## 0.23.0
+
+### Changed (breaking)
+
+- **`SmplrJson` renamed to `SmplrPreset`.** The type re-export from the
+  package barrel uses the new name; the old name is not aliased. Update
+  imports: `import { type SmplrPreset } from "smplr"`.
+- **Public converters renamed: `*ToSmplrJson` → `*ToPreset`.** Affects
+  `samplerToSmplrJson`, `pianoToSmplrJson`, `drumMachineToSmplrJson`,
+  `mellotronToSmplrJson`, `sf2InstrumentToSmplrJson`,
+  `soundfontToSmplrJson`. All drop the `Smplr` prefix in addition.
+  Mechanical rename: `samplerToSmplrJson` → `samplerToPreset`, etc.
+
+### Added
+
+- **`Sampler` accepts `{ preset: SmplrPreset }`** as an alternate
+  construction mode for full-schema input — per-region pitch/velocity/
+  round-robin support without leaving the `Sampler` factory.
+- **`sampler.reload(input)`** swaps content at runtime. Accepts either a
+  flat buffers record (same shape as the construction `buffers` field) or a
+  `SmplrPreset`. Useful for drum-machine / step-sequencer consumers that
+  mutate samples in response to UI changes.
+- **`SamplerReloadInput`** type exported for typing reload-input variables.
+- **`SMPLR_PRESET.md`** reference doc covering the full `SmplrPreset`
+  schema (top-level shape, `PlaybackParams`, `SmplrGroup`, `SmplrRegion`,
+  inheritance rules, worked examples). AUTHORING.md's schema section now
+  links here instead of duplicating the table.
+
+### Fixed
+
+- **`Smplr.loadInstrument` performs atomic state swaps and serializes
+  concurrent calls (latest wins).** Previously the matcher swapped
+  synchronously while buffers swapped asynchronously, so notes scheduled
+  during the load window could silently drop. Concurrent calls also raced
+  unpredictably — the slower-to-resolve `.then` won regardless of call order.
+- **`Smplr.loadInstrument` clears the reversed-buffer cache on every swap.**
+  Previously, reloading content under a sample name that re-used a name from
+  a prior load (e.g. drum-kit swaps with consistent `"kick"`/`"snare"`
+  naming) with `reverse: true` set would play the stale reversed buffer.
+
 ## 0.22.0
 
 If you only ever followed the README, **no migration should be required**.

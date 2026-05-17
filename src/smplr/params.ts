@@ -51,7 +51,7 @@ export type NoteOverrides = {
  * Detune is computed in cents:
  *   (playedMidi - region.pitch + tune) * 100 + detune + noteOverrides.detune
  *
- * @param defaults  Global defaults from SmplrJson.defaults
+ * @param defaults  Global defaults from SmplrPreset.defaults
  * @param group     The matched SmplrGroup
  * @param region    The matched SmplrRegion
  * @param midi      The played MIDI note number

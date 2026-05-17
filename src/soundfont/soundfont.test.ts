@@ -2,7 +2,7 @@ import {
   Soundfont,
   getSoundfontKits,
   getSoundfontNames,
-  soundfontToSmplrJson,
+  soundfontToPreset,
 } from "./soundfont";
 
 // ---------------------------------------------------------------------------
@@ -127,18 +127,18 @@ describe("getSoundfontKits", () => {
 });
 
 // ---------------------------------------------------------------------------
-// soundfontToSmplrJson — pure converter
+// soundfontToPreset — pure converter
 // ---------------------------------------------------------------------------
 
-describe("soundfontToSmplrJson", () => {
+describe("soundfontToPreset", () => {
   it("converts a list of note names into one group with regions", () => {
-    const json = soundfontToSmplrJson(["C4", "C5"]);
+    const json = soundfontToPreset(["C4", "C5"]);
     expect(json.groups).toHaveLength(1);
     expect(json.groups[0].regions).toHaveLength(2);
   });
 
   it("regions cover [0, 127] via spreadKeyRanges", () => {
-    const json = soundfontToSmplrJson(["C4", "C5"]);
+    const json = soundfontToPreset(["C4", "C5"]);
     const sorted = [...json.groups[0].regions].sort(
       (a, b) => a.keyRange![0] - b.keyRange![0],
     );
@@ -147,7 +147,7 @@ describe("soundfontToSmplrJson", () => {
   });
 
   it("applies loop data when provided", () => {
-    const json = soundfontToSmplrJson(["C4"], { 60: [100, 200] });
+    const json = soundfontToPreset(["C4"], { 60: [100, 200] });
     const region = json.groups[0].regions[0];
     expect(region.loop).toBe(true);
     expect(region.loopStart).toBe(100);
@@ -155,7 +155,7 @@ describe("soundfontToSmplrJson", () => {
   });
 
   it("omits loop fields when no loop data is supplied", () => {
-    const json = soundfontToSmplrJson(["C4"]);
+    const json = soundfontToPreset(["C4"]);
     const region = json.groups[0].regions[0];
     expect(region.loop).toBeUndefined();
     expect(region.loopStart).toBeUndefined();

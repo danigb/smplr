@@ -154,7 +154,7 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
   });
 
   it("does not export internal SFZ conversion", () => {
-    expect(valueExports.has("sfzToSmplrJson")).toBe(false);
+    expect(valueExports.has("sfzToPreset")).toBe(false);
   });
 
   it("does not export internal MIDI helpers", () => {
@@ -162,8 +162,8 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
     expect(valueExports.has("findNearestMidi")).toBe(false);
   });
 
-  it("exports the SmplrJson type with optional smplr version field", () => {
-    expect(typeExports.has("SmplrJson")).toBe(true);
+  it("exports the SmplrPreset type with optional smplr version field", () => {
+    expect(typeExports.has("SmplrPreset")).toBe(true);
     expect(dts).toMatch(/smplr\?\s*:\s*["']1\.0["']/);
   });
 });

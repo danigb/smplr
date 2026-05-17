@@ -1,11 +1,11 @@
 import { toMidi } from "./midi";
-import { SmplrGroup, SmplrJson, SmplrRegion } from "./types";
+import { SmplrGroup, SmplrPreset, SmplrRegion } from "./types";
 
 export type SfzConvertOptions = {
   /** Base URL prepended to all sample paths. */
   baseUrl: string;
   /**
-   * Transform a raw SFZ sample path (e.g. "Arco\\C4.wav") to a SmplrJson
+   * Transform a raw SFZ sample path (e.g. "Arco\\C4.wav") to a SmplrPreset
    * relative path WITHOUT the audio extension (e.g. "Arco/C4").
    * The SampleLoader will append ".<format>" when building the final URL.
    */
@@ -15,7 +15,7 @@ export type SfzConvertOptions = {
 };
 
 /**
- * Parse SFZ text and convert to a SmplrJson descriptor.
+ * Parse SFZ text and convert to a SmplrPreset descriptor.
  *
  * Handles both inline format (`<region> sample=foo.wav lokey=60`)
  * and multi-line format (headers on their own line, opcodes below).
@@ -25,10 +25,10 @@ export type SfzConvertOptions = {
  *
  * @internal Not part of the public 1.0 API surface.
  */
-export function sfzToSmplrJson(
+export function sfzToPreset(
   sfzText: string,
   options: SfzConvertOptions,
-): SmplrJson {
+): SmplrPreset {
   const formats = options.formats ?? ["ogg", "m4a"];
 
   // Resolve #define preprocessor directives before tokenizing

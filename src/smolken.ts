@@ -1,7 +1,7 @@
 import { Storage } from "./storage";
 import { Instrument } from "./smplr";
 import { LoadProgress } from "./smplr/types";
-import { sfzToSmplrJson } from "./smplr/sfz-convert";
+import { sfzToPreset } from "./smplr/sfz-convert";
 
 export function getSmolkenNames() {
   return ["Pizzicato", "Arco", "Switched"];
@@ -40,7 +40,7 @@ export const Smolken = Instrument(
       .then((r) => r.text())
       .then((sfzText) =>
         smplr.loadInstrument(
-          sfzToSmplrJson(sfzText, {
+          sfzToPreset(sfzText, {
             baseUrl: SMOLKEN_BASE_URL,
             pathFromSampleName: (name) =>
               name.replace(/\\/g, "/").replace(/\.wav$/i, ""),

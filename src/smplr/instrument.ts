@@ -5,7 +5,7 @@ import { SmplrImpl, type SmplrOptions } from "./smplr";
 import type {
   LoadProgress,
   NoteEvent,
-  SmplrJson,
+  SmplrPreset,
   StopFn,
   StopTarget,
 } from "./types";
@@ -78,7 +78,7 @@ export interface PluginSmplr extends Smplr {
    * Resolves when all samples are ready.
    */
   loadInstrument(
-    json: SmplrJson,
+    json: SmplrPreset,
     buffers?: Map<string, AudioBuffer>,
   ): Promise<void>;
 }

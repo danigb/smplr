@@ -1,6 +1,6 @@
 import { HttpStorage, Storage } from "../storage";
 import { Instrument } from "../smplr";
-import { LoadProgress, SmplrGroup, SmplrJson } from "../smplr/types";
+import { LoadProgress, SmplrGroup, SmplrPreset } from "../smplr/types";
 import { spreadKeyRanges } from "../smplr/utils";
 import { toMidi } from "../smplr/midi";
 import {
@@ -54,10 +54,7 @@ export const Soundfont = Instrument(
 
     return loadSoundfontData(ctx, config).then(
       ({ buffers, noteNames, loopData }) =>
-        smplr.loadInstrument(
-          soundfontToSmplrJson(noteNames, loopData),
-          buffers,
-        ),
+        smplr.loadInstrument(soundfontToPreset(noteNames, loopData), buffers),
     );
   },
 );
@@ -122,17 +119,17 @@ async function decodeSoundfontFile(
 }
 
 // ---------------------------------------------------------------------------
-// soundfontToSmplrJson — pure converter function
+// soundfontToPreset — pure converter function
 // ---------------------------------------------------------------------------
 
 /**
- * Convert a list of note names (with optional loop data) to SmplrJson.
+ * Convert a list of note names (with optional loop data) to SmplrPreset.
  * Uses spreadKeyRanges so notes between recorded pitches pitch-shift correctly.
  */
-export function soundfontToSmplrJson(
+export function soundfontToPreset(
   noteNames: string[],
   loopData?: LoopData,
-): SmplrJson {
+): SmplrPreset {
   const entries: [number, string][] = [];
 
   for (const noteName of noteNames) {
