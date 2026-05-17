@@ -2,7 +2,7 @@
 
 ## 0.22.0
 
-If you only ever followed the README, **no migration is required**.
+If you only ever followed the README, **no migration should be required**.
 
 ### New
 
@@ -52,7 +52,7 @@ If you only ever followed the README, **no migration is required**.
 
 ## 0.21.0
 
-If you only ever followed the README, **no migration is required**.
+If you only ever followed the README, **no migration should be required**.
 
 ### New: defining instruments with `Instrument(...)`
 
