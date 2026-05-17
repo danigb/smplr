@@ -1,10 +1,51 @@
 # smplr
 
+## 0.22.0
+
+If you only ever followed the README, **no migration is required**.
+
+### New
+
+- **`output.volume` getter/setter** on the channel. `instrument.output.volume = 80`
+  is now the canonical way to change volume; `output.volume` reads the current
+  value.
+- **`output.setEffectMix(name, mix)`** on the channel. Replaces the old
+  `output.sendEffect(name, mix)` as the canonical name; the old name is kept
+  as a deprecated alias.
+- **`instrument.dispose()`** — stops all voices, tears down the audio graph,
+  and stops the scheduler. Becomes the canonical terminal-cleanup method;
+  `disconnect()` stays as a deprecated alias.
+- **`instrument.getCC(cc)`** — reads the latest value set via `setCC`. Defaults
+  to `0` for any CC that hasn't been set.
+- **Post-dispose safety**: calling `start`, `stop`, `setCC`, `getCC`,
+  or `loadInstrument` on a disposed instrument throws a
+  clear error instead of silently no-opping.
+- **`SmplrJson.smplr?: "1.0"`** — optional schema version field on the JSON
+  descriptor. Reserved for future migrations; safe to omit.
+
+### Deprecated (still works in 1.x)
+
+- **`output.setVolume(n)`** — `@deprecated` in TSDoc. Use `output.volume = n`.
+- **`output.sendEffect(name, mix)`** — `@deprecated`. Use `output.setEffectMix(name, mix)`.
+- **`instrument.disconnect()`** — `@deprecated`. Use `instrument.dispose()`.
+  `disconnect()` continues to call into the same teardown.
+- **`instrument.load`** (carried from 0.21.0) — `@deprecated`. Use `instrument.ready`.
+
+### Removed
+
+- **`spreadKeyRanges` and `SpreadResult`** are no longer exported from the
+  public API. They were undocumented utilities used internally; if you depended
+  on them, copy the implementation from `src/smplr/utils.ts`.
+
+### Internal-only (no public export change, JSDoc tagged)
+
+- `sfzToSmplrJson`, `toMidi`, `findNearestMidi` are now explicitly tagged
+  `@internal`. They were never publicly exported; this clarifies their status
+  for tooling and future contributors.
+
 ## 0.21.0
 
-smplr 0.21.0 is the **1.0 candidate**: it ships the public authoring API and the `Smplr` interface, but holds the formal 1.0 stability commitment until a coordinated set of sibling tickets lands (narrow `loader`/`scheduler` public interfaces, metadata-as-standalone-functions, `OutputChannel` cleanup, `SmplrJson` versioning). **Every code example in the README continues to work unmodified** — including all `new X(ctx, opts)` constructor patterns, `await new X(ctx).load` returning the instrument, `output.setVolume`, `output.sendEffect`, and every instrument-specific extra method.
-
-If you only ever followed the README, **no migration is required**. Upgrade and keep going.
+If you only ever followed the README, **no migration is required**.
 
 ### New: defining instruments with `Instrument(...)`
 
@@ -83,7 +124,7 @@ const inst = Custom(ctx, {});
 await inst.ready;
 ```
 
-For the typical case (an instrument you want to use *now*, not export as a reusable factory), `Sampler` covers the inline-instrument use case.
+For the typical case (an instrument you want to use _now_, not export as a reusable factory), `Sampler` covers the inline-instrument use case.
 
 ### Stability — 1.0 candidate
 

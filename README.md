@@ -57,7 +57,7 @@ wav.downloadWav("arpeggio.wav");
 
 See demo: https://danigb.github.io/smplr/
 
-`smplr` is approaching 1.0. The 0.21.0 release is the **1.0 candidate** — the documented surface is intended to ship unchanged into 1.0; the formal stability commitment lands when a handful of coordinated sibling tickets are in (see the 0.21.0 [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md) entry).
+`smplr` is approaching 1.0. The 0.22.0 release lands the final batch of pre-1.0 API work — every documented `new X(ctx, opts)` keeps working, and the documented surface is intended to ship unchanged into 1.0. The formal stability commitment lands once the narrow `loader`/`scheduler` public interfaces sibling ticket is in (see [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md)).
 
 > **Upgrading from an earlier 0.x?** No code changes are required — every documented `new X(ctx, opts)` keeps working. New code should drop the `new` (`X(ctx, opts)`) and prefer `await x.ready` over `await x.load`.
 
@@ -291,13 +291,41 @@ If `loop` is true but `loopStart` or `loopEnd` are not specified, 0 and total du
 
 #### Change volume
 
-Instrument `output` attribute represents the main output of the instrument. `output.setVolume` method accepts a number where 0 means no volume, and 127 is max volume without amplification:
+Instrument `output` attribute represents the main output of the instrument. The `output.volume` getter/setter accepts a number where 0 means no volume, and 127 is max volume without amplification:
 
 ```js
-piano.output.setVolume(80);
+piano.output.volume = 80;
+piano.output.volume; // => 80
 ```
 
+`output.setVolume(n)` is kept as a deprecated alias and continues to work.
+
 ⚠️ `volume` is global to the instrument, but `velocity` is specific for each note.
+
+#### MIDI CC
+
+Set and read MIDI Control Change values on the instrument:
+
+```js
+piano.setCC(64, 127); // sustain pedal on
+piano.getCC(64);      // => 127
+piano.setCC(64, 0);   // sustain pedal off
+```
+
+Unset CCs default to `0` (matches MIDI's "undefined controller defaults to 0" convention).
+
+#### Disposing
+
+When you're done with an instrument, call `dispose()` to stop all voices, tear down the audio graph, and stop the scheduler. The instance must not be used after this call.
+
+```js
+useEffect(() => {
+  const piano = SplendidGrandPiano(context);
+  return () => piano.dispose();
+}, []);
+```
+
+`disconnect()` is kept as a deprecated alias and continues to work.
 
 #### Events
 
@@ -345,11 +373,13 @@ const piano = SplendidGrandPiano(context, { volume });
 piano.output.addEffect("reverb", reverb, 0.2);
 ```
 
-To change the mix level, use `output.sendEffect(name, mix)`:
+To change the mix level, use `output.setEffectMix(name, mix)`:
 
 ```js
-piano.output.sendEffect("reverb", 0.5);
+piano.output.setEffectMix("reverb", 0.5);
 ```
+
+`output.sendEffect(name, mix)` is kept as a deprecated alias and continues to work.
 
 ### Cache requests
 
@@ -642,6 +672,22 @@ This will download a WAV file you can attach to your issue or pull request.
 ---
 
 ## Instruments
+
+### Available instruments
+
+Each instrument family exposes a synchronous helper that returns the names you can pass to its factory:
+
+| Factory | Names helper |
+|---|---|
+| `Soundfont` | `getSoundfontNames(): string[]` |
+| `ElectricPiano` | `getElectricPianoNames(): string[]` |
+| `Mallet` | `getMalletNames(): string[]` |
+| `Mellotron` | `getMellotronNames(): string[]` |
+| `DrumMachine` | `getDrumMachineNames(): string[]` |
+| `Smolken` | `getSmolkenNames(): string[]` |
+| `Versilian` | `getVersilianInstruments(): Promise<string[]>` |
+
+`getVersilianInstruments` is async because the catalog is fetched from the network on first call (cached thereafter).
 
 ### Sampler
 
