@@ -28,4 +28,34 @@ describe("B5 — output channel aliases stay callable", () => {
 
     expect(() => piano.output.setVolume(80)).not.toThrow();
   });
+
+  it("output.volume getter returns the latest set value", () => {
+    const ctx = createAudioContextMock();
+    const piano = new SplendidGrandPiano(ctx as any);
+    piano.load.catch(() => {});
+
+    piano.output.volume = 80;
+    expect(piano.output.volume).toBe(80);
+  });
+
+  it("output.setEffectMix is a function", () => {
+    const ctx = createAudioContextMock();
+    const piano = new SplendidGrandPiano(ctx as any);
+    piano.load.catch(() => {});
+
+    expect(typeof piano.output.setEffectMix).toBe("function");
+  });
+
+  it("setVolume and volume setter are equivalent", () => {
+    const ctx = createAudioContextMock();
+    const a = new SplendidGrandPiano(ctx as any);
+    a.load.catch(() => {});
+    a.output.setVolume(60);
+
+    const b = new SplendidGrandPiano(ctx as any);
+    b.load.catch(() => {});
+    b.output.volume = 60;
+
+    expect(a.output.volume).toBe(b.output.volume);
+  });
 });

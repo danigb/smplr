@@ -1,5 +1,5 @@
 import { AudioInsert, connectSerial } from "./connect";
-import { createControl } from "./signals";
+import { Control, createControl } from "./signals";
 import { midiVelToGain } from "./volume";
 
 export type ChannelConfig = {
@@ -22,6 +22,7 @@ type Send = {
  * @private
  */
 export class Channel {
+  /** @deprecated Use `output.volume = n` instead. */
   public readonly setVolume: (vol: number) => void;
   public readonly input: AudioNode;
 
@@ -32,6 +33,7 @@ export class Channel {
   #disconnect: () => void;
   #unsubscribe: () => void;
   #config: Readonly<ChannelConfig>;
+  #volumeControl: Control<number>;
   #disconnected = false;
 
   constructor(
@@ -58,10 +60,19 @@ export class Channel {
     ]);
 
     const volume = createControl(this.#config.volume);
+    this.#volumeControl = volume;
     this.setVolume = volume.set;
     this.#unsubscribe = volume.subscribe((volume) => {
       this.#volume.gain.value = this.#config.volumeToGain(volume);
     });
+  }
+
+  get volume(): number {
+    return this.#volumeControl.get();
+  }
+
+  set volume(value: number) {
+    this.#volumeControl.set(value);
   }
 
   get pan(): number {
@@ -105,7 +116,7 @@ export class Channel {
     this.#sends.push({ name, mix, disconnect });
   }
 
-  sendEffect(name: string, mix: number) {
+  setEffectMix(name: string, mix: number) {
     if (this.#disconnected) {
       throw Error("Can't send effect to disconnected channel");
     }
@@ -116,6 +127,11 @@ export class Channel {
     } else {
       console.warn("Send bus not found: " + name);
     }
+  }
+
+  /** @deprecated Use `setEffectMix(name, mix)` instead. */
+  sendEffect(name: string, mix: number) {
+    this.setEffectMix(name, mix);
   }
 
   disconnect() {

@@ -1,5 +1,5 @@
+import { spreadKeyRanges } from "./smplr/utils";
 import {
-  spreadKeyRanges,
   pianoToSmplrJson,
   LAYERS,
   SplendidGrandPiano,

@@ -121,4 +121,23 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
       expect(valueExports.has(name)).toBe(true);
     }
   });
+
+  it("does not export internal spread utilities", () => {
+    expect(valueExports.has("spreadKeyRanges")).toBe(false);
+    expect(typeExports.has("SpreadResult")).toBe(false);
+  });
+
+  it("does not export internal SFZ conversion", () => {
+    expect(valueExports.has("sfzToSmplrJson")).toBe(false);
+  });
+
+  it("does not export internal MIDI helpers", () => {
+    expect(valueExports.has("toMidi")).toBe(false);
+    expect(valueExports.has("findNearestMidi")).toBe(false);
+  });
+
+  it("exports the SmplrJson type with optional smplr version field", () => {
+    expect(typeExports.has("SmplrJson")).toBe(true);
+    expect(dts).toMatch(/smplr\?\s*:\s*["']1\.0["']/);
+  });
 });

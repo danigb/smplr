@@ -13,6 +13,7 @@ function noteNameToMidi(note: string): number | undefined {
   return [0, 2, 4, 5, 7, 9, 11][step] + alt + 12 * (oct + 1);
 }
 
+/** @internal Not part of the public 1.0 API surface. */
 export function toMidi(note: string | number | undefined): number | undefined {
   return note === undefined
     ? undefined
@@ -21,6 +22,7 @@ export function toMidi(note: string | number | undefined): number | undefined {
       : noteNameToMidi(note);
 }
 
+/** @internal Not part of the public 1.0 API surface. */
 export function findNearestMidi(
   midi: number,
   isAvailable: Record<string | number, unknown>,

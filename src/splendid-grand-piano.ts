@@ -125,12 +125,6 @@ export function pianoToSmplrJson(options: PianoJsonOptions): SmplrJson {
 }
 
 // ---------------------------------------------------------------------------
-// spreadKeyRanges — re-exported from utils for backward compatibility
-// ---------------------------------------------------------------------------
-
-export { spreadKeyRanges } from "./smplr/utils";
-
-// ---------------------------------------------------------------------------
 // LAYERS — piano sample data
 // ---------------------------------------------------------------------------
 

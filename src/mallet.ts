@@ -1,8 +1,8 @@
 import { Instrument } from "./smplr";
 import { loadVersilianInstrument, VersilianOptions } from "./versilian";
 
-export function getMalletNames() {
-  return Object.keys(NAME_TO_PATH) as MalletName[];
+export function getMalletNames(): string[] {
+  return Object.keys(NAME_TO_PATH);
 }
 
 export const Mallet = Instrument(

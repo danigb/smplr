@@ -7,12 +7,14 @@
  * `floor((A + B) / 2)`, matching the behaviour of the old `findNearestMidiInLayer`
  * which always resolved ties in favour of the lower sample.
  */
+/** @internal Not part of the public 1.0 API surface. */
 export type SpreadResult = {
   keyRange: [number, number];
   pitch: number;
   sample: string;
 };
 
+/** @internal Not part of the public 1.0 API surface. */
 export function spreadKeyRanges(samples: [number, string][]): SpreadResult[] {
   if (samples.length === 0) return [];
 

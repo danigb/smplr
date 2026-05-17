@@ -134,6 +134,13 @@ export class SmplrImpl implements Smplr {
   #onStart: ((event: NoteEvent) => void) | undefined;
   #onEnded: ((event: NoteEvent) => void) | undefined;
   #ccState: Map<number, number> = new Map();
+  #disposed = false;
+
+  #assertNotDisposed(action: string): void {
+    if (this.#disposed) {
+      throw Error(`Cannot ${action} on a disposed Smplr instance.`);
+    }
+  }
 
   constructor(
     context: BaseAudioContext,
@@ -227,6 +234,7 @@ export class SmplrImpl implements Smplr {
     json: SmplrJson,
     buffers?: Map<string, AudioBuffer>,
   ): Promise<void> {
+    this.#assertNotDisposed("load an instrument");
     this.#defaults = json.defaults;
     this.#aliases = json.aliases
       ? new Map(Object.entries(json.aliases))
@@ -261,7 +269,18 @@ export class SmplrImpl implements Smplr {
    * ccRange constraints (e.g. CC64 sustain pedal).
    */
   setCC(cc: number, value: number): void {
+    this.#assertNotDisposed("set CC");
     this.#ccState.set(cc, value);
+  }
+
+  /**
+   * Read the latest value set via {@link setCC}. Returns `0` for any CC that
+   * has not been set (matches MIDI's "undefined controller defaults to 0"
+   * convention).
+   */
+  getCC(cc: number): number {
+    this.#assertNotDisposed("read CC");
+    return this.#ccState.get(cc) ?? 0;
   }
 
   /**
@@ -269,6 +288,7 @@ export class SmplrImpl implements Smplr {
    * played yet, or stops the resulting voices if it has.
    */
   start(event: NoteEvent): StopFn {
+    this.#assertNotDisposed("start a note");
     const normalized = this.#normalizeNoteEvent(event);
 
     const schedulerStop = this.scheduler.schedule(
@@ -291,6 +311,7 @@ export class SmplrImpl implements Smplr {
    * - `{ time }` (no stopId) → stop all voices at a future time
    */
   stop(target?: StopTarget): void {
+    this.#assertNotDisposed("stop voices");
     if (target === undefined) {
       this.#voices.stopAll();
     } else if (typeof target === "string" || typeof target === "number") {
@@ -305,13 +326,22 @@ export class SmplrImpl implements Smplr {
   }
 
   /**
-   * Stop all voices, disconnect the output channel, and stop the scheduler.
-   * The instance should not be used after this call.
+   * Stop all voices, dispose the output channel, and stop the scheduler.
+   * The instance must not be used after this call — subsequent
+   * `start`/`stop`/`setCC`/`getCC`/`loadInstrument` calls throw.
+   * Subsequent `dispose()` calls are no-ops.
    */
-  disconnect(): void {
+  dispose(): void {
+    if (this.#disposed) return;
+    this.#disposed = true;
     this.#voices.stopAll();
     this.#channel.disconnect();
     this.scheduler.stop();
+  }
+
+  /** @deprecated Use {@link dispose} instead. */
+  disconnect(): void {
+    this.dispose();
   }
 
   #getBuffer(sample: string, reverse: boolean): AudioBuffer | undefined {
