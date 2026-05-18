@@ -37,6 +37,8 @@ export type SoundfontOptions = Partial<
   SoundfontConfig & {
     destination?: AudioNode;
     volume?: number;
+    /** Stereo pan position (-1 = full left, 0 = centre, +1 = full right). */
+    pan?: number;
     velocity?: number;
     onLoadProgress?: (progress: LoadProgress) => void;
   }

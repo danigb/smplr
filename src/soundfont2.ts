@@ -36,6 +36,8 @@ export type Soundfont2Options = {
   createSoundfont: (data: Uint8Array) => Sf2;
   destination?: AudioNode;
   volume?: number;
+  /** Stereo pan position (-1 = full left, 0 = centre, +1 = full right). */
+  pan?: number;
   velocity?: number;
 };
 

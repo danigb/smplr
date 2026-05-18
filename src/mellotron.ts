@@ -57,6 +57,8 @@ export type MellotronOptions = Partial<
   MellotronConfig & {
     destination?: AudioNode;
     volume?: number;
+    /** Stereo pan position (-1 = full left, 0 = centre, +1 = full right). */
+    pan?: number;
     velocity?: number;
     decayTime?: number;
     onLoadProgress?: (progress: LoadProgress) => void;

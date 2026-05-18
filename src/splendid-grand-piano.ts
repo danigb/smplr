@@ -19,6 +19,8 @@ export type SplendidGrandPianoConfig = {
   destination?: AudioNode;
   /** Master volume (0–127 MIDI scale). */
   volume?: number;
+  /** Stereo pan position (-1 = full left, 0 = centre, +1 = full right). */
+  pan?: number;
   /** Called after each buffer is loaded or served from cache. */
   onLoadProgress?: (progress: LoadProgress) => void;
   /** Audio formats to try, in order of preference. Defaults to ["ogg", "m4a"]. */

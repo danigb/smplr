@@ -13,6 +13,7 @@ type SamplerBase = {
   storage?: Storage;
   detune?: number;
   volume?: number;
+  pan?: number;
   velocity?: number;
   decayTime?: number;
   lpfCutoffHz?: number;
