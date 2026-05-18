@@ -1,0 +1,37 @@
+import pkg from "smplr/package.json";
+import { DrumMachineExample } from "src/DrumMachineExample";
+import { SequencerExample } from "src/SequencerExample";
+import { ElectricPianoExample } from "src/ElectricPianoExample";
+import { MalletExample } from "src/MalletExample";
+import { MellotronExample } from "src/MellotronExample";
+import { SmolkenExample } from "src/SmolkenExample";
+import { Soundfont2Example } from "src/Soundfont2Example";
+import { SoundfontExample } from "src/SoundfontExample";
+import { VersilianExample } from "src/VersilianExample";
+import { PianoExample } from "src/PianoExample";
+
+const { version } = pkg;
+
+export function IndexPage() {
+  return (
+    <main className="max-w-4xl mx-auto my-20 p-4">
+      <div className="flex items-end mb-16">
+        <h1 className="text-6xl font-bold">smplr</h1>
+        <span className="text-zinc-500 ml-3 text-lg">{version}</span>
+      </div>
+
+      <div className="flex flex-col gap-8">
+        <PianoExample />
+        <SoundfontExample />
+        <ElectricPianoExample />
+        <MalletExample />
+        <DrumMachineExample />
+        <SequencerExample />
+        <MellotronExample />
+        <SmolkenExample />
+        <VersilianExample />
+        <Soundfont2Example />
+      </div>
+    </main>
+  );
+}

@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState } from "react";
 import { CacheStorage, Reverb, Sequencer, SplendidGrandPiano } from "smplr";
 import { ConnectMidi } from "./ConnectMidi";
@@ -27,7 +25,9 @@ export function PianoExample({ className }: { className?: string }) {
       seqRef.current.togglePlayPause();
       return;
     }
-    const notes = await fetch("/arabesque.json").then((r) => r.json());
+    const notes = await fetch(`${import.meta.env.BASE_URL}arabesque.json`).then(
+      (r) => r.json(),
+    );
     const seq = Sequencer(piano.context, {
       bpm: 80,
       humanize: { timingMs: 5, velocity: 20 },

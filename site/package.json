@@ -3,36 +3,36 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "devs": "next-dev-https --https  --port 3001",
-    "deploy": "npm run deploy:build && npm run deploy:github",
-    "deploy:github": "npm run deploy:build && gh-pages -d out/ -t",
-    "deploy:build": "DEPLOY=true next build",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "vite",
+    "devs": "HTTPS=true vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy:build": "DEPLOY=true vite build && cp dist/index.html dist/404.html",
+    "deploy": "pnpm run deploy:build && gh-pages -d dist -t",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "smplr": "link:..",
     "soundfont2": "^0.4.0",
     "tonal": "^6.4.3",
-    "webmidi": "^3.1.16"
+    "webmidi": "^3.1.16",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-router-dom": "^6.30.0"
   },
   "devDependencies": {
+    "@fontsource-variable/inter": "^5.0.0",
     "@types/node": "^22.19.19",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-basic-ssl": "^1.2.0",
+    "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.5.0",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "^15.5.18",
     "gh-pages": "^6.3.0",
-    "next": "^15.5.18",
-    "next-dev-https": "^0.13.3",
     "postcss": "^8.5.14",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
     "tailwindcss": "^3.4.19",
-    "typescript": "5.4.5"
+    "typescript": "5.4.5",
+    "vite": "^6.0.0"
   },
   "pnpm": {
     "overrides": {

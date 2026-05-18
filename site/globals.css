@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply font-sans;
+  }
+}
+
 /* taken from https://github.com/lillydinhle/react-piano-component/blob/master/src/demo/components/InteractivePiano.css */
 
 .piano-container {
