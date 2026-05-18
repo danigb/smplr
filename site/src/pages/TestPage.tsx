@@ -1,4 +1,3 @@
-import Head from "next/head";
 import { useEffect, useRef, useState } from "react";
 import { Note } from "tonal";
 import {
@@ -18,7 +17,8 @@ import {
   getSoundfontNames,
   getVersilianInstruments,
 } from "smplr";
-import { getAudioContext } from "../src/audio-context";
+import { getAudioContext } from "src/audio-context";
+import { useTitle } from "../useTitle";
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
@@ -332,7 +332,8 @@ async function runAll(
 
 // ── page ─────────────────────────────────────────────────────────────────────
 
-export default function TestPage() {
+export function TestPage() {
+  useTitle("smplr — test page");
   const [isRunning, setIsRunning] = useState(false);
   const [toneActive, setToneActive] = useState(false);
   const [ctxInfo, setCtxInfo] = useState("");
@@ -369,83 +370,76 @@ export default function TestPage() {
   }
 
   return (
-    <>
-      <Head>
-        <title>smplr — test page</title>
-      </Head>
-      <div className="min-h-screen bg-gray-950 text-green-300 p-8 font-mono text-sm">
-        <h1 className="text-base mb-4 text-green-400">smplr test page</h1>
-        <div className="flex gap-4 mb-6">
-          <button
-            onClick={toggle}
-            className="px-4 py-2 rounded bg-green-900 hover:bg-green-800 text-green-100 font-bold"
-          >
-            {isRunning ? "⏸ Pause" : "▶ Play"}
-          </button>
-          <button
-            onClick={async () => {
-              if (oscRef.current) {
-                oscRef.current.stop();
+    <div className="min-h-screen bg-gray-950 text-green-300 p-8 font-mono text-sm">
+      <h1 className="text-base mb-4 text-green-400">smplr test page</h1>
+      <div className="flex gap-4 mb-6">
+        <button
+          onClick={toggle}
+          className="px-4 py-2 rounded bg-green-900 hover:bg-green-800 text-green-100 font-bold"
+        >
+          {isRunning ? "⏸ Pause" : "▶ Play"}
+        </button>
+        <button
+          onClick={async () => {
+            if (oscRef.current) {
+              oscRef.current.stop();
+              oscRef.current = null;
+              setToneActive(false);
+            } else {
+              const ctx = getAudioContext();
+              if (ctx.state === "suspended") {
+                await ctx.resume();
+              }
+              setCtxInfo(
+                `state: ${ctx.state}, sampleRate: ${ctx.sampleRate}, baseLatency: ${ctx.baseLatency}`,
+              );
+              const osc = ctx.createOscillator();
+              osc.type = "sine";
+              osc.frequency.value = 440;
+              osc.connect(ctx.destination);
+              osc.start();
+              osc.onended = () => {
                 oscRef.current = null;
                 setToneActive(false);
-              } else {
-                const ctx = getAudioContext();
-                if (ctx.state === "suspended") {
-                  await ctx.resume();
-                }
-                setCtxInfo(
-                  `state: ${ctx.state}, sampleRate: ${ctx.sampleRate}, baseLatency: ${ctx.baseLatency}`,
-                );
-                const osc = ctx.createOscillator();
-                osc.type = "sine";
-                osc.frequency.value = 440;
-                osc.connect(ctx.destination);
-                osc.start();
-                osc.onended = () => {
-                  oscRef.current = null;
-                  setToneActive(false);
-                };
-                oscRef.current = osc;
-                setToneActive(true);
-              }
-            }}
-            className="px-4 py-2 rounded bg-yellow-900 hover:bg-yellow-800 text-yellow-100 font-bold"
-          >
-            {toneActive ? "Stop tone" : "Test tone"}
-          </button>
-        </div>
-        {ctxInfo && (
-          <div className="mb-4 text-xs text-zinc-400">{ctxInfo}</div>
-        )}
-        <div
-          ref={logRef}
-          className="overflow-y-auto h-[72vh] leading-relaxed space-y-px"
+              };
+              oscRef.current = osc;
+              setToneActive(true);
+            }
+          }}
+          className="px-4 py-2 rounded bg-yellow-900 hover:bg-yellow-800 text-yellow-100 font-bold"
         >
-          {lines.map((line, i) => (
-            <div
-              key={i}
-              className={
-                line.startsWith("━")
-                  ? "text-green-500 pt-2"
-                  : line.startsWith("  ✓")
-                    ? "text-green-400"
-                    : line.startsWith("  ✗")
-                      ? "text-red-400"
-                      : line.startsWith("  ▶")
-                        ? "text-yellow-300"
-                        : line.startsWith("  ■")
-                          ? "text-green-200"
-                          : "text-green-600"
-              }
-            >
-              {line}
-            </div>
-          ))}
-          {isRunning && (
-            <div className="text-green-700 animate-pulse select-none">▊</div>
-          )}
-        </div>
+          {toneActive ? "Stop tone" : "Test tone"}
+        </button>
       </div>
-    </>
+      {ctxInfo && <div className="mb-4 text-xs text-zinc-400">{ctxInfo}</div>}
+      <div
+        ref={logRef}
+        className="overflow-y-auto h-[72vh] leading-relaxed space-y-px"
+      >
+        {lines.map((line, i) => (
+          <div
+            key={i}
+            className={
+              line.startsWith("━")
+                ? "text-green-500 pt-2"
+                : line.startsWith("  ✓")
+                  ? "text-green-400"
+                  : line.startsWith("  ✗")
+                    ? "text-red-400"
+                    : line.startsWith("  ▶")
+                      ? "text-yellow-300"
+                      : line.startsWith("  ■")
+                        ? "text-green-200"
+                        : "text-green-600"
+            }
+          >
+            {line}
+          </div>
+        ))}
+        {isRunning && (
+          <div className="text-green-700 animate-pulse select-none">▊</div>
+        )}
+      </div>
+    </div>
   );
 }

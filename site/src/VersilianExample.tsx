@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import {
   CacheStorage,
@@ -42,7 +40,7 @@ export function VersilianExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= Reverb(context);
-    storage ??= CacheStorage("smolken");
+    storage ??= CacheStorage("versilian");
     const newInstrument = Versilian(context, {
       instrument: instrumentName,
       volume,
@@ -62,8 +60,6 @@ export function VersilianExample({ className }: { className?: string }) {
           <h1 className="text-3xl">Versilian </h1>
           <h2>Versilian Community Sample Library</h2>
         </div>
-
-        <div>(experimental)</div>
 
         <LoadWithStatus
           status={status}

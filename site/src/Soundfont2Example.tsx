@@ -72,8 +72,6 @@ export function Soundfont2Example({ className }: { className?: string }) {
           <h2>Soundfont2 sampler</h2>
         </div>
 
-        <div>(experimental)</div>
-
         <LoadWithStatus
           status={status}
           progress={progress}

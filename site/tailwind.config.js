@@ -1,7 +1,11 @@
 module.exports = {
-  content: ["./pages/**/*.tsx", "./src/**/*.tsx"],
+  content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['"Inter Variable"', "system-ui", "sans-serif"],
+      },
+    },
   },
   plugins: [],
 };
