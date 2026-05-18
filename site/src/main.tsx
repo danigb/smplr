@@ -5,9 +5,6 @@ import "@fontsource-variable/inter";
 import "../globals.css";
 import { Layout } from "./Layout";
 import { IndexPage } from "./pages/IndexPage";
-import { TestPage } from "./pages/TestPage";
-import { SequencerPage } from "./pages/SequencerPage";
-import { DrumabusePage } from "./pages/DrumabusePage";
 
 const router = createBrowserRouter(
   [
@@ -15,11 +12,27 @@ const router = createBrowserRouter(
       element: <Layout />,
       children: [
         { path: "/", element: <IndexPage /> },
-        { path: "/sequencer", element: <SequencerPage /> },
-        { path: "/drumabuse", element: <DrumabusePage /> },
+        {
+          path: "/sequencer",
+          lazy: () =>
+            import("./pages/SequencerPage").then((m) => ({
+              Component: m.SequencerPage,
+            })),
+        },
+        {
+          path: "/drumabuse",
+          lazy: () =>
+            import("./pages/DrumabusePage").then((m) => ({
+              Component: m.DrumabusePage,
+            })),
+        },
       ],
     },
-    { path: "/test", element: <TestPage /> },
+    {
+      path: "/test",
+      lazy: () =>
+        import("./pages/TestPage").then((m) => ({ Component: m.TestPage })),
+    },
   ],
   { basename: import.meta.env.BASE_URL.replace(/\/$/, "") },
 );

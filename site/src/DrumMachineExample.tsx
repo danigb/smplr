@@ -57,7 +57,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
       >
         <div className="flex gap-4 mb-2">
           <select
-            className="appearance-none bg-zinc-700 text-zinc-200 rounded border border-gray-400 py-2 px-3 leading-tight focus:outline-none focus:border-blue-500"
+            className="appearance-none bg-zinc-700 text-zinc-200 rounded-sm border border-gray-400 py-2 px-3 leading-tight focus:outline-hidden focus:border-blue-500"
             value={dmName}
             onChange={(e) => {
               const newName = e.target.value;
@@ -104,10 +104,10 @@ export function DrumMachineExample({ className }: { className?: string }) {
           {drums?.getGroupNames().map((group) => {
             const rev = reversedGroups.has(group);
             return (
-              <div key={group} className="bg-zinc-900 rounded px-2 pb-2">
+              <div key={group} className="bg-zinc-900 rounded-sm px-2 pb-2">
                 <div className="flex gap-1">
                   <button
-                    className="text-left flex-grow"
+                    className="text-left grow"
                     onClick={() => {
                       drums?.start({
                         note: group,
@@ -119,7 +119,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
                     {group}
                   </button>
                   <button
-                    className={`text-xs px-1 rounded ${rev ? "bg-rose-700 text-white" : "bg-zinc-700 text-zinc-400"}`}
+                    className={`text-xs px-1 rounded-sm ${rev ? "bg-rose-700 text-white" : "bg-zinc-700 text-zinc-400"}`}
                     onClick={() => toggleReverse(group)}
                     title="Toggle reverse playback"
                   >
@@ -130,7 +130,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
                   {drums?.getSampleNamesForGroup(group).map((sample) => (
                     <button
                       key={sample}
-                      className="bg-zinc-600 w-4 h-4 rounded"
+                      className="bg-zinc-600 w-4 h-4 rounded-sm"
                       onPointerDown={() => {
                         drums?.start({
                           note: sample,

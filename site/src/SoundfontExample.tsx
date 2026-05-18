@@ -78,7 +78,7 @@ export function SoundfontExample({ className }: { className?: string }) {
       >
         <div className="flex items-center gap-4 mb-2">
           <select
-            className="appearance-none bg-zinc-700 text-zinc-200 rounded border border-gray-400 py-2 px-3 leading-tight focus:outline-none focus:border-blue-500"
+            className="appearance-none bg-zinc-700 text-zinc-200 rounded-sm border border-gray-400 py-2 px-3 leading-tight focus:outline-hidden focus:border-blue-500"
             value={libraryName}
             onChange={(e) => {
               const libraryName = e.target.value;
@@ -93,7 +93,7 @@ export function SoundfontExample({ className }: { className?: string }) {
             ))}
           </select>
           <select
-            className="appearance-none bg-zinc-700 text-zinc-200 rounded border border-gray-400 py-2 px-3 leading-tight focus:outline-none focus:border-blue-500"
+            className="appearance-none bg-zinc-700 text-zinc-200 rounded-sm border border-gray-400 py-2 px-3 leading-tight focus:outline-hidden focus:border-blue-500"
             value={instrumentName}
             onChange={(e) => {
               const instrumentName = e.target.value;
@@ -108,7 +108,7 @@ export function SoundfontExample({ className }: { className?: string }) {
             ))}
           </select>
           <button
-            className="bg-zinc-700 rounded px-3 py-0.5 shadow"
+            className="bg-zinc-700 rounded-sm px-3 py-0.5 shadow-sm"
             onClick={() => {
               instrument?.stop();
             }}

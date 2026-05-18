@@ -87,7 +87,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
       </div>
       <div className="my-2 flex gap-4">
         <select
-          className="appearance-none bg-zinc-700 text-zinc-200 rounded border border-gray-400 py-2 px-3 leading-tight focus:outline-none focus:border-blue-500"
+          className="appearance-none bg-zinc-700 text-zinc-200 rounded-sm border border-gray-400 py-2 px-3 leading-tight focus:outline-hidden focus:border-blue-500"
           value={samplerName}
           onChange={(e) => {
             const value = e.target.value;
@@ -121,7 +121,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
       <div className={status !== "ready" ? "opacity-30" : ""}>
         <div className="flex gap-4 mb-2 no-select">
           <select
-            className="appearance-none bg-zinc-700 text-zinc-200 rounded border border-gray-400 py-2 px-3 leading-tight focus:outline-none focus:border-blue-500"
+            className="appearance-none bg-zinc-700 text-zinc-200 rounded-sm border border-gray-400 py-2 px-3 leading-tight focus:outline-hidden focus:border-blue-500"
             value={instrumentName}
             onChange={(e) => {
               const instrumentName = e.target.value;
@@ -136,7 +136,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
             ))}
           </select>
           <button
-            className="bg-zinc-700 rounded px-3 py-0.5 shadow"
+            className="bg-zinc-700 rounded-sm px-3 py-0.5 shadow-sm"
             onClick={() => {
               sampler?.stop();
             }}

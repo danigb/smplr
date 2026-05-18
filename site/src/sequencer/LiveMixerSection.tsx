@@ -206,7 +206,7 @@ export function LiveMixerSection() {
           <label className="flex gap-2 items-center text-sm">
             <span className="text-zinc-400">Time sig</span>
             <select
-              className="bg-zinc-700 px-2 py-1 rounded"
+              className="bg-zinc-700 px-2 py-1 rounded-sm"
               value={sigKey}
               onChange={(e) =>
                 changeSig(e.target.value as keyof typeof TIME_SIGS)
@@ -228,7 +228,7 @@ export function LiveMixerSection() {
           {tracks.map((t) => (
             <div
               key={t.id}
-              className="flex items-center gap-3 bg-zinc-800/40 rounded px-3 py-2"
+              className="flex items-center gap-3 bg-zinc-800/40 rounded-sm px-3 py-2"
             >
               <div className="w-16 text-sm">{t.id}</div>
               <button
