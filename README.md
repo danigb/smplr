@@ -845,7 +845,7 @@ sampler.start({ note: 60 });
 await sampler.reload(kitB);
 ```
 
-The full `SmplrPreset` schema is documented in [SMPLR_PRESET.md](./SMPLR_PRESET.md). Note: `buffers` and `preset` are mutually exclusive on construction — pass exactly one.
+The full `SmplrPreset` schema is documented in [PRESET_SCHEMA.md](./PRESET_SCHEMA.md). Note: `buffers` and `preset` are mutually exclusive on construction — pass exactly one.
 
 `sampler.reload(input)` accepts either shape (flat buffers record or full `SmplrPreset`), regardless of which mode was used at construction.
 

@@ -129,6 +129,6 @@ The interface lists the shared surface: `start`, `stop`, `setCC`, `getCC`, `disp
 
 ## SmplrPreset schema
 
-`SmplrPreset` is the descriptor that drives sample selection, region matching, and playback. See [SMPLR_PRESET.md](./SMPLR_PRESET.md) for the full schema reference (top-level shape, `PlaybackParams`, `SmplrGroup`, `SmplrRegion`, inheritance rules, and worked examples).
+`SmplrPreset` is the descriptor that drives sample selection, region matching, and playback. See [PRESET_SCHEMA.md](./PRESET_SCHEMA.md) for the full schema reference (top-level shape, `PlaybackParams`, `SmplrGroup`, `SmplrRegion`, inheritance rules, and worked examples).
 
 The canonical type definition lives in `src/smplr/types.ts`.
