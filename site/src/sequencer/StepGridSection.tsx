@@ -123,8 +123,8 @@ export function StepGridSection() {
         <LoadWithStatus status={status} onClick={load} progress={progress} />
       </div>
       <p className="text-zinc-400 text-sm mb-4">
-        Click cells to toggle steps. Humanize sliders apply per-track timing
-        and velocity randomization.
+        Click cells to toggle steps. Humanize sliders apply per-track timing and
+        velocity randomization.
       </p>
 
       <div className={disabled ? "opacity-30 pointer-events-none" : ""}>

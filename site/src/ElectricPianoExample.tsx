@@ -24,7 +24,12 @@ export function ElectricPianoExample({ className }: { className?: string }) {
     setStatus("loading");
     const context = getAudioContext();
     reverb ??= Reverb(context);
-    const newPiano = ElectricPiano(context, { instrument, volume, onLoadProgress, formats: [format] });
+    const newPiano = ElectricPiano(context, {
+      instrument,
+      volume,
+      onLoadProgress,
+      formats: [format],
+    });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);
     newPiano.load.then(() => {

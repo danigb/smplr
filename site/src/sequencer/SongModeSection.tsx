@@ -168,9 +168,7 @@ export function SongModeSection() {
               placeholder="0,1,1,2"
             />
           </label>
-          {ended && (
-            <span className="text-amber-400 text-sm">chain ended</span>
-          )}
+          {ended && <span className="text-amber-400 text-sm">chain ended</span>}
         </div>
 
         <div className="grid grid-cols-3 gap-2">

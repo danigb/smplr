@@ -13,7 +13,7 @@ let instrumentNames = getMalletNames();
 export function MalletExample({ className }: { className?: string }) {
   const [instrument, setInstrument] = useState<Mallet | undefined>(undefined);
   const [instrumentName, setInstrumentName] = useState<string>(
-    instrumentNames[0]
+    instrumentNames[0],
   );
   const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [reverbMix, setReverbMix] = useState(0);

@@ -84,7 +84,7 @@ export function PianoKeyboard({
             >
               <div className={"text"}></div>
             </button>
-          )
+          ),
         )}
       </div>
       <div className="flex gap-1 items-center mt-1">
@@ -146,7 +146,7 @@ export function PianoKeyboard({
                 detune: 0,
                 time: time * 0.25,
                 duration: 0.05,
-              })
+              }),
             );
           }}
         >

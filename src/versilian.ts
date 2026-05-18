@@ -9,9 +9,9 @@ const VCSL_BASE_URL = "https://smpldsnds.github.io/sgossner-vcsl";
 let instrumentsPromise: Promise<string[]> | undefined;
 
 export function getVersilianInstruments(): Promise<string[]> {
-  return (instrumentsPromise ??= fetch(
-    VCSL_BASE_URL + "/sfz_files.json",
-  ).then((res) => res.json()));
+  return (instrumentsPromise ??= fetch(VCSL_BASE_URL + "/sfz_files.json").then(
+    (res) => res.json(),
+  ));
 }
 
 export type VersilianConfig = {

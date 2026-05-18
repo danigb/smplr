@@ -123,9 +123,8 @@ export function MultiInstrumentSection() {
         <LoadWithStatus status={status} onClick={load} progress={progress} />
       </div>
       <p className="text-zinc-400 text-sm mb-4">
-        One Sequencer driving two instruments via separate{" "}
-        <code>addTrack</code> calls. Drums + piano play together over a 2-bar
-        loop.
+        One Sequencer driving two instruments via separate <code>addTrack</code>{" "}
+        calls. Drums + piano play together over a 2-bar loop.
       </p>
 
       <div className={disabled ? "opacity-30 pointer-events-none" : ""}>

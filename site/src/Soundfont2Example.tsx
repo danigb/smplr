@@ -27,9 +27,7 @@ let samplerNames: string[] = [
 ];
 
 export function Soundfont2Example({ className }: { className?: string }) {
-  const [sampler, setSampler] = useState<Soundfont2 | undefined>(
-    undefined
-  );
+  const [sampler, setSampler] = useState<Soundfont2 | undefined>(undefined);
   const [samplerName, setSamplerName] = useState<string>(samplerNames[0]);
   const [instrumentName, setInstrumentName] = useState<string>("");
   const { status, setStatus, progress, onLoadProgress } = useStatus();
@@ -37,7 +35,7 @@ export function Soundfont2Example({ className }: { className?: string }) {
   const [volume, setVolume] = useState(100);
   const [isCustomEnabled, setCustomEnabled] = useState(false);
   const [customUrl, setCustomUrl] = useState(
-    "https://smpldsnds.github.io/soundfonts/soundfonts/yamaha-grand-lite.sf2"
+    "https://smpldsnds.github.io/soundfonts/soundfonts/yamaha-grand-lite.sf2",
   );
 
   function loadSampler(nameOrUrl: string) {
