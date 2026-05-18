@@ -1,5 +1,18 @@
 # smplr
 
+## 0.25.0
+
+### New
+
+- **`DrumAbuse`** — sampled instrument for the
+  [Synthabuse](https://www.youtube.com/watch?v=Ay-U9eYKmGA) drum-machine
+  collection. 5 packs, ~210 vintage drum machines and synths. Two source
+  modes: `source: { kind: "machine", machine }` loads one machine's full
+  kit, `source: { kind: "pack", pack, instrument }` loads a cross-machine
+  instrument list. Helpers: `getDrumAbuseMachineNames()`,
+  `getDrumAbusePackNames()`, `getDrumAbuseMachinesForPack(pack)`,
+  `getDrumAbuseMachinePack(id)`.
+
 ## 0.24.0
 
 ### New

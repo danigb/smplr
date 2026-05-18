@@ -124,12 +124,13 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
     }
   });
 
-  it("exports all 10 first-party factories as values (with Soundfont2Sampler as deprecated alias)", () => {
+  it("exports all 11 first-party factories as values (with Soundfont2Sampler as deprecated alias)", () => {
     for (const name of [
       "Sampler",
       "Soundfont",
       "SplendidGrandPiano",
       "DrumMachine",
+      "DrumAbuse",
       "ElectricPiano",
       "Mallet",
       "Mellotron",
@@ -154,6 +155,7 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
       "Soundfont",
       "SplendidGrandPiano",
       "DrumMachine",
+      "DrumAbuse",
       "ElectricPiano",
       "Mallet",
       "Mellotron",
