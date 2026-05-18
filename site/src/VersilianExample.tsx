@@ -61,8 +61,6 @@ export function VersilianExample({ className }: { className?: string }) {
           <h2>Versilian Community Sample Library</h2>
         </div>
 
-        <div>(experimental)</div>
-
         <LoadWithStatus
           status={status}
           progress={progress}

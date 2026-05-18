@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { DrumMachine, Sequencer } from "smplr";
-import { getAudioContext } from "./audio-context";
-import { LoadWithStatus, useStatus } from "./useStatus";
+import { getAudioContext } from "src/audio-context";
+import { LoadWithStatus, useStatus } from "src/useStatus";
 
 const STEPS = 16;
-// 480 PPQ / 4 = 120 ticks per 16th note
-const STEP_TICKS = 120;
-// 16 steps = 1 measure
+const STEP_TICKS = 120; // 480 PPQ / 4 = 16th note
 const LOOP_TICKS = STEPS * STEP_TICKS;
 
-export function SequencerExample({ className }: { className?: string }) {
+export function StepGridSection() {
   const { status, setStatus, progress, onLoadProgress } = useStatus();
 
   const drumsRef = useRef<DrumMachine | null>(null);
@@ -17,39 +15,39 @@ export function SequencerExample({ className }: { className?: string }) {
 
   const [groups, setGroups] = useState<string[]>([]);
   const [grid, setGrid] = useState<boolean[][]>([]);
-  const [chance, setChance] = useState<number[]>([]);
   const [bpm, setBpm] = useState(120);
-  const [pan, setPan] = useState(0);
+  const [humanizeTiming, setHumanizeTiming] = useState(0);
+  const [humanizeVelocity, setHumanizeVelocity] = useState(0);
   const [activeStep, setActiveStep] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Keep refs so the track-rebuild effect always sees current values without
-  // triggering extra re-renders.
   const gridRef = useRef<boolean[][]>([]);
-  const chanceRef = useRef<number[]>([]);
   const groupsRef = useRef<string[]>([]);
+  const humanizeRef = useRef({ timingMs: 0, velocity: 0 });
   gridRef.current = grid;
-  chanceRef.current = chance;
   groupsRef.current = groups;
+  humanizeRef.current = {
+    timingMs: humanizeTiming,
+    velocity: humanizeVelocity,
+  };
 
   function load() {
     setStatus("loading");
     const context = getAudioContext();
-    const drums = DrumMachine(context, { instrument: "TR-808", onLoadProgress });
+    const drums = DrumMachine(context, {
+      instrument: "TR-808",
+      onLoadProgress,
+    });
 
     drums.load
       .then(() => {
         const rows = drums.getGroupNames().slice(0, 4);
         const initGrid = rows.map(() => Array<boolean>(STEPS).fill(false));
-        const initChance = rows.map(() => 100);
-
         drumsRef.current = drums;
         gridRef.current = initGrid;
-        chanceRef.current = initChance;
         groupsRef.current = rows;
         setGroups(rows);
         setGrid(initGrid);
-        setChance(initChance);
 
         const seq = Sequencer(context, {
           bpm: 120,
@@ -57,18 +55,16 @@ export function SequencerExample({ className }: { className?: string }) {
           loopEnd: LOOP_TICKS,
           stepSize: STEP_TICKS,
         });
-
         seq.on("step", (stepIndex: number) => {
           setActiveStep(stepIndex % STEPS);
         });
-
         seqRef.current = seq;
         setStatus("ready");
       })
       .catch(() => setStatus("error"));
   }
 
-  // Rebuild sequencer tracks whenever grid or chance changes.
+  // Rebuild tracks on grid or humanize change, applying per-track humanize.
   useEffect(() => {
     const seq = seqRef.current;
     const drums = drumsRef.current;
@@ -77,19 +73,24 @@ export function SequencerExample({ className }: { className?: string }) {
     seq.clearTracks();
     groupsRef.current.forEach((group, rowIdx) => {
       const notes = gridRef.current[rowIdx].flatMap((on, step) =>
-        on
-          ? [{ note: group, at: step * STEP_TICKS, chance: chanceRef.current[rowIdx] }]
-          : []
+        on ? [{ note: group, at: step * STEP_TICKS }] : [],
       );
-      if (notes.length > 0) seq.addTrack(drums, notes);
+      if (notes.length > 0) {
+        seq.addTrack(drums, notes, {
+          humanize: {
+            timingMs: humanizeRef.current.timingMs,
+            velocity: humanizeRef.current.velocity,
+          },
+        });
+      }
     });
-  }, [grid, chance]);
+  }, [grid, humanizeTiming, humanizeVelocity]);
 
   function toggleStep(rowIdx: number, step: number) {
     setGrid((prev) =>
       prev.map((row, r) =>
-        r === rowIdx ? row.map((on, s) => (s === step ? !on : on)) : row
-      )
+        r === rowIdx ? row.map((on, s) => (s === step ? !on : on)) : row,
+      ),
     );
   }
 
@@ -106,27 +107,39 @@ export function SequencerExample({ className }: { className?: string }) {
     }
   }
 
+  useEffect(() => {
+    return () => {
+      seqRef.current?.stop();
+      drumsRef.current?.disconnect();
+    };
+  }, []);
+
   const disabled = status !== "ready";
 
   return (
-    <div className={className}>
-      <div className="flex gap-2 items-end mb-2">
-        <h1 className="text-3xl">Sequencer</h1>
+    <div>
+      <div className="flex gap-2 items-end mb-4">
+        <h2 className="text-2xl">Step grid + humanize</h2>
         <LoadWithStatus status={status} onClick={load} progress={progress} />
       </div>
+      <p className="text-zinc-400 text-sm mb-4">
+        Click cells to toggle steps. Humanize sliders apply per-track timing
+        and velocity randomization.
+      </p>
 
       <div className={disabled ? "opacity-30 pointer-events-none" : ""}>
-        {/* Transport controls */}
         <div className="flex flex-wrap gap-4 mb-4 items-center">
           <button
-            className={`px-3 py-1 rounded font-mono ${isPlaying ? "bg-rose-700" : "bg-teal-700"}`}
+            className={`px-3 py-1 rounded font-mono ${
+              isPlaying ? "bg-rose-700" : "bg-teal-700"
+            }`}
             onClick={togglePlay}
           >
             {isPlaying ? "Stop" : "Play"}
           </button>
 
-          <label className="flex gap-2 items-center">
-            <span className="text-sm text-zinc-400">BPM</span>
+          <label className="flex gap-2 items-center text-sm">
+            <span className="text-zinc-400">BPM</span>
             <input
               type="range"
               min={60}
@@ -139,37 +152,42 @@ export function SequencerExample({ className }: { className?: string }) {
                 if (seqRef.current) seqRef.current.bpm = v;
               }}
             />
-            <span className="text-sm w-8">{bpm}</span>
+            <span className="w-8">{bpm}</span>
           </label>
 
-          <label className="flex gap-2 items-center">
-            <span className="text-sm text-zinc-400">Pan</span>
+          <label className="flex gap-2 items-center text-sm">
+            <span className="text-zinc-400">Timing ±ms</span>
             <input
               type="range"
-              min={-1}
-              max={1}
-              step={0.01}
-              value={pan}
-              onChange={(e) => {
-                const v = e.target.valueAsNumber;
-                setPan(v);
-                if (drumsRef.current) drumsRef.current.output.pan = v;
-              }}
+              min={0}
+              max={50}
+              step={1}
+              value={humanizeTiming}
+              onChange={(e) => setHumanizeTiming(e.target.valueAsNumber)}
             />
-            <span className="text-sm w-10">{pan.toFixed(2)}</span>
+            <span className="w-8">{humanizeTiming}</span>
+          </label>
+
+          <label className="flex gap-2 items-center text-sm">
+            <span className="text-zinc-400">Vel ±</span>
+            <input
+              type="range"
+              min={0}
+              max={30}
+              step={1}
+              value={humanizeVelocity}
+              onChange={(e) => setHumanizeVelocity(e.target.valueAsNumber)}
+            />
+            <span className="w-8">{humanizeVelocity}</span>
           </label>
         </div>
 
-        {/* Step grid */}
         <div className="overflow-x-auto">
           {groups.map((group, rowIdx) => (
             <div key={group} className="flex gap-1 mb-2 items-center">
-              {/* Row label */}
               <div className="w-24 text-sm text-zinc-400 truncate flex-shrink-0">
                 {group}
               </div>
-
-              {/* Steps */}
               <div className="flex gap-0.5">
                 {Array.from({ length: STEPS }, (_, step) => (
                   <button
@@ -190,26 +208,6 @@ export function SequencerExample({ className }: { className?: string }) {
                   />
                 ))}
               </div>
-
-              {/* Chance slider */}
-              <label className="flex gap-1 items-center ml-3 flex-shrink-0">
-                <span className="text-xs text-zinc-500 w-12">chance</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={chance[rowIdx] ?? 100}
-                  className="w-20"
-                  onChange={(e) => {
-                    const v = e.target.valueAsNumber;
-                    setChance((prev) =>
-                      prev.map((c, i) => (i === rowIdx ? v : c))
-                    );
-                  }}
-                />
-                <span className="text-xs w-8">{chance[rowIdx]}%</span>
-              </label>
             </div>
           ))}
         </div>
