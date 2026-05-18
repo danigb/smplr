@@ -375,7 +375,7 @@ export function TestPage() {
       <div className="flex gap-4 mb-6">
         <button
           onClick={toggle}
-          className="px-4 py-2 rounded bg-green-900 hover:bg-green-800 text-green-100 font-bold"
+          className="px-4 py-2 rounded-sm bg-green-900 hover:bg-green-800 text-green-100 font-bold"
         >
           {isRunning ? "⏸ Pause" : "▶ Play"}
         </button>
@@ -406,7 +406,7 @@ export function TestPage() {
               setToneActive(true);
             }
           }}
-          className="px-4 py-2 rounded bg-yellow-900 hover:bg-yellow-800 text-yellow-100 font-bold"
+          className="px-4 py-2 rounded-sm bg-yellow-900 hover:bg-yellow-800 text-yellow-100 font-bold"
         >
           {toneActive ? "Stop tone" : "Test tone"}
         </button>

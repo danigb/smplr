@@ -80,7 +80,7 @@ export function PianoExample({ className }: { className?: string }) {
       <div className={status !== "ready" ? "opacity-30" : ""}>
         <div className="flex gap-4 mb-2 no-select">
           <button
-            className="bg-zinc-700 rounded px-3 py-0.5 shadow"
+            className="bg-zinc-700 rounded-sm px-3 py-0.5 shadow-sm"
             onClick={() => {
               piano?.stop();
             }}
@@ -88,7 +88,7 @@ export function PianoExample({ className }: { className?: string }) {
             Stop all
           </button>
           <button
-            className="bg-zinc-700 rounded px-3 py-0.5 shadow"
+            className="bg-zinc-700 rounded-sm px-3 py-0.5 shadow-sm"
             onClick={toggleSequence}
           >
             {seqState === "playing" ? "Pause sequence" : "Play sequence"}

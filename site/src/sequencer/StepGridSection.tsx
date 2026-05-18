@@ -185,7 +185,7 @@ export function StepGridSection() {
         <div className="overflow-x-auto">
           {groups.map((group, rowIdx) => (
             <div key={group} className="flex gap-1 mb-2 items-center">
-              <div className="w-24 text-sm text-zinc-400 truncate flex-shrink-0">
+              <div className="w-24 text-sm text-zinc-400 truncate shrink-0">
                 {group}
               </div>
               <div className="flex gap-0.5">
@@ -193,7 +193,7 @@ export function StepGridSection() {
                   <button
                     key={step}
                     className={[
-                      "w-7 h-7 rounded text-xs transition-colors",
+                      "w-7 h-7 rounded-sm text-xs transition-colors",
                       step % 4 === 0 ? "ml-1" : "",
                       step === activeStep
                         ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-950"

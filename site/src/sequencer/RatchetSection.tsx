@@ -144,7 +144,7 @@ export function RatchetSection() {
             <button
               key={step}
               className={[
-                "w-12 h-12 rounded text-sm font-mono transition-colors",
+                "w-12 h-12 rounded-sm text-sm font-mono transition-colors",
                 step === activeStep
                   ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-950"
                   : "",

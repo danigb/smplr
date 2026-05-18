@@ -89,7 +89,7 @@ export function ConnectMidi({
     <>
       <button
         className={
-          "px-1 rounded " + (isConnected ? "bg-emerald-600" : "bg-zinc-700")
+          "px-1 rounded-sm " + (isConnected ? "bg-emerald-600" : "bg-zinc-700")
         }
         onClick={() => {
           if (isConnected) {
@@ -102,7 +102,7 @@ export function ConnectMidi({
         MIDI
       </button>
       <select
-        className="appearance-none bg-zinc-700 text-zinc-200 rounded border border-gray-400 py-2 px-3 leading-tight focus:outline-none focus:border-blue-500 py-[2px]"
+        className="appearance-none bg-zinc-700 text-zinc-200 rounded-sm border border-gray-400 py-2 px-3 leading-tight focus:outline-hidden focus:border-blue-500 py-[2px]"
         value={midiDeviceName}
         onChange={(e) => {
           const name = e.target.value;

@@ -36,14 +36,14 @@ export function LoadWithStatus({
   return status === "init" ? (
     <div className="flex gap-2 items-center">
       <button
-        className="text-rose-700 bg-zinc-900 px-2 rounded"
+        className="text-rose-700 bg-zinc-900 px-2 rounded-sm"
         onClick={onClick}
       >
         Load
       </button>
       {onFormatChange && (
         <select
-          className="bg-zinc-900 text-zinc-400 text-sm px-1 rounded"
+          className="bg-zinc-900 text-zinc-400 text-sm px-1 rounded-sm"
           value={format}
           onChange={(e) => onFormatChange(e.target.value as SampleFormat)}
         >

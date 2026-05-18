@@ -73,7 +73,7 @@ export function PianoKeyboard({
           Octave: {oct}-{oct + 12 + 11}
         </div>
         <button
-          className="bg-zinc-900 px-1 rounded"
+          className="bg-zinc-900 px-1 rounded-sm"
           onClick={() => {
             setOct(oct - 12);
           }}
@@ -81,7 +81,7 @@ export function PianoKeyboard({
           -
         </button>
         <button
-          className="bg-zinc-900 px-1 rounded"
+          className="bg-zinc-900 px-1 rounded-sm"
           onClick={() => {
             setOct(oct + 12);
           }}
@@ -114,7 +114,7 @@ export function PianoKeyboard({
         />
         <div className="">Sustain</div>
         <button
-          className="bg-zinc-900 px-1 rounded"
+          className="bg-zinc-900 px-1 rounded-sm"
           onClick={() => {
             const degrees = Scale.degrees("C4 major");
 

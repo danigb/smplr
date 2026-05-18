@@ -161,7 +161,7 @@ export function SongModeSection() {
             <span className="text-zinc-400">chainOrder</span>
             <input
               type="text"
-              className="bg-zinc-700 px-2 py-1 rounded w-24 text-sm font-mono"
+              className="bg-zinc-700 px-2 py-1 rounded-sm w-24 text-sm font-mono"
               value={chainText}
               onChange={(e) => setChainText(e.target.value)}
               onBlur={applyChain}
@@ -178,7 +178,7 @@ export function SongModeSection() {
             <div
               key={label}
               className={[
-                "p-3 rounded border text-sm",
+                "p-3 rounded-sm border text-sm",
                 activePattern === i
                   ? "border-teal-500 bg-teal-900/30"
                   : "border-zinc-700 bg-zinc-800/30",

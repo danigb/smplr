@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import basicSsl from "@vitejs/plugin-basic-ssl";
+import tailwindcss from "@tailwindcss/vite";
 import { visualizer } from "rollup-plugin-visualizer";
 import path from "node:path";
 
@@ -12,6 +13,7 @@ export default defineConfig({
   base: isDeploy ? "/smplr/" : "/",
   plugins: [
     react(),
+    tailwindcss(),
     ...(useHttps ? [basicSsl()] : []),
     ...(useStats
       ? [
