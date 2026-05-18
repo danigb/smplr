@@ -190,4 +190,17 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
     expect(typeExports.has("SmplrPreset")).toBe(true);
     expect(dts).toMatch(/smplr\?\s*:\s*["']1\.0["']/);
   });
+
+  // Keeps `TransportClock` and friends internal so future shared-transport work
+  // (research: thoughts/research/2026-05-17_20-18-43_shared-transport.md) can
+  // land additively in 1.x — names, shapes, and `seekAt` semantics stay free to
+  // change while the type isn't part of the npm contract.
+  it("does not export TransportClock or its companions", () => {
+    expect(valueExports.has("TransportClock")).toBe(false);
+    expect(typeExports.has("TransportClock")).toBe(false);
+    expect(valueExports.has("TransportState")).toBe(false);
+    expect(typeExports.has("TransportState")).toBe(false);
+    expect(valueExports.has("TransportClockOptions")).toBe(false);
+    expect(typeExports.has("TransportClockOptions")).toBe(false);
+  });
 });

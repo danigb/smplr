@@ -250,23 +250,23 @@ describe("currentTick", () => {
 });
 
 // ---------------------------------------------------------------------------
-// tickDuration
+// ticksToSeconds
 // ---------------------------------------------------------------------------
 
-describe("tickDuration", () => {
+describe("ticksToSeconds", () => {
   it("96 ticks at 120bpm, ppq=96 = 0.5s", () => {
     const clock = makeClock(makeContext(0));
-    expect(clock.tickDuration(PPQ)).toBeCloseTo(0.5);
+    expect(clock.ticksToSeconds(PPQ)).toBeCloseTo(0.5);
   });
 
   it("scales with tick count", () => {
     const clock = makeClock(makeContext(0));
-    expect(clock.tickDuration(2 * PPQ)).toBeCloseTo(1.0);
+    expect(clock.ticksToSeconds(2 * PPQ)).toBeCloseTo(1.0);
   });
 
   it("uses the current bpm field", () => {
     const clock = makeClock(makeContext(0), 60); // 60bpm → 1s per beat
-    expect(clock.tickDuration(PPQ)).toBeCloseTo(1.0);
+    expect(clock.ticksToSeconds(PPQ)).toBeCloseTo(1.0);
   });
 });
 

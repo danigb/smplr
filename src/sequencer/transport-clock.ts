@@ -164,6 +164,11 @@ export class TransportClock {
    *
    * Any checkpoints at or after `audioTime` are removed and replaced with this
    * new anchor, preserving the BPM that was in effect at that time.
+   *
+   * @internal Leaks checkpoint-list semantics; only called by `Sequencer._flush`
+   * for loop-boundary re-anchoring. Not safe to share between Sequencers — see
+   * thoughts/research/2026-05-17_20-18-43_shared-transport.md §3. Must not be
+   * exported from any barrel.
    */
   seekAt(tick: number, audioTime: number): void {
     // Find the BPM that will be in effect at audioTime
@@ -224,9 +229,13 @@ export class TransportClock {
   }
 
   /**
-   * Duration in seconds for a given number of ticks at the current BPM.
+   * Convert a tick count to seconds at the current (snapshot) BPM.
+   *
+   * Uses `this._bpm` directly, not the checkpoint history — so after a
+   * mid-play BPM change this returns a value based on the *latest* BPM only.
+   * For checkpoint-aware durations, use `tickToAudioTime(end) - tickToAudioTime(start)`.
    */
-  tickDuration(ticks: number): number {
+  ticksToSeconds(ticks: number): number {
     return ticks * this._secondsPerTick(this._bpm);
   }
 
