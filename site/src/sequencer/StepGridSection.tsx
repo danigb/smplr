@@ -189,24 +189,30 @@ export function StepGridSection() {
                 {group}
               </div>
               <div className="flex gap-0.5">
-                {Array.from({ length: STEPS }, (_, step) => (
-                  <button
-                    key={step}
-                    className={[
-                      "w-7 h-7 rounded-sm text-xs transition-colors",
-                      step % 4 === 0 ? "ml-1" : "",
-                      step === activeStep
-                        ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-950"
-                        : "",
-                      grid[rowIdx]?.[step]
-                        ? "bg-teal-600 hover:bg-teal-500"
-                        : "bg-zinc-700 hover:bg-zinc-600",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    onClick={() => toggleStep(rowIdx, step)}
-                  />
-                ))}
+                {Array.from({ length: STEPS }, (_, step) => {
+                  const isOn = grid[rowIdx]?.[step] ?? false;
+                  const isCurrent = step === activeStep;
+                  return (
+                    <button
+                      key={step}
+                      className={[
+                        "w-7 h-7 rounded-sm text-xs transition-colors",
+                        step % 4 === 0 ? "ml-1" : "",
+                        isOn && isCurrent
+                          ? "ring-2 ring-yellow-300 ring-offset-1 ring-offset-zinc-950"
+                          : "",
+                        isOn
+                          ? "bg-teal-600 hover:bg-teal-500"
+                          : isCurrent
+                            ? "bg-zinc-500 hover:bg-zinc-400"
+                            : "bg-zinc-700 hover:bg-zinc-600",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      onClick={() => toggleStep(rowIdx, step)}
+                    />
+                  );
+                })}
               </div>
             </div>
           ))}
