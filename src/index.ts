@@ -1,4 +1,5 @@
 export * from "./drum-machine/drum-machine";
+export * from "./drum-abuse";
 export * from "./offline";
 export * from "./smplr";
 export * from "./sequencer";
