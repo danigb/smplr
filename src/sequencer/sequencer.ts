@@ -485,6 +485,7 @@ class SequencerImpl {
     this._clock.stop();
     this._stopLoop();
     this._endScheduled = false;
+    for (const stopFn of this._activeVoices.values()) stopFn();
     this._activeVoices.clear();
     this._emitStateChange("stopped");
     return this;
@@ -821,7 +822,7 @@ class SequencerImpl {
         const audioTime = this._clock.tickToAudioTime(noteTick);
         const durationSec =
           note.duration !== undefined
-            ? this._clock.tickDuration(
+            ? this._clock.ticksToSeconds(
                 parseTicks(note.duration, this._ppq, this._timeSignature),
               )
             : undefined;

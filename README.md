@@ -71,7 +71,7 @@ Samples are stored at https://github.com/smpldsnds and there is no need to downl
 
 #### Using a package manager
 
-Use npm or your favourite package manager to install the library to use it in your project:
+Install with npm or your favourite package manager:
 
 ```
 npm i smplr
@@ -105,29 +105,27 @@ The package needs to be served as a URL from a service like [unpkg](https://unpk
 
 `smplr` ships eleven instruments out of the box. Pick one and jump to its section in the [Instrument reference](#instrument-reference) for setup details.
 
-| Instrument                                  | Description                               | Names helper                  |
-| ------------------------------------------- | ----------------------------------------- | ----------------------------- |
-| [`Sampler`](#sampler)                       | Your own buffers or SFZ-style preset      | —                             |
-| [`Soundfont`](#soundfont)                   | General MIDI soundfonts                   | `getSoundfontNames()`         |
-| [`SplendidGrandPiano`](#splendidgrandpiano) | Sampled Steinway grand, 4 velocity layers | —                             |
-| [`ElectricPiano`](#electric-piano)          | CP80, PianetT, Wurlitzer, TX81Z           | `getElectricPianoNames()`     |
-| [`DrumMachine`](#drum-machines)             | Classic drum machines (TR-808, …)         | `getDrumMachineNames()`       |
-| [`DrumAbuse`](#drumabuse)                   | ~210 machines (Synthabuse collection)     | `getDrumAbuseMachineNames()`  |
-| [`Mallet`](#mallets)                        | VCSL mallets                              | `getMalletNames()`            |
-| [`Mellotron`](#mellotron)                   | Mellotron archive samples                 | `getMellotronNames()`         |
-| [`Smolken`](#smolken-double-bass)           | Smolken double bass (Arco/Pizz/Switched)  | `getSmolkenNames()`           |
-| [`Versilian`](#versilian)                   | VCSL multi-instrument (partial support)   | `getVersilianInstruments()` * |
-| [`Soundfont2`](#soundfont2)                 | Reads .sf2 files directly                 | —                             |
+| Instrument                                  | Description                               | Names helper                 |
+| ------------------------------------------- | ----------------------------------------- | ---------------------------- |
+| [`Sampler`](#sampler)                       | Your own buffers or SFZ-style preset      | —                            |
+| [`Soundfont`](#soundfont)                   | General MIDI soundfonts                   | `getSoundfontNames()`        |
+| [`SplendidGrandPiano`](#splendidgrandpiano) | Sampled Steinway grand, 4 velocity layers | —                            |
+| [`ElectricPiano`](#electric-piano)          | CP80, PianetT, Wurlitzer, TX81Z           | `getElectricPianoNames()`    |
+| [`DrumMachine`](#drum-machines)             | Classic drum machines (TR-808, …)         | `getDrumMachineNames()`      |
+| [`DrumAbuse`](#drumabuse)                   | ~210 machines (Synthabuse collection)     | `getDrumAbuseMachineNames()` |
+| [`Mallet`](#mallets)                        | VCSL mallets                              | `getMalletNames()`           |
+| [`Mellotron`](#mellotron)                   | Mellotron archive samples                 | `getMellotronNames()`        |
+| [`Smolken`](#smolken-double-bass)           | Smolken double bass (Arco/Pizz/Switched)  | `getSmolkenNames()`          |
+| [`Versilian`](#versilian)                   | VCSL multi-instrument (partial support)   | `getVersilianInstruments()`  |
+| [`Soundfont2`](#soundfont2)                 | Reads .sf2 files directly                 | —                            |
 
-`*` `getVersilianInstruments` is async because the catalog is fetched from the network on first call (cached thereafter).
+Each names helper returns strings to pass as the factory's `instrument` option. `getVersilianInstruments` is async (the catalog is fetched once and cached).
 
-Each names helper returns the strings you can pass to the corresponding factory's `instrument` option.
-
-If none of the bundled instruments fits your use case, you can author your own — see [Defining your own instrument](#defining-your-own-instrument).
+To build your own instrument, see [Defining your own instrument](#defining-your-own-instrument).
 
 ## Using an instrument
 
-Every smplr instrument follows the same usage pattern. This section covers what's shared across all of them; for instrument-specific options, see the [Instrument reference](#instrument-reference).
+The shared API below applies to every instrument. Instrument-specific options live in the [Instrument reference](#instrument-reference).
 
 ### Create and load
 
@@ -141,29 +139,18 @@ const piano = SplendidGrandPiano(context, { decayTime: 0.5 });
 const marimba = Soundfont(context, { instrument: "marimba" });
 ```
 
-> **Compatibility note:** All factories also support the `new` keyword — `new SplendidGrandPiano(context)` produces the same instance as `SplendidGrandPiano(context)`. Code from earlier `smplr` versions keeps working unchanged. Editors will mark the `new` form as `@deprecated` to nudge new code toward the call form; both remain supported throughout the 1.x line.
-
 #### Wait for audio loading
 
-You can start playing notes as soon as one audio is loaded. But if you want to wait for all of them, you can use the `load` property that returns a promise:
+You can start playing notes as soon as one sample is loaded. To wait for all of them, await either:
 
-```js
-piano.load.then(() => {
-  // now the piano is fully loaded
-});
-```
-
-Since the promise returns the instrument instance, you can create and wait in a single line:
+- `piano.ready` — resolves to `void` (preferred for new code).
+- `piano.load` — resolves to the instrument itself, so you can create and await in one line:
 
 ```js
 const piano = await SplendidGrandPiano(context).load;
 ```
 
-The pre-1.0 `new`-prefixed form continues to work — `const piano = await new SplendidGrandPiano(context).load` resolves to the same instrument. This is the documented backward-compat path for code from earlier `smplr` versions.
-
-> **New in 1.0:** prefer `await piano.ready` for new code. It resolves to `void` (not the instrument) and won't be removed — `.load` is kept as a deprecated alias for compatibility.
-
-⚠️ In versions lower than 0.8.0 a `loaded()` function was exposed instead.
+> Upgrading from older versions? See [MIGRATE.md](./MIGRATE.md).
 
 #### Load progress
 
@@ -202,13 +189,13 @@ All instruments share some configuration options, passed as the second argument 
 
 #### Start and stop notes
 
-The `start` function accepts a bunch of options:
+The `start` function accepts these options:
 
 ```js
 piano.start({ note: "C4", velocity: 80, time: 5, duration: 1 });
 ```
 
-The `velocity` is a number between 0 and 127 the represents at which velocity the key is pressed. The bigger the number, louder the sound. But `velocity` not only controls the loudness. In some instruments, it also affects the timbre.
+`velocity` (0–127) represents how hard the key is pressed: louder at higher values, and on some instruments it also changes timbre.
 
 The `start` function returns a `stop` function for the given note:
 
@@ -235,9 +222,9 @@ piano.stop(60); // stop the note(s) started with `note: 60`
 
 #### Schedule notes
 
-You can schedule notes using `time` and `duration` properties. Both are measured in seconds. Time is the number of seconds since the AudioContext was created, like in `audioContext.currentTime`
+Schedule notes via the `time` and `duration` properties (both in seconds). `time` is measured against `audioContext.currentTime`.
 
-For example, next example plays a C major arpeggio, one note per second:
+This plays a C major arpeggio, one note per second:
 
 ```js
 const now = context.currentTime;
@@ -275,8 +262,6 @@ Instrument `output` attribute represents the main output of the instrument. The 
 piano.output.volume = 80;
 piano.output.volume; // => 80
 ```
-
-`output.setVolume(n)` is kept as a deprecated alias and continues to work.
 
 ⚠️ `volume` is global to the instrument, but `velocity` is specific for each note.
 
@@ -329,13 +314,9 @@ To change the mix level, use `output.setEffectMix(name, mix)`:
 piano.output.setEffectMix("reverb", 0.5);
 ```
 
-`output.sendEffect(name, mix)` is kept as a deprecated alias and continues to work.
-
 ### Events
 
-Two events are supported `onStart` and `onEnded`. Both callbacks will receive as parameter started note.
-
-Events can be configured globally:
+Two events are available: `onStart` and `onEnded`. Both callbacks receive the started note as a parameter, and can be configured globally:
 
 ```js
 const context = new AudioContext();
@@ -372,8 +353,6 @@ useEffect(() => {
   return () => piano.dispose();
 }, []);
 ```
-
-`disconnect()` is kept as a deprecated alias and continues to work.
 
 ### Caching samples
 
@@ -413,7 +392,7 @@ const context = new StandardizedAudioContext() as unknown as AudioContext;
 const marimba = Soundfont(context, { instrument: "marimba" });
 ```
 
-In case you need to use the `Reverb` module (or any other module that needs `AudioWorkletNode`) you need to enforce to use the one from `standardized-audio-context` package. Here is how:
+If you use `Reverb` (or anything else that needs `AudioWorkletNode`), force the `standardized-audio-context` version:
 
 ```ts
 import {
@@ -432,7 +411,7 @@ See [standardized-audio-context issue #897](https://github.com/chrisguttandin/st
 
 ## Sequencer
 
-`Sequencer` schedules notes from one or more tracks against any smplr instrument with sample-accurate timing. Constructed as `Sequencer(context, opts)` (the `new Sequencer(...)` form also still works as a deprecated alias).
+`Sequencer` schedules notes from one or more tracks against any smplr instrument with sample-accurate timing.
 
 ```js
 import { Sequencer, SplendidGrandPiano, DrumMachine } from "smplr";
@@ -505,13 +484,13 @@ seq.clearTracks(); // remove every track
 
 `addTrack`'s third argument accepts:
 
-| Field      | Type                                        | Description                                                           |
-| ---------- | ------------------------------------------- | --------------------------------------------------------------------- |
-| `id`       | `string`                                    | Stable id for `setTrackVolume` / `muteTrack` / `soloTrack`.            |
-| `humanize` | `{ timingMs?: number; velocity?: number }`  | Per-track humanize. Overrides the sequencer-level setting when set.   |
-| `volume`   | `number`                                    | Multiplicative velocity scalar (default 1). `0.5` halves velocities.   |
-| `muted`    | `boolean`                                   | When true, this track does not dispatch notes.                         |
-| `solo`     | `boolean`                                   | When true, only soloed tracks play.                                    |
+| Field      | Type                                       | Description                                                          |
+| ---------- | ------------------------------------------ | -------------------------------------------------------------------- |
+| `id`       | `string`                                   | Stable id for `setTrackVolume` / `muteTrack` / `soloTrack`.          |
+| `humanize` | `{ timingMs?: number; velocity?: number }` | Per-track humanize. Overrides the sequencer-level setting when set.  |
+| `volume`   | `number`                                   | Multiplicative velocity scalar (default 1). `0.5` halves velocities. |
+| `muted`    | `boolean`                                  | When true, this track does not dispatch notes.                       |
+| `solo`     | `boolean`                                  | When true, only soloed tracks play.                                  |
 
 After `setPatterns` is called (see [Pattern chain](#pattern-chain-song-mode)), `addTrack` / `removeTrack` / `clearTracks` throw — the chain is owned by the patterns array.
 
@@ -680,22 +659,28 @@ seq.addTrack(piano, notes, { humanize: { timingMs: 0, velocity: 0 } });
 
 #### SequencerNote fields
 
-| Field                  | Type                | Description                                                                  |
-| ---------------------- | ------------------- | ---------------------------------------------------------------------------- |
-| `note`                 | `string \| number`  | Note name or MIDI number.                                                    |
-| `at`                   | `string \| number`  | Musical position (ticks or `"bar:beat[.frac][:ticks]"` / `"4n"` / `"1m"`).   |
-| `duration`             | `string \| number?` | Duration; omit for a one-shot trigger.                                       |
-| `velocity`             | `number?`           | Velocity 0–127. Default 100.                                                 |
-| `id`                   | `string \| number?` | Used as `noteId` in `noteOn` / `noteOff` events. Default: array index.       |
+| Field                  | Type                | Description                                                                   |
+| ---------------------- | ------------------- | ----------------------------------------------------------------------------- |
+| `note`                 | `string \| number`  | Note name or MIDI number.                                                     |
+| `at`                   | `string \| number`  | Musical position (ticks or `"bar:beat[.frac][:ticks]"` / `"4n"` / `"1m"`).    |
+| `duration`             | `string \| number?` | Duration; omit for a one-shot trigger.                                        |
+| `velocity`             | `number?`           | Velocity 0–127. Default 100.                                                  |
+| `id`                   | `string \| number?` | Used as `noteId` in `noteOn` / `noteOff` events. Default: array index.        |
 | `chance`               | `number?`           | Probability 0–100 that this note fires on each pass. Re-rolled on every loop. |
-| `ratchet`              | `number?`           | Expand into N sub-notes over `duration` (requires `duration`).               |
-| `ratchetVelocityDecay` | `number?`           | Per-step velocity decay; each sub-note scaled by `(1 - decay)^i`.            |
+| `ratchet`              | `number?`           | Expand into N sub-notes over `duration` (requires `duration`).                |
+| `ratchetVelocityDecay` | `number?`           | Per-step velocity decay; each sub-note scaled by `(1 - decay)^i`.             |
 
 Example:
 
 ```js
 seq.addTrack(drums, [
-  { note: "hat", at: "1:4", duration: "8n", ratchet: 4, ratchetVelocityDecay: 0.2 },
+  {
+    note: "hat",
+    at: "1:4",
+    duration: "8n",
+    ratchet: 4,
+    ratchetVelocityDecay: 0.2,
+  },
   { note: "snare", at: "1:2", chance: 50 }, // fires 50% of the time
 ]);
 ```
@@ -714,7 +699,7 @@ seq.setPatterns([
 ]);
 
 seq.chainOrder = [0, 1, 2, 1, 2]; // intro, verse, chorus, verse, chorus
-seq.loop = true;                  // loop the whole chain
+seq.loop = true; // loop the whole chain
 seq.start();
 
 seq.on("patternChange", (idx) => ui.highlightPattern(idx));
@@ -813,7 +798,7 @@ Detailed configuration for each bundled instrument. For the shared API (load, pl
 
 ### Sampler
 
-An audio buffer sampler. Pass a `buffers` object with the files to be load:
+An audio buffer sampler. Pass a `buffers` map of name → URL:
 
 #### Buffers mode
 
@@ -833,7 +818,7 @@ And then use the name of the buffer as note name:
 sampler.start({ note: "kick" });
 ```
 
-#### Advanced mode
+#### Preset mode
 
 For advanced use cases (per-region pitch/velocity/round-robin, SFZ-like multi-sample instruments, runtime swaps), pass a `SmplrPreset` directly:
 
@@ -860,7 +845,7 @@ sampler.start({ note: 60 });
 await sampler.reload(kitB);
 ```
 
-The full `SmplrPreset` schema is documented in [SMPLR_PRESET.md](./SMPLR_PRESET.md). Note: `buffers` and `preset` are mutually exclusive on construction — pass exactly one.
+The full `SmplrPreset` schema is documented in [PRESET_SCHEMA.md](./PRESET_SCHEMA.md). Note: `buffers` and `preset` are mutually exclusive on construction — pass exactly one.
 
 `sampler.reload(input)` accepts either shape (flat buffers record or full `SmplrPreset`), regardless of which mode was used at construction.
 
@@ -1049,10 +1034,10 @@ await drums.load;
 drums.start({ note: "kick" });
 
 // Samples are grouped by instrument name, like DrumMachine:
-drums.getGroupNames();                // => ["kick", "snare", "hi-hat", ...]
+drums.getGroupNames(); // => ["kick", "snare", "hi-hat", ...]
 drums.getSampleNamesForGroup("kick"); // => ["kick/1", "kick/2", ...]
-drums.start({ note: "kick" });        // first sample in the group
-drums.start({ note: "kick/1" });      // a specific sample
+drums.start({ note: "kick" }); // first sample in the group
+drums.start({ note: "kick/1" }); // a specific sample
 ```
 
 If a machine has more than one sample set, pass `set` to pick a specific one. Omit to load the first set.
@@ -1074,8 +1059,8 @@ import {
   getDrumAbuseMachinesForPack,
 } from "smplr";
 
-getDrumAbusePackNames();               // => ["vol1", "vol2", "vol3", "vol4", "vol5"]
-getDrumAbuseMachinesForPack("vol1");   // => machine ids in vol1
+getDrumAbusePackNames(); // => ["vol1", "vol2", "vol3", "vol4", "vol5"]
+getDrumAbuseMachinesForPack("vol1"); // => machine ids in vol1
 
 const drums = DrumAbuse(new AudioContext(), {
   source: { kind: "pack", pack: "vol1", instrument: "bass-drum" },
@@ -1096,7 +1081,7 @@ const doubleBass = await Smolken(context, { instrument: "Arco" }).load;
 
 ### Versilian
 
-Versilian is a sample capable of using the [Versilian Community Sample Library](https://github.com/sgossner/VCSL).
+Plays instruments from the [Versilian Community Sample Library](https://github.com/sgossner/VCSL).
 
 ⚠️ Not all features are implemented. Some instruments may sound incorrect ⚠️
 
@@ -1112,7 +1097,7 @@ const versilian = Versilian(context, { instrument: instrumentNames[0] });
 
 ### Soundfont2
 
-Sampler capable of reading .sf2 files directly. Previously named `Soundfont2Sampler`; the old name remains as a deprecated alias.
+Sampler capable of reading .sf2 files directly.
 
 ```ts
 import { Soundfont2 } from "smplr";
@@ -1133,19 +1118,15 @@ sampler.load.then(() => {
 });
 ```
 
-Still limited support. API may vary.
-
 ## Defining your own instrument
 
 If none of the bundled instruments fits your use case, you can author your own with the `Instrument` builder and the `Smplr` interface.
 
 See **[Defining an instrument](./AUTHORING.md)** for the full authoring guide — sync and async examples, third-party package layout, and how to use `Smplr` as a TypeScript type for generic helpers.
 
-## Upgrading and stability
+## Upgrading
 
-`smplr` is approaching 1.0. The 0.22.0 release lands the final batch of pre-1.0 API work — every documented `new X(ctx, opts)` keeps working, and the documented surface is intended to ship unchanged into 1.0. The formal stability commitment lands once the narrow `loader`/`scheduler` public interfaces sibling ticket is in (see [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md)).
-
-> **Upgrading from an earlier 0.x?** No code changes are required — every documented `new X(ctx, opts)` keeps working. New code should drop the `new` (`X(ctx, opts)`) and prefer `await x.ready` over `await x.load`.
+`smplr` is approaching 1.0; pre-1.0 APIs keep working as deprecated aliases. See [MIGRATE.md](./MIGRATE.md) for the full compatibility table and [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md) for per-release detail.
 
 ## License
 

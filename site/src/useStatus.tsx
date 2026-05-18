@@ -6,14 +6,11 @@ export function useStatus() {
   const [status, setStatus] = useState<Status>("init");
   const [progress, setProgress] = useState("");
 
-  const onLoadProgress = useCallback(
-    (p: { loaded: number; total: number }) => {
-      setProgress(
-        p.total > 0 ? `${Math.round((100 * p.loaded) / p.total)}%` : ""
-      );
-    },
-    []
-  );
+  const onLoadProgress = useCallback((p: { loaded: number; total: number }) => {
+    setProgress(
+      p.total > 0 ? `${Math.round((100 * p.loaded) / p.total)}%` : "",
+    );
+  }, []);
 
   return { status, setStatus, progress, onLoadProgress } as const;
 }
@@ -58,7 +55,9 @@ export function LoadWithStatus({
       {format && <div className="text-zinc-500 text-sm">({format})</div>}
     </div>
   ) : status === "loading" ? (
-    <div className="text-gray-500">Loading{progress ? ` ${progress}` : "..."}</div>
+    <div className="text-gray-500">
+      Loading{progress ? ` ${progress}` : "..."}
+    </div>
   ) : (
     <div className="text-red-700">Error loading</div>
   );

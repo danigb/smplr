@@ -10,12 +10,12 @@ let reverb: Reverb | undefined;
 export function SoundfontExample({ className }: { className?: string }) {
   const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [loopStatus, setLoopStatus] = useState<"disabled" | "loop" | "no-loop">(
-    "disabled"
+    "disabled",
   );
   const [libraryName, setLibraryName] = useState(getSoundfontKits()[0]);
   const [instrumentName, setInstrumentName] = useState("marimba");
   const [instrument, setInstrument] = useState<Soundfont | undefined>(
-    undefined
+    undefined,
   );
   const [reverbMix, setReverbMix] = useState(0.0);
   const [volume, setVolume] = useState(100);
@@ -127,7 +127,7 @@ export function SoundfontExample({ className }: { className?: string }) {
               checked={loopStatus === "loop"}
               onChange={() => {
                 setLoopStatus((status) =>
-                  status === "no-loop" ? "loop" : "no-loop"
+                  status === "no-loop" ? "loop" : "no-loop",
                 );
               }}
               type="checkbox"

@@ -56,8 +56,7 @@ export function LiveMixerSection() {
         const snare =
           groups.find((g) => /snare|sd/i.test(g)) ?? groups[1] ?? kick;
         const hat = groups.find((g) => /hat|hh/i.test(g)) ?? groups[2] ?? kick;
-        const ride =
-          groups.find((g) => /ride|cy/i.test(g)) ?? groups[3] ?? hat;
+        const ride = groups.find((g) => /ride|cy/i.test(g)) ?? groups[3] ?? hat;
 
         const initial: TrackState[] = [
           { id: "kick", group: kick, muted: false, solo: false, volume: 1 },
@@ -77,25 +76,41 @@ export function LiveMixerSection() {
         // Kick: 1 & 3
         seq.addTrack(
           drums,
-          buildTrackNotes(kick, [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], STEP),
+          buildTrackNotes(
+            kick,
+            [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            STEP,
+          ),
           { id: "kick", volume: 1 },
         );
         // Snare: 2 & 4
         seq.addTrack(
           drums,
-          buildTrackNotes(snare, [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], STEP),
+          buildTrackNotes(
+            snare,
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+            STEP,
+          ),
           { id: "snare", volume: 1 },
         );
         // Hats: every 8th
         seq.addTrack(
           drums,
-          buildTrackNotes(hat, [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], STEP),
+          buildTrackNotes(
+            hat,
+            [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+            STEP,
+          ),
           { id: "hat", volume: 0.8 },
         );
         // Ride: every 4th
         seq.addTrack(
           drums,
-          buildTrackNotes(ride, [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], STEP),
+          buildTrackNotes(
+            ride,
+            [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+            STEP,
+          ),
           { id: "ride", volume: 0.7 },
         );
 

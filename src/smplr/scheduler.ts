@@ -5,43 +5,62 @@ import { NoteEvent, StopFn } from "./types";
 const LOOKAHEAD_MS_DEFAULT = 200;
 const INTERVAL_MS_DEFAULT = 50;
 
+/**
+ * Schedules note events for future dispatch. Used internally by every smplr
+ * instrument; pass an instance via {@link SmplrOptions.scheduler} to share one
+ * scheduler across multiple instruments.
+ */
+export interface Scheduler {
+  /**
+   * Dispatch `callback` at `event.time`. If `event.time` is within the
+   * scheduler's lookahead window (or omitted), the callback fires synchronously
+   * and the returned {@link StopFn} is a no-op. Otherwise the event is queued.
+   *
+   * The returned function removes the event from the queue before dispatch.
+   */
+  schedule(event: NoteEvent, callback: (event: NoteEvent) => void): StopFn;
+
+  /**
+   * Clear all queued (not-yet-dispatched) events and stop the polling
+   * interval. Does not affect voices already playing.
+   */
+  stop(): void;
+}
+
+/** Options accepted by `Scheduler(context, options)`. */
+export type SchedulerOptions = {
+  /**
+   * How far ahead of `currentTime` events are dispatched synchronously.
+   * Defaults to 200ms.
+   */
+  lookaheadMs?: number;
+  /**
+   * How often the queue is polled for events ready to dispatch.
+   * Defaults to 50ms.
+   */
+  intervalMs?: number;
+};
+
 type QueueItem = {
   time: number;
   event: NoteEvent;
   callback: (event: NoteEvent) => void;
 };
 
-/**
- * Standalone scheduler. Dispatches NoteEvents immediately when they fall within the
- * lookahead window, or queues them for future dispatch via a self-managing interval.
- *
- * Multiple Smplr instances can share a single Scheduler for coordinated timing.
- */
-class SchedulerImpl {
+class SchedulerImpl implements Scheduler {
   #context: BaseAudioContext;
   #lookaheadSec: number;
   #intervalMs: number;
   #queue: SortedQueue<QueueItem>;
   #intervalId: ReturnType<typeof setInterval> | undefined;
 
-  constructor(
-    context: BaseAudioContext,
-    options?: { lookaheadMs?: number; intervalMs?: number },
-  ) {
+  constructor(context: BaseAudioContext, options?: SchedulerOptions) {
     this.#context = context;
     this.#lookaheadSec = (options?.lookaheadMs ?? LOOKAHEAD_MS_DEFAULT) / 1000;
     this.#intervalMs = options?.intervalMs ?? INTERVAL_MS_DEFAULT;
     this.#queue = new SortedQueue<QueueItem>((a, b) => a.time - b.time);
   }
 
-  /**
-   * Schedule a callback for a NoteEvent.
-   *
-   * - If the event's time falls within the lookahead window (or has no time), the
-   *   callback is called synchronously and a no-op StopFn is returned.
-   * - Otherwise the event is queued, the interval is started if needed, and a StopFn
-   *   is returned that removes the event from the queue before it is dispatched.
-   */
   schedule(event: NoteEvent, callback: (event: NoteEvent) => void): StopFn {
     const now = this.#context.currentTime;
     const time = getEventTime(event) ?? now;
@@ -60,10 +79,6 @@ class SchedulerImpl {
     };
   }
 
-  /**
-   * Clear all queued (not-yet-dispatched) events and stop the interval.
-   * Does not affect voices that are already playing.
-   */
   stop(): void {
     this.#queue.clear();
     if (this.#intervalId !== undefined) {
@@ -101,5 +116,10 @@ function getEventTime(event: NoteEvent): number | undefined {
 
 const noOp: StopFn = () => {};
 
-export const Scheduler = asConstructable(SchedulerImpl);
-export type Scheduler = ReturnType<typeof Scheduler>;
+type SchedulerFactory = {
+  (context: BaseAudioContext, options?: SchedulerOptions): Scheduler;
+  /** @deprecated Call as a function: `Scheduler(...)` instead of `new Scheduler(...)`. */
+  new (context: BaseAudioContext, options?: SchedulerOptions): Scheduler;
+};
+
+export const Scheduler: SchedulerFactory = asConstructable(SchedulerImpl);

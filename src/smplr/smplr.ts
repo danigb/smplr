@@ -194,9 +194,11 @@ export class SmplrImpl implements Smplr {
     if (json) {
       // Pattern A: load immediately
       this.ready = this.loader
-        .load(json, (loaded, total) => {
-          this.#loadProgress = { loaded, total };
-          this.#onLoadProgress?.({ loaded, total });
+        .load(json, {
+          onProgress: (loaded, total) => {
+            this.#loadProgress = { loaded, total };
+            this.#onLoadProgress?.({ loaded, total });
+          },
         })
         .then((buffers) => {
           this.#buffers = buffers;

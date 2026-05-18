@@ -272,7 +272,10 @@ export function DrumabusePage() {
   function updateMixer(slotId: string, patch: Partial<Mixer>) {
     setMixers((prev) => ({
       ...prev,
-      [slotId]: { ...(prev[slotId] ?? { muted: false, solo: false, volume: 1 }), ...patch },
+      [slotId]: {
+        ...(prev[slotId] ?? { muted: false, solo: false, volume: 1 }),
+        ...patch,
+      },
     }));
     const seq = seqRef.current;
     if (!seq) return;
@@ -415,9 +418,7 @@ export function DrumabusePage() {
             return (
               <div key={slot.name} className="flex gap-2 mb-1 items-center">
                 <div className="w-28 shrink-0">
-                  <div
-                    className={`text-sm ${enabled ? "" : "text-zinc-500"}`}
-                  >
+                  <div className={`text-sm ${enabled ? "" : "text-zinc-500"}`}>
                     {slot.name}
                   </div>
                 </div>

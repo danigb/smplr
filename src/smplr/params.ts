@@ -100,6 +100,6 @@ export function resolveParams(
     loopEnd: merged.loopEnd,
     ampVelCurve: region.ampVelCurve,
     loopAuto: region.loopAuto,
-    reverse: overrides?.reverse,
+    reverse: overrides?.reverse ?? merged.reverse,
   };
 }

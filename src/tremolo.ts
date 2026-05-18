@@ -54,8 +54,10 @@ export function createTremolo(
     splitter.disconnect(ampR, 1);
     ampL.disconnect(merger, 0, 0);
     ampR.disconnect(merger, 0, 1);
-    lfoL.disconnect(ampL);
-    lfoR.disconnect(ampR);
+    lfoL.disconnect(lfoLAmp);
+    lfoLAmp.disconnect(ampL.gain);
+    lfoR.disconnect(lfoRAmp);
+    lfoRAmp.disconnect(ampR.gain);
     merger.disconnect(output);
   };
 

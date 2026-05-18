@@ -1,5 +1,73 @@
 # smplr
 
+## 0.26.0
+
+Final pre-1.0 release. Lands the last gating item from the 1.0 stability
+checklist (CHANGELOG §0.21 "Stability — 1.0 candidate") — narrow public
+interfaces for `Scheduler` and `SampleLoader`. After this release the
+documented surface is intended to ship unchanged into 1.0.
+
+### Changed
+
+- **`Scheduler` and `SampleLoader` are now narrowed interfaces, not impl
+  classes.** The factory call signature is unchanged (`Scheduler(ctx, opts)` /
+  `SampleLoader(ctx, opts)` — and `new` form continues to work as a
+  `@deprecated` alias). The returned shape now exposes only the documented
+  methods: `schedule` / `stop` on `Scheduler`, `load` on `SampleLoader`.
+  Implementation classes (`SchedulerImpl`, `SampleLoaderImpl`) no longer
+  appear in `dist/index.d.ts`. A new `__compat__/loader-scheduler-surface.test.ts`
+  tripwire locks the surface against future drift.
+- **New exported types**: `SchedulerOptions`, `SampleLoaderOptions`,
+  `SampleLoaderLoadOptions` — make the documented factory option shapes
+  typeable. `Scheduler(ctx, { lookaheadMs: 100, intervalMs: 25 })` now has
+  IDE autocomplete on the options bag.
+
+### Deprecated (still works)
+
+- **`loader.load(json, (loaded, total) => void)`** — bare-callback form of
+  the second argument is `@deprecated` in TSDoc. Pass an options object
+  instead: `loader.load(json, { onProgress: (loaded, total) => …, buffers })`.
+  Both forms continue to work in 1.x. See [MIGRATE.md](./MIGRATE.md).
+
+### Fixed
+
+- **`Reverb.getParam(name)`** now returns the requested AudioParam instead
+  of always returning `preDelay`. Every reverb parameter except preDelay
+  was previously unreadable/unwritable through the public API.
+- **`Sequencer.stop()`** now calls the stop function on each active voice
+  before clearing the map. Previously, notes already scheduled into the
+  Web Audio graph within the `lookaheadMs` window kept playing after
+  `stop()` returned.
+- **`SmplrPreset.defaults.reverse`** (and group/region-level `reverse`)
+  now propagate when no per-note override is set. Previously the
+  preset-level value was silently dropped, leaving the offset mirror
+  unapplied to reversed buffers.
+- **Tremolo `disconnect()`** no longer throws `InvalidAccessError`: it now
+  disconnects the actual graph edges (`lfo → lfoAmp → amp.gain`) rather
+  than the non-existent `lfo → amp` edge. The intermediate amp gain nodes
+  are also released for GC.
+- **Mellotron / Soundfont loaders** no longer silently drop notes whose
+  MIDI number is `0` (`C-1`). The `!midi` truthiness check has been
+  replaced with `midi === undefined`.
+- **`getVersilianInstruments()`** caches the in-flight promise instead of
+  the resolved array, eliminating a race where two concurrent callers
+  triggered two network fetches.
+
+### Demo site
+
+- **`PianoKeyboard`** highlights actually pressed keys — the `isPlaying`
+  stub used to be hardcoded to `false`, so the `.--playing` CSS class
+  never applied.
+- **`ConnectMidi`** removes its WebMidi listeners on unmount, so
+  navigating away no longer leaks MIDI handlers that still reference a
+  disposed instrument.
+
+### Docs
+
+- **`SMPLR_PRESET.md` renamed to `PRESET_SCHEMA.md`.** The previous name
+  duplicated the type name (`SmplrPreset`); the new name describes the
+  file's role. README and AUTHORING.md cross-references updated.
+
 ## 0.25.0
 
 ### New
@@ -117,10 +185,11 @@
   `SmplrPreset`. Useful for drum-machine / step-sequencer consumers that
   mutate samples in response to UI changes.
 - **`SamplerReloadInput`** type exported for typing reload-input variables.
-- **`SMPLR_PRESET.md`** reference doc covering the full `SmplrPreset`
+- **`PRESET_SCHEMA.md`** reference doc covering the full `SmplrPreset`
   schema (top-level shape, `PlaybackParams`, `SmplrGroup`, `SmplrRegion`,
   inheritance rules, worked examples). AUTHORING.md's schema section now
-  links here instead of duplicating the table.
+  links here instead of duplicating the table. (Renamed from
+  `SMPLR_PRESET.md` in 0.26.0.)
 
 ### Fixed
 

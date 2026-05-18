@@ -12,10 +12,10 @@ let instrumentNames = getMellotronNames();
 
 export function MellotronExample({ className }: { className?: string }) {
   const [instrument, setInstrument] = useState<Mellotron | undefined>(
-    undefined
+    undefined,
   );
   const [instrumentName, setInstrumentName] = useState<string>(
-    instrumentNames[0]
+    instrumentNames[0],
   );
   const { status, setStatus, progress, onLoadProgress } = useStatus();
   const [reverbMix, setReverbMix] = useState(0);

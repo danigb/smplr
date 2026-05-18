@@ -6,14 +6,12 @@ import { sfzToPreset } from "./smplr/sfz-convert";
 
 const VCSL_BASE_URL = "https://smpldsnds.github.io/sgossner-vcsl";
 
-let instruments: string[] = [];
+let instrumentsPromise: Promise<string[]> | undefined;
 
-export async function getVersilianInstruments(): Promise<string[]> {
-  if (instruments.length) return instruments;
-  instruments = await fetch(VCSL_BASE_URL + "/sfz_files.json").then((res) =>
-    res.json(),
-  );
-  return instruments;
+export function getVersilianInstruments(): Promise<string[]> {
+  return (instrumentsPromise ??= fetch(VCSL_BASE_URL + "/sfz_files.json").then(
+    (res) => res.json(),
+  ));
 }
 
 export type VersilianConfig = {

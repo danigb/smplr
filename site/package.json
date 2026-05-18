@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "deploy:build": "DEPLOY=true vite build && cp dist/index.html dist/404.html",
     "deploy": "pnpm run deploy:build && gh-pages -d dist -t",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "dependencies": {
     "react": "19.2.6",
@@ -29,6 +31,7 @@
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "^6.0.2",
     "gh-pages": "^6.3.0",
+    "prettier": "^3.8.3",
     "rollup-plugin-visualizer": "^7.0.1",
     "tailwindcss": "^4.3.0",
     "typescript": "6.0.3",

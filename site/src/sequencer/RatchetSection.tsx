@@ -31,8 +31,7 @@ export function RatchetSection() {
       .then(() => {
         const groups = drums.getGroupNames();
         // Find a hat-like group; fall back to the first group.
-        const hat =
-          groups.find((g) => /hat|hh|hi-?hat/i.test(g)) ?? groups[0];
+        const hat = groups.find((g) => /hat|hh|hi-?hat/i.test(g)) ?? groups[0];
         hatRef.current = hat;
         drumsRef.current = drums;
 
@@ -42,9 +41,7 @@ export function RatchetSection() {
           loopEnd: LOOP_TICKS,
           stepSize: STEP_TICKS,
         });
-        seq.on("step", (stepIndex: number) =>
-          setActiveStep(stepIndex % STEPS),
-        );
+        seq.on("step", (stepIndex: number) => setActiveStep(stepIndex % STEPS));
         seqRef.current = seq;
         setStatus("ready");
       })
@@ -76,9 +73,7 @@ export function RatchetSection() {
   }, [ratchets, decay, status]);
 
   function cycleRatchet(step: number) {
-    setRatchets((prev) =>
-      prev.map((r, i) => (i === step ? (r + 1) % 5 : r)),
-    );
+    setRatchets((prev) => prev.map((r, i) => (i === step ? (r + 1) % 5 : r)));
   }
 
   function togglePlay() {
