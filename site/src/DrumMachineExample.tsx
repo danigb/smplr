@@ -25,7 +25,7 @@ export function DrumMachineExample({ className }: { className?: string }) {
   function loadDrumMachine(instrument: string) {
     setStatus("loading");
     const context = getAudioContext();
-    reverb ??= new Reverb(context);
+    reverb ??= Reverb(context);
     const drums = DrumMachine(context, { instrument, onLoadProgress });
     drums.output.addEffect("reverb", reverb, reverbMix);
 

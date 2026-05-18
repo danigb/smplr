@@ -25,7 +25,7 @@ export function MellotronExample({ className }: { className?: string }) {
     if (instrument) instrument.dispose();
     setStatus("loading");
     const context = getAudioContext();
-    reverb ??= new Reverb(context);
+    reverb ??= Reverb(context);
     const newInstrument = Mellotron(context, {
       instrument: instrumentName,
       volume,

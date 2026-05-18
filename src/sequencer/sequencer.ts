@@ -1,3 +1,4 @@
+import { asConstructable } from "../smplr/as-constructable";
 import { parseTicks } from "./time-parser";
 import { TransportClock } from "./transport-clock";
 
@@ -16,6 +17,19 @@ export type SequencerNote = {
   velocity?: number;
   /** Probability (0–100) that this note fires on each pass. Default 100 (always). */
   chance?: number;
+  /**
+   * Expand into N evenly-spaced sub-notes over `duration`. Requires `duration`;
+   * silently ignored if `duration` is omitted. Default 1 (no ratchet). When >1,
+   * each sub-note's `noteId` is suffixed with `#0`, `#1`, … so individual
+   * ratchet voices can be stopped via `stopNote("id#0")`.
+   */
+  ratchet?: number;
+  /**
+   * Multiplicative velocity decay per ratchet step: each step's velocity is
+   * scaled by `(1 - decay) ** step_index`. 0 = constant, 1 = silence by last
+   * step. Default 0.
+   */
+  ratchetVelocityDecay?: number;
 };
 
 /**
@@ -43,10 +57,27 @@ export type SequencerNoteEvent = {
   note: SequencerNote;
 };
 
+/**
+ * Time signature as a `{ numerator, denominator }` pair (e.g. `{ numerator: 7, denominator: 8 }`
+ * for 7/8). The numerator counts beats per bar; the denominator defines the
+ * note value of one beat (4 = quarter note, 8 = eighth note, …).
+ */
+export type TimeSignature = { numerator: number; denominator: number };
+
+/** Normalise a raw number / TimeSignature / undefined into a TimeSignature. */
+function normaliseTimeSignature(
+  input: number | TimeSignature | undefined,
+): TimeSignature {
+  if (input === undefined) return { numerator: 4, denominator: 4 };
+  if (typeof input === "number") return { numerator: input, denominator: 4 };
+  return input;
+}
+
 export type SequencerOptions = {
   bpm?: number;
   ppq?: number;
-  timeSignature?: number;
+  /** Time signature. Accepts `4` (interpreted as 4/4) or `{ numerator, denominator }`. */
+  timeSignature?: number | TimeSignature;
   loop?: boolean;
   loopStart?: string | number;
   loopEnd?: string | number;
@@ -60,6 +91,47 @@ export type SequencerOptions = {
   stepSize?: string | number;
 };
 
+/**
+ * Per-track options accepted by {@link Sequencer.addTrack} and
+ * {@link Sequencer.setPatterns}.
+ */
+export type AddTrackOptions = {
+  /**
+   * Stable track id. Required to address this track via
+   * {@link Sequencer.setTrackVolume}, {@link Sequencer.muteTrack},
+   * {@link Sequencer.soloTrack}, etc.
+   */
+  id?: string;
+  /** Per-track humanize. Overrides {@link SequencerOptions.humanize} when set. */
+  humanize?: { timingMs?: number; velocity?: number };
+  /** Multiplicative velocity scalar in [0, 1+]. Default 1. */
+  volume?: number;
+  /** When true, this track does not dispatch any notes. Default false. */
+  muted?: boolean;
+  /**
+   * When true, only soloed tracks dispatch notes. If any track in the pattern
+   * is soloed, every non-soloed track is silenced. Default false.
+   */
+  solo?: boolean;
+};
+
+/**
+ * Public shape for one pattern accepted by {@link Sequencer.setPatterns}.
+ */
+export type PatternInput = {
+  tracks: Array<
+    {
+      instrument: SequencerInstrument;
+      notes: SequencerNote[];
+    } & AddTrackOptions
+  >;
+  /**
+   * Pattern length override in ticks or musical time. Defaults to the longest
+   * track in this pattern.
+   */
+  loopEnd?: string | number;
+};
+
 // ---------------------------------------------------------------------------
 // Internal types
 // ---------------------------------------------------------------------------
@@ -69,6 +141,12 @@ type StopFn = (time?: number) => void;
 type Track = {
   instrument: SequencerInstrument;
   notes: SequencerNote[];
+  id?: string;
+  /** Per-track humanize override; undefined → fall back to the sequencer's global humanize. */
+  humanize?: { timing: number; velocity: number };
+  volume: number;
+  muted: boolean;
+  solo: boolean;
 };
 
 type RepeatEvent = {
@@ -80,26 +158,48 @@ type RepeatEvent = {
   startTick: number;
 };
 
+type Pattern = {
+  tracks: Track[];
+  /** Pattern length override in ticks; null = default to longest track. */
+  loopEndOverride: number | null;
+  /** Cached pattern length: max(at + duration) across all tracks. */
+  totalTicks: number;
+};
+
 // ---------------------------------------------------------------------------
 // Sequencer
 // ---------------------------------------------------------------------------
 
-export class Sequencer {
+class SequencerImpl {
   private readonly _context: BaseAudioContext;
   private readonly _clock: TransportClock;
   private readonly _ppq: number;
 
-  private _timeSignature: number;
+  private _timeSignature: TimeSignature;
   private _stepTicks: number | undefined;
-  private _tracks: Track[] = [];
+  /**
+   * Patterns. Always at least one (the implicit default pattern). Replaced
+   * atomically by {@link setPatterns}.
+   */
+  private _patterns: Pattern[] = [
+    { tracks: [], loopEndOverride: null, totalTicks: 0 },
+  ];
+  /** Indices into {@link _patterns} defining playback order. */
+  private _chainOrder: number[] = [0];
+  /** Current position within {@link _chainOrder}. */
+  private _chainIndex = 0;
+  /**
+   * True once {@link setPatterns} has been called. After this point,
+   * `addTrack` / `removeTrack` / `clearTracks` throw because the chain shape
+   * is owned by the patterns array.
+   */
+  private _patternsExplicit = false;
   private _repeatEvents: RepeatEvent[] = [];
   private _listeners: Map<string, Set<(...args: any[]) => void>> = new Map();
 
   // Loop
   private _loop: boolean;
   private _loopStartTick: number;
-  /** null = default to _totalTicks */
-  private _loopEndOverride: number | null = null;
 
   // Timing
   private _lookaheadSec: number;
@@ -110,8 +210,6 @@ export class Sequencer {
   private _intervalId: ReturnType<typeof setInterval> | undefined;
   /** AudioContext time high-water mark: notes up to here have been scheduled. */
   private _scheduledThrough = 0;
-  /** Computed from track notes; the tick where the last note ends. */
-  private _totalTicks = 0;
   /** Guards against scheduling the auto-stop setTimeout more than once. */
   private _endScheduled = false;
   /** Active voices keyed by noteId, so individual notes can be stopped. */
@@ -120,7 +218,7 @@ export class Sequencer {
   constructor(context: BaseAudioContext, options: SequencerOptions = {}) {
     this._context = context;
     this._ppq = options.ppq ?? 480;
-    this._timeSignature = options.timeSignature ?? 4;
+    this._timeSignature = normaliseTimeSignature(options.timeSignature);
 
     this._clock = new TransportClock(context, {
       bpm: options.bpm ?? 120,
@@ -135,7 +233,7 @@ export class Sequencer {
         : 0;
 
     if (options.loopEnd !== undefined) {
-      this._loopEndOverride = parseTicks(
+      this._patterns[0].loopEndOverride = parseTicks(
         options.loopEnd,
         this._ppq,
         this._timeSignature,
@@ -159,22 +257,186 @@ export class Sequencer {
   // Tracks
   // ---------------------------------------------------------------------------
 
-  addTrack(instrument: SequencerInstrument, notes: SequencerNote[]): this {
-    this._tracks.push({ instrument, notes });
-    this._recomputeTotalTicks();
+  /**
+   * Add a track to the (implicit, default) pattern. Throws after
+   * {@link setPatterns} has been called — use {@link setPatterns} to mutate
+   * the chain.
+   */
+  addTrack(
+    instrument: SequencerInstrument,
+    notes: SequencerNote[],
+    options?: AddTrackOptions,
+  ): this {
+    this._assertImplicitPattern("addTrack");
+    const pattern = this._patterns[0];
+    pattern.tracks.push(this._buildTrack(instrument, notes, options));
+    pattern.totalTicks = this._computePatternTotalTicks(pattern);
     return this;
   }
 
   removeTrack(instrument: SequencerInstrument): this {
-    this._tracks = this._tracks.filter((t) => t.instrument !== instrument);
-    this._recomputeTotalTicks();
+    this._assertImplicitPattern("removeTrack");
+    const pattern = this._patterns[0];
+    pattern.tracks = pattern.tracks.filter((t) => t.instrument !== instrument);
+    pattern.totalTicks = this._computePatternTotalTicks(pattern);
     return this;
   }
 
   clearTracks(): this {
-    this._tracks = [];
-    this._totalTicks = 0;
+    this._assertImplicitPattern("clearTracks");
+    const pattern = this._patterns[0];
+    pattern.tracks = [];
+    pattern.totalTicks = 0;
     return this;
+  }
+
+  /**
+   * Replace the sequencer's patterns. Each pattern owns its own tracks and
+   * optional `loopEnd`. After this call, `addTrack` / `removeTrack` /
+   * `clearTracks` throw — the chain is owned by the patterns array.
+   *
+   * `chainOrder` is reset to `[0, 1, …, patterns.length - 1]`.
+   */
+  setPatterns(patterns: PatternInput[]): this {
+    if (patterns.length === 0) {
+      throw new Error("setPatterns requires at least one pattern");
+    }
+    this._patterns = patterns.map((p) => {
+      const built: Pattern = {
+        tracks: p.tracks.map((t) => this._buildTrack(t.instrument, t.notes, t)),
+        loopEndOverride:
+          p.loopEnd !== undefined
+            ? parseTicks(p.loopEnd, this._ppq, this._timeSignature)
+            : null,
+        totalTicks: 0,
+      };
+      built.totalTicks = this._computePatternTotalTicks(built);
+      return built;
+    });
+    this._chainOrder = this._patterns.map((_, i) => i);
+    this._chainIndex = 0;
+    this._patternsExplicit = true;
+    return this;
+  }
+
+  /** Current chain order: indices into the patterns array, in playback order. */
+  get chainOrder(): number[] {
+    return [...this._chainOrder];
+  }
+
+  /**
+   * Set a new chain order. Each entry must be a valid pattern index.
+   * Throws if `order` is empty or contains an out-of-range index.
+   */
+  set chainOrder(order: number[]) {
+    if (order.length === 0) {
+      throw new Error("chainOrder must not be empty");
+    }
+    for (const idx of order) {
+      if (idx < 0 || idx >= this._patterns.length) {
+        throw new Error(`chainOrder index ${idx} out of range`);
+      }
+    }
+    this._chainOrder = [...order];
+    if (this._chainIndex >= order.length) this._chainIndex = 0;
+  }
+
+  /**
+   * Set a track's multiplicative volume scalar. Affects every note dispatched
+   * by the track from the next flush onwards. No-op if no track has the
+   * given id. Search is scoped to the currently-playing pattern.
+   */
+  setTrackVolume(id: string, volume: number): this {
+    const t = this._findTrack(id);
+    if (t) t.volume = volume;
+    return this;
+  }
+
+  /** Mute a track by id. No-op if no track has the given id. */
+  muteTrack(id: string): this {
+    return this._setTrackFlag(id, "muted", true);
+  }
+
+  /** Unmute a track by id. No-op if no track has the given id. */
+  unmuteTrack(id: string): this {
+    return this._setTrackFlag(id, "muted", false);
+  }
+
+  /** Solo a track by id. While any track is soloed, non-soloed tracks are silenced. */
+  soloTrack(id: string): this {
+    return this._setTrackFlag(id, "solo", true);
+  }
+
+  /** Remove the solo flag from a track. */
+  unsoloTrack(id: string): this {
+    return this._setTrackFlag(id, "solo", false);
+  }
+
+  /**
+   * Locate a track by id, scoped to the currently-playing pattern.
+   */
+  private _findTrack(id: string): Track | undefined {
+    return this._currentPattern().tracks.find((t) => t.id === id);
+  }
+
+  private _setTrackFlag(
+    id: string,
+    flag: "muted" | "solo",
+    value: boolean,
+  ): this {
+    const t = this._findTrack(id);
+    if (t) t[flag] = value;
+    return this;
+  }
+
+  private _buildTrack(
+    instrument: SequencerInstrument,
+    notes: SequencerNote[],
+    options?: AddTrackOptions,
+  ): Track {
+    return {
+      instrument,
+      notes,
+      id: options?.id,
+      humanize: options?.humanize
+        ? {
+            timing: options.humanize.timingMs ?? 0,
+            velocity: options.humanize.velocity ?? 0,
+          }
+        : undefined,
+      volume: options?.volume ?? 1,
+      muted: options?.muted ?? false,
+      solo: options?.solo ?? false,
+    };
+  }
+
+  private _currentPattern(): Pattern {
+    return (
+      this._patterns[this._chainOrder[this._chainIndex]] ?? this._patterns[0]
+    );
+  }
+
+  private _assertImplicitPattern(method: string): void {
+    if (this._patternsExplicit) {
+      throw new Error(
+        `${method}() is not available after setPatterns(); use setPatterns() to update the chain.`,
+      );
+    }
+  }
+
+  private _computePatternTotalTicks(pattern: Pattern): number {
+    let max = 0;
+    for (const track of pattern.tracks) {
+      for (const note of track.notes) {
+        const atTick = parseTicks(note.at, this._ppq, this._timeSignature);
+        const durTick =
+          note.duration !== undefined
+            ? parseTicks(note.duration, this._ppq, this._timeSignature)
+            : 0;
+        max = Math.max(max, atTick + durTick);
+      }
+    }
+    return max;
   }
 
   // ---------------------------------------------------------------------------
@@ -204,6 +466,7 @@ export class Sequencer {
     this._clock.start(startTick);
     this._scheduledThrough = this._context.currentTime;
     this._endScheduled = false;
+    this._chainIndex = 0;
     this._resetRepeatEvents(startTick);
     this._startLoop();
     this._emitStateChange("playing");
@@ -261,14 +524,16 @@ export class Sequencer {
     this._clock.bpm = value;
   }
 
-  get timeSignature(): number {
-    return this._timeSignature;
+  get timeSignature(): TimeSignature {
+    return { ...this._timeSignature };
   }
 
-  set timeSignature(value: number) {
-    this._timeSignature = value;
-    this._clock.timeSignature = value;
-    this._recomputeTotalTicks();
+  set timeSignature(value: number | TimeSignature) {
+    this._timeSignature = normaliseTimeSignature(value);
+    this._clock.timeSignature = this._timeSignature;
+    for (const p of this._patterns) {
+      p.totalTicks = this._computePatternTotalTicks(p);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -323,13 +588,17 @@ export class Sequencer {
     );
   }
 
-  /** Loop end in ticks. Defaults to the end of the longest track. */
+  /**
+   * Loop end in ticks for the currently-playing pattern. Defaults to the end
+   * of the pattern's longest track.
+   */
   get loopEnd(): number {
-    return this._loopEndOverride ?? this._totalTicks;
+    const p = this._currentPattern();
+    return p.loopEndOverride ?? p.totalTicks;
   }
 
   set loopEnd(value: string | number) {
-    this._loopEndOverride = parseTicks(
+    this._currentPattern().loopEndOverride = parseTicks(
       String(value),
       this._ppq,
       this._timeSignature,
@@ -394,19 +663,20 @@ export class Sequencer {
   /**
    * Listen to a sequencer event.
    *
-   * | Event          | Args                                              |
-   * |----------------|---------------------------------------------------|
-   * | "statechange"  | (state: "playing" \| "paused" \| "stopped")       |
-   * | "start"        |                                                   |
-   * | "stop"         |                                                   |
-   * | "pause"        |                                                   |
-   * | "end"          |                                                   |
-   * | "loop"         |                                                   |
-   * | "beat"         | (beat: number, time: number)                      |
-   * | "bar"          | (bar: number, time: number)                       |
-   * | "step"         | (stepIndex: number, time: number)                 |
-   * | "noteOn"       | (event: SequencerNoteEvent)                       |
-   * | "noteOff"      | (event: SequencerNoteEvent)                       |
+   * | Event           | Args                                              |
+   * |-----------------|---------------------------------------------------|
+   * | "statechange"   | (state: "playing" \| "paused" \| "stopped")       |
+   * | "start"         |                                                   |
+   * | "stop"          |                                                   |
+   * | "pause"         |                                                   |
+   * | "end"           |                                                   |
+   * | "loop"          |                                                   |
+   * | "patternChange" | (patternIndex: number, time: number)              |
+   * | "beat"          | (beat: number, time: number)                      |
+   * | "bar"           | (bar: number, time: number)                       |
+   * | "step"          | (stepIndex: number, time: number)                 |
+   * | "noteOn"        | (event: SequencerNoteEvent)                       |
+   * | "noteOff"       | (event: SequencerNoteEvent)                       |
    */
   on(event: string, callback: (...args: any[]) => void): this {
     if (!this._listeners.has(event)) {
@@ -448,45 +718,70 @@ export class Sequencer {
     const fromTick = this._clock.audioTimeToTick(this._scheduledThrough);
     const toTick = this._clock.audioTimeToTick(windowEnd);
 
-    if (this._loop) {
-      const loopEndTick = this.loopEnd;
+    const pattern = this._currentPattern();
+    const isMultiPattern = this._chainOrder.length > 1;
+    const patternEndTick = pattern.loopEndOverride ?? pattern.totalTicks;
+    const isLastInChain = this._chainIndex === this._chainOrder.length - 1;
+    // Single-pattern restart uses the configured loopStart; chain patterns
+    // always restart from tick 0 of the next pattern.
+    const patternStartTick = isMultiPattern ? 0 : this._loopStartTick;
 
-      if (toTick >= loopEndTick && loopEndTick > this._loopStartTick) {
-        // Window crosses the loop boundary.
+    // Cross-boundary: advance chain (or wrap a looping single pattern).
+    // Single-pattern + !loop falls through to the auto-stop path below.
+    const willAdvance =
+      patternEndTick > patternStartTick &&
+      toTick >= patternEndTick &&
+      (isMultiPattern || this._loop) &&
+      !(isLastInChain && !this._loop);
 
-        // Part 1: notes from the current position up to loop end.
-        this._scheduleWindow(fromTick, loopEndTick);
+    if (willAdvance) {
+      // Part 1: notes up to the pattern boundary.
+      this._scheduleWindow(fromTick, patternEndTick);
 
-        // Compute the exact audio time of the loop restart, then re-anchor
-        // the clock. Any future tickToAudioTime / audioTimeToTick calls will
-        // operate in the new iteration's tick space.
-        const loopRestartAudioTime = this._clock.tickToAudioTime(loopEndTick);
-        this._clock.seekAt(this._loopStartTick, loopRestartAudioTime);
+      const restartAudioTime = this._clock.tickToAudioTime(patternEndTick);
+
+      if (isMultiPattern) {
+        this._chainIndex = (this._chainIndex + 1) % this._chainOrder.length;
+        this._emit(
+          "patternChange",
+          this._chainOrder[this._chainIndex],
+          restartAudioTime,
+        );
+        // Wrapping the chain back to index 0 also counts as a loop.
+        if (this._chainIndex === 0) {
+          this._emit("loop");
+        }
+      } else {
         this._emit("loop");
-        this._resetRepeatEvents(this._loopStartTick);
-
-        // Part 2: overflow notes from loop start into the remainder of the window.
-        // After seekAt, audioTimeToTick(windowEnd) is in the new iteration.
-        const overflowToTick = this._clock.audioTimeToTick(windowEnd);
-        this._scheduleWindow(this._loopStartTick, overflowToTick);
-
-        this._scheduledThrough = windowEnd;
-        return;
       }
+
+      const nextStartTick = isMultiPattern ? 0 : this._loopStartTick;
+      this._clock.seekAt(nextStartTick, restartAudioTime);
+      this._resetRepeatEvents(nextStartTick);
+
+      // Part 2: overflow into the new pattern within the same window.
+      const overflowToTick = this._clock.audioTimeToTick(windowEnd);
+      this._scheduleWindow(nextStartTick, overflowToTick);
+
+      this._scheduledThrough = windowEnd;
+      return;
     }
 
     this._scheduleWindow(fromTick, toTick);
     this._scheduledThrough = windowEnd;
 
-    // Auto-stop for non-looping scores once the window passes the last note.
+    // Auto-stop once we've passed the end of the last pattern in the chain
+    // (or the only pattern in non-loop mode). Uses the pattern's loopEnd
+    // override when set; otherwise falls back to the longest-track length.
     if (
       !this._loop &&
       !this._endScheduled &&
-      this._totalTicks > 0 &&
-      toTick >= this._totalTicks
+      isLastInChain &&
+      patternEndTick > 0 &&
+      toTick >= patternEndTick
     ) {
       this._endScheduled = true;
-      const endAudioTime = this._clock.tickToAudioTime(this._totalTicks);
+      const endAudioTime = this._clock.tickToAudioTime(patternEndTick);
       const delay = Math.max(0, (endAudioTime - now) * 1000);
       setTimeout(() => {
         this._stopLoop();
@@ -502,9 +797,17 @@ export class Sequencer {
   // ---------------------------------------------------------------------------
 
   private _scheduleWindow(fromTick: number, toTick: number): void {
-    // ---- Track notes ----
-    for (let trackIndex = 0; trackIndex < this._tracks.length; trackIndex++) {
-      const track = this._tracks[trackIndex];
+    // ---- Track notes (current pattern) ----
+    const tracks = this._currentPattern().tracks;
+    const anySolo = tracks.some((t) => t.solo);
+
+    for (let trackIndex = 0; trackIndex < tracks.length; trackIndex++) {
+      const track = tracks[trackIndex];
+      if (track.muted) continue;
+      if (anySolo && !track.solo) continue;
+
+      const trackHumanize = track.humanize ?? this._humanize;
+
       for (let noteIndex = 0; noteIndex < track.notes.length; noteIndex++) {
         const note = track.notes[noteIndex];
         const noteTick = parseTicks(note.at, this._ppq, this._timeSignature);
@@ -523,37 +826,59 @@ export class Sequencer {
               )
             : undefined;
 
-        const timingOffset = this._humanize.timing
-          ? ((Math.random() * 2 - 1) * this._humanize.timing) / 1000
+        const timingOffset = trackHumanize.timing
+          ? ((Math.random() * 2 - 1) * trackHumanize.timing) / 1000
           : 0;
-        const velocityOffset = this._humanize.velocity
-          ? Math.round((Math.random() * 2 - 1) * this._humanize.velocity)
+        const velocityOffset = trackHumanize.velocity
+          ? Math.round((Math.random() * 2 - 1) * trackHumanize.velocity)
           : 0;
 
-        const noteId = note.id ?? noteIndex;
+        const baseNoteId = note.id ?? noteIndex;
         const noteEvent: SequencerNoteEvent = {
-          noteId,
+          noteId: baseNoteId,
           trackIndex,
           noteIndex,
           note,
         };
 
-        const result = track.instrument.start({
-          note: note.note,
-          time: Math.max(0, audioTime + timingOffset),
-          duration: durationSec,
-          velocity: (note.velocity ?? 100) + velocityOffset,
-          noteId,
-          onStart: () => this._emit("noteOn", noteEvent),
-          onEnded: () => {
-            this._activeVoices.delete(noteId);
-            this._emit("noteOff", noteEvent);
-          },
-        });
+        const ratchetCount =
+          note.ratchet && note.ratchet > 1 && durationSec !== undefined
+            ? Math.floor(note.ratchet)
+            : 1;
+        const ratchetDecay = note.ratchetVelocityDecay ?? 0;
+        const ratchetStepSec =
+          ratchetCount > 1 && durationSec !== undefined
+            ? durationSec / ratchetCount
+            : 0;
+        const ratchetDurationSec =
+          ratchetCount > 1 ? ratchetStepSec : durationSec;
 
-        // Capture the stop function if the instrument returns one
-        if (typeof result === "function") {
-          this._activeVoices.set(noteId, result as StopFn);
+        for (let r = 0; r < ratchetCount; r++) {
+          const ratchetOffsetSec = r * ratchetStepSec;
+          const ratchetVelocityScale =
+            ratchetCount > 1 ? Math.pow(1 - ratchetDecay, r) : 1;
+          const subNoteId =
+            ratchetCount > 1 ? `${baseNoteId}#${r}` : baseNoteId;
+
+          const result = track.instrument.start({
+            note: note.note,
+            time: Math.max(0, audioTime + timingOffset + ratchetOffsetSec),
+            duration: ratchetDurationSec,
+            velocity:
+              (note.velocity ?? 100) * track.volume * ratchetVelocityScale +
+              velocityOffset,
+            noteId: subNoteId,
+            onStart: () => this._emit("noteOn", noteEvent),
+            onEnded: () => {
+              this._activeVoices.delete(subNoteId);
+              this._emit("noteOff", noteEvent);
+            },
+          });
+
+          // Capture the stop function if the instrument returns one
+          if (typeof result === "function") {
+            this._activeVoices.set(subNoteId, result as StopFn);
+          }
         }
       }
     }
@@ -590,8 +915,8 @@ export class Sequencer {
   }
 
   private _emitBeatsInWindow(fromTick: number, toTick: number): void {
-    const beatTicks = this._ppq;
-    const barTicks = this._ppq * this._timeSignature;
+    const beatTicks = this._ppq * (4 / this._timeSignature.denominator);
+    const barTicks = beatTicks * this._timeSignature.numerator;
 
     // Small tolerance so floating-point drift doesn't skip a beat at tick=0.
     const firstBeat = Math.ceil((fromTick - 0.001) / beatTicks) * beatTicks;
@@ -630,29 +955,14 @@ export class Sequencer {
     this._emit("statechange", state);
   }
 
-  /** Recompute _totalTicks from all track notes (at + duration). */
-  private _recomputeTotalTicks(): void {
-    let max = 0;
-    for (const track of this._tracks) {
-      for (const note of track.notes) {
-        const atTick = parseTicks(note.at, this._ppq, this._timeSignature);
-        const durTick =
-          note.duration !== undefined
-            ? parseTicks(note.duration, this._ppq, this._timeSignature)
-            : 0;
-        max = Math.max(max, atTick + durTick);
-      }
-    }
-    this._totalTicks = max;
-  }
-
   /** Format a raw tick count as "bar:beat:tick" (all 1-indexed). */
   private _tickToPosition(tick: number): string {
-    const barTicks = this._ppq * this._timeSignature;
+    const beatTicks = this._ppq * (4 / this._timeSignature.denominator);
+    const barTicks = beatTicks * this._timeSignature.numerator;
     const bar = Math.floor(tick / barTicks) + 1;
     const ticksInBar = tick % barTicks;
-    const beat = Math.floor(ticksInBar / this._ppq) + 1;
-    const ticksInBeat = Math.round(ticksInBar % this._ppq);
+    const beat = Math.floor(ticksInBar / beatTicks) + 1;
+    const ticksInBeat = Math.round(ticksInBar % beatTicks);
     return `${bar}:${beat}:${ticksInBeat}`;
   }
 
@@ -670,3 +980,6 @@ export class Sequencer {
     }
   }
 }
+
+export const Sequencer = asConstructable(SequencerImpl);
+export type Sequencer = ReturnType<typeof Sequencer>;

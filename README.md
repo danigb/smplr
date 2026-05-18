@@ -25,7 +25,7 @@ const context = new AudioContext();
 const piano = SplendidGrandPiano(context);
 const drums = DrumMachine(context, { instrument: "TR-808" });
 
-const seq = new Sequencer(context, { bpm: 110, loop: true });
+const seq = Sequencer(context, { bpm: 110, loop: true });
 seq.addTrack(piano, [
   { note: "C4", at: "1:1", duration: "4n" },
   { note: "E4", at: "1:2", duration: "4n" },
@@ -47,7 +47,7 @@ import { SplendidGrandPiano, Reverb, renderOffline } from "smplr";
 
 const wav = await renderOffline(async (context) => {
   const piano = await SplendidGrandPiano(context).load;
-  piano.output.addEffect("reverb", new Reverb(context), 0.3);
+  piano.output.addEffect("reverb", Reverb(context), 0.3);
   ["C4", "E4", "G4", "C5"].forEach((note, i) => {
     piano.start({ note, time: i * 0.4, duration: 0.4 });
   });
@@ -111,7 +111,7 @@ The package needs to be served as a URL from a service like [unpkg](https://unpk
 
 ### Defining an instrument
 
-`smplr` ships ten instruments out of the box — `SplendidGrandPiano`, `Soundfont`, `DrumMachine`, `ElectricPiano`, `Mallet`, `Mellotron`, `Smolken`, `Versilian`, `Sampler`, `Soundfont2Sampler`. If none of them fit your use case, you can author your own with the `Instrument` builder and the `Smplr` interface.
+`smplr` ships ten instruments out of the box — `SplendidGrandPiano`, `Soundfont`, `DrumMachine`, `ElectricPiano`, `Mallet`, `Mellotron`, `Smolken`, `Versilian`, `Sampler`, `Soundfont2`. If none of them fit your use case, you can author your own with the `Instrument` builder and the `Smplr` interface.
 
 See **[Defining an instrument](./AUTHORING.md)** for the full authoring guide — sync and async examples, third-party package layout, and how to use `Smplr` as a TypeScript type for generic helpers.
 
@@ -179,7 +179,7 @@ All instruments share some configuration options, passed as the second argument 
 - `volumeToGain`: a function to map MIDI volume to a linear gain. Uses the MIDI standard curve by default.
 - `storage`: a [storage backend](#cache-requests) used to fetch sample buffers. `HttpStorage` by default.
 - `loader`: a shared `SampleLoader` instance. Pass the same loader to multiple instruments to cache buffers across them (see [Buffer reuse](#buffer-reuse)).
-- `scheduler`: a shared `Scheduler` instance. Construct your own to tune scheduling — for example, `new Scheduler(context, { lookaheadMs: 100, intervalMs: 25 })` — or omit to get a per-instrument default.
+- `scheduler`: a shared `Scheduler` instance. Construct your own to tune scheduling — for example, `Scheduler(context, { lookaheadMs: 100, intervalMs: 25 })` — or omit to get a per-instrument default.
 - `onLoadProgress`: a function called after each sample buffer is decoded. Receives `{ loaded, total }` where `total` is the full count known before loading starts.
 - `onStart`: called when a note is dispatched to the audio engine. Receives the started note. See ⚠️ note under [Events](#events) on timing precision.
 - `onEnded`: called when each voice's audio node ends. Receives the started note.
@@ -302,6 +302,22 @@ piano.output.volume; // => 80
 
 ⚠️ `volume` is global to the instrument, but `velocity` is specific for each note.
 
+#### Pan, detune, and reverse
+
+Every instrument accepts a `pan` option at construction (`-1` = full left, `+1` = full right):
+
+```js
+const drums = DrumMachine(context, { instrument: "TR-808", pan: -0.5 });
+```
+
+Two universal setters mutate the playback defaults in place. They apply to notes scheduled **after** the call; in-flight notes are unaffected.
+
+```js
+sampler.setDetune(100); // semitone up (100 cents) for all future notes
+sampler.setReverse(true); // play samples reversed for all future notes
+sampler.setReverse(false); // back to forward playback
+```
+
 #### MIDI CC
 
 Set and read MIDI Control Change values on the instrument:
@@ -368,7 +384,7 @@ Use `output.addEffect(name, effect, mix)` to connect an effect using a send bus:
 
 ```js
 import { Reverb, SplendidGrandPiano } from "smplr";
-const reverb = new Reverb(context);
+const reverb = Reverb(context);
 const piano = SplendidGrandPiano(context, { volume });
 piano.output.addEffect("reverb", reverb, 0.2);
 ```
@@ -391,7 +407,7 @@ To cache samples in the browser, use a `CacheStorage` object:
 import { SplendidGrandPiano, CacheStorage } from "smplr";
 
 const context = new AudioContext();
-const storage = new CacheStorage();
+const storage = CacheStorage();
 // First time the instrument loads, will fetch the samples from http. Subsequent times from cache.
 const piano = SplendidGrandPiano(context, { storage });
 ```
@@ -400,7 +416,7 @@ const piano = SplendidGrandPiano(context, { storage });
 
 ## Sequencer
 
-`Sequencer` schedules notes from one or more tracks against any smplr instrument with sample-accurate timing. Unlike instruments, it's a regular class — always constructed with `new Sequencer(context, opts)`.
+`Sequencer` schedules notes from one or more tracks against any smplr instrument with sample-accurate timing. Constructed as `Sequencer(context, opts)` (the `new Sequencer(...)` form also still works as a deprecated alias).
 
 ```js
 import { Sequencer, SplendidGrandPiano, DrumMachine } from "smplr";
@@ -409,7 +425,7 @@ const context = new AudioContext();
 const piano = SplendidGrandPiano(context);
 const drums = DrumMachine(context, { instrument: "TR-808" });
 
-const seq = new Sequencer(context, { bpm: 120, loop: true });
+const seq = Sequencer(context, { bpm: 120, loop: true });
 
 seq.addTrack(piano, [
   { note: "C4", at: "1:1", duration: "4n" },
@@ -446,18 +462,54 @@ Note positions and durations accept several formats:
 #### Constructor options
 
 ```js
-const seq = new Sequencer(context, {
+const seq = Sequencer(context, {
   bpm: 120, // default 120
   ppq: 480, // pulses per quarter note, default 480
-  timeSignature: 4, // beats per bar, default 4
+  timeSignature: 4, // accepts `4` (→ 4/4) or `{ numerator, denominator }`
   loop: false, // default false
   loopStart: 0, // loop start position (ticks or string)
   loopEnd: "2:1", // loop end position; defaults to end of longest track
   lookaheadMs: 200, // scheduling lookahead, default 200
   intervalMs: 50, // flush interval, default 50
   humanize: { timingMs: 10, velocity: 8 }, // optional randomisation
+  stepSize: "16n", // optional: emit "step" events at this interval
 });
 ```
+
+`timeSignature` accepts a plain number (interpreted as `{ numerator: n, denominator: 4 }`) or a full object such as `{ numerator: 7, denominator: 8 }` for 7/8 time. The `seq.timeSignature` getter always returns the `{ numerator, denominator }` form.
+
+#### Tracks
+
+```js
+seq.addTrack(piano, notes); // append a track
+seq.addTrack(drums, notes, { id: "drums", volume: 0.8 }); // with options
+seq.removeTrack(piano); // remove by instrument reference
+seq.clearTracks(); // remove every track
+```
+
+`addTrack`'s third argument accepts:
+
+| Field      | Type                                        | Description                                                           |
+| ---------- | ------------------------------------------- | --------------------------------------------------------------------- |
+| `id`       | `string`                                    | Stable id for `setTrackVolume` / `muteTrack` / `soloTrack`.            |
+| `humanize` | `{ timingMs?: number; velocity?: number }`  | Per-track humanize. Overrides the sequencer-level setting when set.   |
+| `volume`   | `number`                                    | Multiplicative velocity scalar (default 1). `0.5` halves velocities.   |
+| `muted`    | `boolean`                                   | When true, this track does not dispatch notes.                         |
+| `solo`     | `boolean`                                   | When true, only soloed tracks play.                                    |
+
+After `setPatterns` is called (see [Pattern chain](#pattern-chain-song-mode)), `addTrack` / `removeTrack` / `clearTracks` throw — the chain is owned by the patterns array.
+
+#### Track mixer
+
+```js
+seq.setTrackVolume("drums", 0.6);
+seq.muteTrack("drums");
+seq.unmuteTrack("drums");
+seq.soloTrack("lead");
+seq.unsoloTrack("lead");
+```
+
+Mixer methods operate on the **currently-playing pattern** (so per-pattern mute/solo state is automatic when using a pattern chain). Calls with an unknown id are no-ops.
 
 #### Playback
 
@@ -481,11 +533,16 @@ seq.stopNote("intro-c", time); // stop at a scheduled time
 
 ```js
 seq.bpm = 140; // change BPM live, no glitch
-seq.timeSignature = 3; // change time signature
+seq.timeSignature = 3; // 3/4 (number → { numerator: 3, denominator: 4 })
+seq.timeSignature = { numerator: 7, denominator: 8 }; // 7/8
+
+seq.timeSignature; // → { numerator: 7, denominator: 8 }
 
 seq.position; // current position as "bar:beat:tick" string
 seq.position = "3:1"; // seek while playing or stopped
 ```
+
+The `"beat"` event fires once per denominator-defined note: 4/4 → 4 beats per bar, 6/8 → 6 beats per bar, etc.
 
 #### Loop
 
@@ -531,11 +588,17 @@ seq.on("beat", (beat, time) => {
 seq.on("bar", (bar, time) => {
   ui.updateBar(bar);
 });
+seq.on("step", (stepIndex, time) => {
+  ui.flashStep(stepIndex); // only fires when `stepSize` is set in options
+});
 seq.on("loop", () => {
   console.log("looped");
 });
 seq.on("end", () => {
   console.log("done");
+});
+seq.on("patternChange", (patternIndex, time) => {
+  ui.highlightPattern(patternIndex); // fires when the chain advances
 });
 seq.on("start", () => {});
 seq.on("stop", () => {});
@@ -543,6 +606,9 @@ seq.on("pause", () => {});
 
 seq.off("beat", handler); // remove a listener
 ```
+
+The `"step"` event only fires when the sequencer was constructed with `stepSize` (e.g. `"16n"`).
+The `"patternChange"` event only fires when more than one pattern is in the chain.
 
 #### Note events
 
@@ -581,7 +647,7 @@ seq.addTrack(piano, [
 Add subtle randomisation to timing and velocity for a more natural feel:
 
 ```js
-const seq = new Sequencer(context, {
+const seq = Sequencer(context, {
   bpm: 90,
   humanize: { timingMs: 12, velocity: 8 },
 });
@@ -589,6 +655,60 @@ const seq = new Sequencer(context, {
 
 - `timingMs`: maximum random offset in milliseconds (±). Default 0.
 - `velocity`: maximum random offset in MIDI velocity units (±). Default 0.
+
+Per-track humanize (passed to `addTrack`) overrides the global setting:
+
+```js
+seq.addTrack(piano, notes, { humanize: { timingMs: 0, velocity: 0 } });
+```
+
+#### SequencerNote fields
+
+| Field                  | Type                | Description                                                                  |
+| ---------------------- | ------------------- | ---------------------------------------------------------------------------- |
+| `note`                 | `string \| number`  | Note name or MIDI number.                                                    |
+| `at`                   | `string \| number`  | Musical position (ticks or `"bar:beat[.frac][:ticks]"` / `"4n"` / `"1m"`).   |
+| `duration`             | `string \| number?` | Duration; omit for a one-shot trigger.                                       |
+| `velocity`             | `number?`           | Velocity 0–127. Default 100.                                                 |
+| `id`                   | `string \| number?` | Used as `noteId` in `noteOn` / `noteOff` events. Default: array index.       |
+| `chance`               | `number?`           | Probability 0–100 that this note fires on each pass. Re-rolled on every loop. |
+| `ratchet`              | `number?`           | Expand into N sub-notes over `duration` (requires `duration`).               |
+| `ratchetVelocityDecay` | `number?`           | Per-step velocity decay; each sub-note scaled by `(1 - decay)^i`.            |
+
+Example:
+
+```js
+seq.addTrack(drums, [
+  { note: "hat", at: "1:4", duration: "8n", ratchet: 4, ratchetVelocityDecay: 0.2 },
+  { note: "snare", at: "1:2", chance: 50 }, // fires 50% of the time
+]);
+```
+
+When `ratchet > 1`, each sub-note's `noteId` is suffixed with `#0`, `#1`, etc., so you can stop an individual sub-voice via `seq.stopNote("id#0")`.
+
+#### Pattern chain (song mode)
+
+For multi-pattern arrangements (intro → verse → chorus), use `setPatterns`:
+
+```js
+seq.setPatterns([
+  { tracks: [{ instrument: drums, notes: introNotes }], loopEnd: "1m" },
+  { tracks: [{ instrument: drums, notes: verseNotes }], loopEnd: "2m" },
+  { tracks: [{ instrument: drums, notes: chorusNotes }], loopEnd: "2m" },
+]);
+
+seq.chainOrder = [0, 1, 2, 1, 2]; // intro, verse, chorus, verse, chorus
+seq.loop = true;                  // loop the whole chain
+seq.start();
+
+seq.on("patternChange", (idx) => ui.highlightPattern(idx));
+```
+
+- Each pattern's `tracks` entries accept the same `AddTrackOptions` (`id`, `humanize`, `volume`, `muted`, `solo`) as `addTrack`.
+- `loopEnd` is per-pattern and defaults to the longest track in that pattern.
+- `chainOrder` defaults to `[0, 1, …, n-1]`. Setting it lets you repeat or reorder patterns without duplicating data.
+- With `loop: false` the chain plays once and emits `"end"`; with `loop: true` it cycles indefinitely and emits `"loop"` each time it wraps.
+- Track mixer methods (`muteTrack`, `setTrackVolume`, etc.) operate on the currently-playing pattern — `muteTrack("lead")` only affects the pattern that owns the `"lead"` track.
 
 ---
 
@@ -641,7 +761,7 @@ If you already have an instrument loaded, pass the same `SampleLoader` to avoid 
 ```js
 import { SplendidGrandPiano, SampleLoader, renderOffline } from "smplr";
 
-const loader = new SampleLoader(audioContext);
+const loader = SampleLoader(audioContext);
 const piano = SplendidGrandPiano(audioContext, { loader });
 await piano.load;
 
@@ -933,16 +1053,16 @@ const context = new AudioContext();
 const versilian = Versilian(context, { instrument: instrumentNames[0] });
 ```
 
-### Soundfont2Sampler
+### Soundfont2
 
-Sampler capable of reading .sf2 files directly:
+Sampler capable of reading .sf2 files directly. Previously named `Soundfont2Sampler`; the old name remains as a deprecated alias.
 
 ```ts
-import { Soundfont2Sampler } from "smplr";
+import { Soundfont2 } from "smplr";
 import { SoundFont2 } from "soundfont2";
 
 const context = new AudioContext();
-const sampler = Soundfont2Sampler(context, {
+const sampler = Soundfont2(context, {
   url: "https://smpldsnds.github.io/soundfonts/soundfonts/galaxy-electric-pianos.sf2",
   createSoundfont: (data) => new SoundFont2(data),
 });

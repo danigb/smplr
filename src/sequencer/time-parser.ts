@@ -1,3 +1,5 @@
+import type { TimeSignature } from "./sequencer";
+
 /**
  * Parse a musical time value to ticks.
  *
@@ -8,11 +10,11 @@
  *   "2n"       — half note
  *   "1n"       — whole note      (4 * ppq ticks)
  *   "4n."      — dotted quarter  (ppq * 1.5 ticks)
- *   "1m"       — one measure     (ppq * timeSignature ticks)
+ *   "1m"       — one measure     (numerator * ppq * 4 / denominator ticks)
  *   "2m"       — two measures
  *   "1:1"      — bar 1, beat 1   (0 ticks; 1-indexed)
  *   "2:1"      — bar 2, beat 1   (1 measure in)
- *   "1:2"      — bar 1, beat 2   (ppq ticks in)
+ *   "1:2"      — bar 1, beat 2   (one denominator-defined beat in)
  *   "1:1:48"   — bar 1, beat 1, +48 raw ticks
  *   "1:1.5"    — bar 1, beat 1.5 (fractional beat)
  *   0, 96, 384 — number passthrough (already in ticks)
@@ -20,7 +22,7 @@
 export function parseTicks(
   time: string | number,
   ppq: number,
-  timeSignature: number,
+  timeSignature: TimeSignature,
 ): number {
   if (typeof time === "number") return time;
 
@@ -31,10 +33,13 @@ export function parseTicks(
     return parseFloat(t);
   }
 
+  const beatTicks = ppq * (4 / timeSignature.denominator);
+  const barTicks = beatTicks * timeSignature.numerator;
+
   // Measure: "1m", "2m", "0.5m"
   const measureMatch = /^(\d+(?:\.\d+)?)m$/.exec(t);
   if (measureMatch) {
-    return parseFloat(measureMatch[1]) * ppq * timeSignature;
+    return parseFloat(measureMatch[1]) * barTicks;
   }
 
   // Note value: "4n", "8n", "4n." (dotted)
@@ -55,7 +60,7 @@ export function parseTicks(
     const bar = parseFloat(posMatch[1]);
     const beat = parseFloat(posMatch[2]);
     const tick = posMatch[3] ? parseFloat(posMatch[3]) : 0;
-    return (bar - 1) * ppq * timeSignature + (beat - 1) * ppq + tick;
+    return (bar - 1) * barTicks + (beat - 1) * beatTicks + tick;
   }
 
   throw new Error(`parseTicks: cannot parse "${time}"`);

@@ -58,6 +58,8 @@ export type ElectricPianoOptions = Partial<{
   storage: Storage;
   destination: AudioNode;
   volume: number;
+  /** Stereo pan position (-1 = full left, 0 = centre, +1 = full right). */
+  pan: number;
   velocity: number;
   onLoadProgress: (progress: LoadProgress) => void;
   /** Audio formats to try, in order of preference. Defaults to ["ogg", "m4a"]. */

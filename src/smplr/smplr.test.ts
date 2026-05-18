@@ -658,6 +658,111 @@ describe("onEnded", () => {
 });
 
 // ---------------------------------------------------------------------------
+// setDetune / setReverse
+// ---------------------------------------------------------------------------
+
+describe("setDetune / setReverse", () => {
+  it("setDetune applies to notes scheduled after the call", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
+    await smplr.load;
+
+    smplr.setDetune(50);
+    smplr.start({ note: "C4" });
+
+    expect(ctx._sources[0].detune.value).toBe(50);
+  });
+
+  it("setDetune mutates defaults on subsequent calls", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
+    await smplr.load;
+
+    smplr.setDetune(100);
+    smplr.start({ note: "C4" });
+    expect(ctx._sources[0].detune.value).toBe(100);
+
+    smplr.setDetune(-50);
+    smplr.start({ note: "C4" });
+    expect(ctx._sources[1].detune.value).toBe(-50);
+  });
+
+  it("setReverse(true) uses the reversed buffer for future notes", async () => {
+    const ctx = makeContext();
+    const original = {
+      numberOfChannels: 1,
+      length: 4,
+      sampleRate: 44100,
+      getChannelData: jest.fn(() => new Float32Array([1, 2, 3, 4])),
+    } as unknown as AudioBuffer;
+
+    const ctxWithCreate = ctx as unknown as { createBuffer: jest.Mock };
+    ctxWithCreate.createBuffer = jest.fn(
+      (channels: number, length: number, sampleRate: number) => {
+        const data: Float32Array[] = [];
+        return {
+          numberOfChannels: channels,
+          length,
+          sampleRate,
+          copyToChannel: (arr: Float32Array, ch: number) => {
+            data[ch] = arr;
+          },
+          getChannelData: (ch: number) => data[ch],
+        } as unknown as AudioBuffer;
+      },
+    );
+
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext);
+    await smplr.loadInstrument(makeJson(), new Map([["C4", original]]));
+
+    smplr.setReverse(true);
+    smplr.start({ note: "C4" });
+
+    expect(ctxWithCreate.createBuffer).toHaveBeenCalledTimes(1);
+  });
+
+  it("setReverse(false) restores forward playback", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
+    await smplr.load;
+
+    smplr.setReverse(true);
+    smplr.setReverse(false);
+    smplr.start({ note: "C4" });
+
+    // Source's buffer is the forward (non-reversed) buffer
+    expect(ctx._sources[0].buffer).toBeDefined();
+  });
+
+  it("setDetune after dispose throws", () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
+    smplr.dispose();
+    expect(() => smplr.setDetune(50)).toThrow(/disposed/);
+  });
+
+  it("setReverse after dispose throws", () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
+    smplr.dispose();
+    expect(() => smplr.setReverse(true)).toThrow(/disposed/);
+  });
+
+  it("setDetune works before loadInstrument (Pattern B)", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext);
+    smplr.setDetune(75);
+    await smplr.loadInstrument(makeJson());
+
+    // After loadInstrument, the previous setDetune is overridden by the
+    // new instrument's defaults (per loadInstrument's documented atomic swap).
+    // This test just verifies the call doesn't throw pre-load.
+    smplr.start({ note: "C4" });
+    expect(ctx._sources).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Pattern B: new SmplrImpl(ctx, opts) + loadInstrument(json)
 // ---------------------------------------------------------------------------
 

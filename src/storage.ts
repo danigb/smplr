@@ -1,3 +1,5 @@
+import { asConstructable } from "./smplr/as-constructable";
+
 export type StorageResponse = {
   readonly status: number;
   arrayBuffer(): Promise<ArrayBuffer>;
@@ -15,12 +17,15 @@ export const HttpStorage: Storage = {
   },
 };
 
-export class CacheStorage implements Storage {
+class CacheStorageImpl implements Storage {
   #cache: Promise<Cache>;
 
   constructor(name = "smplr") {
     if (typeof window === "undefined" || !("caches" in window)) {
       this.#cache = Promise.reject("CacheStorage not supported");
+      // Attach a no-op handler so node doesn't surface this as an unhandled
+      // rejection in environments where `fetch()` is never called.
+      this.#cache.catch(() => {});
     } else {
       this.#cache = caches.open(name);
     }
@@ -51,3 +56,6 @@ export class CacheStorage implements Storage {
     } catch (err) {}
   }
 }
+
+export const CacheStorage = asConstructable(CacheStorageImpl);
+export type CacheStorage = ReturnType<typeof CacheStorage>;

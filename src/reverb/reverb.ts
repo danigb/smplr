@@ -1,3 +1,4 @@
+import { asConstructable } from "../smplr/as-constructable";
 import { PROCESSOR } from "./processor.min";
 
 const PARAMS = [
@@ -41,7 +42,7 @@ async function createDattorroReverbEffect(
   return reverb;
 }
 
-export class Reverb {
+class ReverbImpl {
   #effect: AudioWorkletNode | undefined;
   #ready: Promise<this>;
   public readonly input: AudioNode;
@@ -84,3 +85,6 @@ export class Reverb {
     this.#output = output;
   }
 }
+
+export const Reverb = asConstructable(ReverbImpl);
+export type Reverb = ReturnType<typeof Reverb>;

@@ -1,3 +1,4 @@
+import { asConstructable } from "./as-constructable";
 import { findFirstSupportedFormat, loadAudioBuffer } from "./load-audio";
 import { HttpStorage, Storage } from "../storage";
 import { SmplrPreset } from "./types";
@@ -9,7 +10,7 @@ import { SmplrPreset } from "./types";
  * or decoded twice. Multiple Smplr instances can share one SampleLoader by
  * passing it via SmplrOptions.loader.
  */
-export class SampleLoader {
+class SampleLoaderImpl {
   #context: BaseAudioContext;
   #storage: Storage;
   #cache: Map<string, AudioBuffer> = new Map();
@@ -108,3 +109,6 @@ function collectSampleNames(json: SmplrPreset): string[] {
   }
   return [...seen];
 }
+
+export const SampleLoader = asConstructable(SampleLoaderImpl);
+export type SampleLoader = ReturnType<typeof SampleLoader>;

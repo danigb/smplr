@@ -28,7 +28,7 @@ export function PianoExample({ className }: { className?: string }) {
       return;
     }
     const notes = await fetch("/arabesque.json").then((r) => r.json());
-    const seq = new Sequencer(piano.context, {
+    const seq = Sequencer(piano.context, {
       bpm: 80,
       humanize: { timingMs: 5, velocity: 20 },
     });
@@ -48,8 +48,8 @@ export function PianoExample({ className }: { className?: string }) {
     if (piano) return;
     setStatus("loading");
     const context = getAudioContext();
-    reverb ??= new Reverb(context);
-    storage ??= new CacheStorage();
+    reverb ??= Reverb(context);
+    storage ??= CacheStorage();
     const newPiano = SplendidGrandPiano(context, {
       volume,
       storage,

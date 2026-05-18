@@ -1,3 +1,4 @@
+import { asConstructable } from "./as-constructable";
 import { SortedQueue } from "./sorted-queue";
 import { NoteEvent, StopFn } from "./types";
 
@@ -16,7 +17,7 @@ type QueueItem = {
  *
  * Multiple Smplr instances can share a single Scheduler for coordinated timing.
  */
-export class Scheduler {
+class SchedulerImpl {
   #context: BaseAudioContext;
   #lookaheadSec: number;
   #intervalMs: number;
@@ -99,3 +100,6 @@ function getEventTime(event: NoteEvent): number | undefined {
 }
 
 const noOp: StopFn = () => {};
+
+export const Scheduler = asConstructable(SchedulerImpl);
+export type Scheduler = ReturnType<typeof Scheduler>;

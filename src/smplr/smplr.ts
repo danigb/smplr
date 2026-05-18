@@ -179,7 +179,7 @@ export class SmplrImpl implements Smplr {
     });
 
     // 2. Scheduler — shared or private
-    this.scheduler = options?.scheduler ?? new Scheduler(context);
+    this.scheduler = options?.scheduler ?? Scheduler(context);
 
     // 3. Region matcher — pre-processes groups/regions once
     this.#matcher = new RegionMatcher(json ?? EMPTY_JSON);
@@ -189,8 +189,7 @@ export class SmplrImpl implements Smplr {
 
     // 5. Sample loader — shared or private
     this.loader =
-      options?.loader ??
-      new SampleLoader(context, { storage: options?.storage });
+      options?.loader ?? SampleLoader(context, { storage: options?.storage });
 
     if (json) {
       // Pattern A: load immediately
@@ -288,6 +287,28 @@ export class SmplrImpl implements Smplr {
   getCC(cc: number): number {
     this.#assertNotDisposed("read CC");
     return this.#ccState.get(cc) ?? 0;
+  }
+
+  /**
+   * Set the cents detune applied to every future note. Mutates the instrument's
+   * playback defaults in place; takes effect on notes scheduled after the call.
+   * In-flight notes are unaffected.
+   */
+  setDetune(cents: number): void {
+    this.#assertNotDisposed("set detune");
+    if (!this.#defaults) this.#defaults = {};
+    this.#defaults.detune = cents;
+  }
+
+  /**
+   * Set whether every future note plays its sample reversed. The reversed-buffer
+   * cache is populated lazily on demand; no cache invalidation is needed in
+   * either direction.
+   */
+  setReverse(reverse: boolean): void {
+    this.#assertNotDisposed("set reverse");
+    if (!this.#defaults) this.#defaults = {};
+    this.#defaults.reverse = reverse;
   }
 
   /**
@@ -397,8 +418,9 @@ export class SmplrImpl implements Smplr {
 
     // Create a voice for each matched region
     let voiceStarted = false;
+    const effectiveReverse = reverse ?? this.#defaults?.reverse ?? false;
     for (const match of matches) {
-      const buffer = this.#getBuffer(match.sample, reverse ?? false);
+      const buffer = this.#getBuffer(match.sample, effectiveReverse);
       if (!buffer) continue;
 
       const params = resolveParams(

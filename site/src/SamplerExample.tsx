@@ -30,7 +30,7 @@ export function SamplerExample({ className }: { className?: string }) {
   function loadDrumMachine() {
     setStatus("loading");
     const context = getAudioContext();
-    reverb ??= new Reverb(context);
+    reverb ??= Reverb(context);
     const buffers = samples.reduce(
       (samples, name) => {
         const url = `https://smpldsnds.github.io/drum-machines/808-mini/${name}.m4a`;

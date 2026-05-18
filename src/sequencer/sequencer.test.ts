@@ -1,4 +1,4 @@
-import { Sequencer, SequencerNote } from "./sequencer";
+import { Sequencer, SequencerNote, type SequencerOptions } from "./sequencer";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -22,10 +22,7 @@ function makeInstrument() {
 const PPQ = 96;
 const BPM = 120;
 
-function makeSeq(
-  ctx: BaseAudioContext,
-  opts: ConstructorParameters<typeof Sequencer>[1] = {},
-) {
+function makeSeq(ctx: BaseAudioContext, opts: SequencerOptions = {}) {
   return new Sequencer(ctx, {
     bpm: BPM,
     ppq: PPQ,
@@ -683,6 +680,102 @@ describe("beat and bar events", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Time signature
+// ---------------------------------------------------------------------------
+
+describe("time signature", () => {
+  it("number input is normalised to { numerator, denominator: 4 }", () => {
+    const seq = makeSeq(makeContext(), { timeSignature: 3 });
+    expect(seq.timeSignature).toEqual({ numerator: 3, denominator: 4 });
+  });
+
+  it("default is 4/4", () => {
+    const seq = makeSeq(makeContext());
+    expect(seq.timeSignature).toEqual({ numerator: 4, denominator: 4 });
+  });
+
+  it("returns a fresh object each get (immutable from outside)", () => {
+    const seq = makeSeq(makeContext(), {
+      timeSignature: { numerator: 7, denominator: 8 },
+    });
+    const a = seq.timeSignature;
+    a.numerator = 99;
+    expect(seq.timeSignature.numerator).toBe(7);
+  });
+
+  it("setter accepts a TimeSignature object", () => {
+    const seq = makeSeq(makeContext());
+    seq.timeSignature = { numerator: 7, denominator: 8 };
+    expect(seq.timeSignature).toEqual({ numerator: 7, denominator: 8 });
+  });
+
+  it("emits 7 beat events per bar in 7/8", () => {
+    const ctx = makeContext(0) as any;
+    const beats: number[] = [];
+    const seq = makeSeq(ctx, {
+      loop: true,
+      loopEnd: "1m",
+      timeSignature: { numerator: 7, denominator: 8 },
+    });
+    seq.addTrack(makeInstrument(), []);
+    seq.on("beat", (beat: number) => beats.push(beat));
+    seq.start();
+
+    // 7/8 bar at 120bpm: 7 eighth notes = 7 * 0.25s = 1.75s
+    // Cover the whole bar in one flush
+    ctx.currentTime = 1.8;
+    jest.advanceTimersByTime(50);
+
+    // Beats 1..7 should fire
+    expect(beats.slice(0, 7)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it("emits 6 beats per bar in 6/8 and bar event every 6 beats", () => {
+    const ctx = makeContext(0) as any;
+    const beats: number[] = [];
+    const bars: number[] = [];
+    const seq = makeSeq(ctx, {
+      loop: true,
+      loopEnd: "1m",
+      timeSignature: { numerator: 6, denominator: 8 },
+    });
+    seq.addTrack(makeInstrument(), []);
+    seq.on("beat", (beat: number) => beats.push(beat));
+    seq.on("bar", (bar: number) => bars.push(bar));
+    seq.start();
+
+    // 6/8 bar at 120bpm: 6 eighth notes = 6 * 0.25s = 1.5s
+    ctx.currentTime = 1.6;
+    jest.advanceTimersByTime(50);
+
+    expect(beats.slice(0, 6)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(bars).toContain(1);
+  });
+
+  it("changing timeSignature mid-playback applies to subsequent beats", () => {
+    const ctx = makeContext(0) as any;
+    const beats: number[] = [];
+    const seq = makeSeq(ctx, { loop: true, loopEnd: "2m" });
+    seq.addTrack(makeInstrument(), []);
+    seq.on("beat", (beat: number) => beats.push(beat));
+    seq.start();
+
+    // First flush at 4/4: beat 1 at t=0
+    jest.advanceTimersByTime(50);
+    expect(beats).toContain(1);
+
+    // Switch to 8/8 (eighth-note beats) — beat events now fire at twice the rate
+    seq.timeSignature = { numerator: 8, denominator: 8 };
+    beats.length = 0;
+    ctx.currentTime = 1.0;
+    jest.advanceTimersByTime(50);
+
+    // In 8/8 there should be multiple beats in the new window
+    expect(beats.length).toBeGreaterThan(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // 11. Humanize
 // ---------------------------------------------------------------------------
 
@@ -752,6 +845,476 @@ describe("on / off", () => {
   it("on() is chainable", () => {
     const seq = makeSeq(makeContext(0));
     expect(seq.on("start", jest.fn())).toBe(seq);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Per-track humanize
+// ---------------------------------------------------------------------------
+
+describe("per-track humanize", () => {
+  it("per-track humanize overrides the global humanize", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    // Global humanize is large; per-track humanize is zero → no offset
+    const seq = makeSeq(ctx, { humanize: { timingMs: 200, velocity: 50 } });
+    seq.addTrack(inst, [{ note: "C4", at: "1:1", velocity: 80 }], {
+      humanize: { timingMs: 0, velocity: 0 },
+    });
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    expect(inst.start.mock.calls[0][0].time).toBeCloseTo(0, 6);
+    expect(inst.start.mock.calls[0][0].velocity).toBeCloseTo(80, 6);
+  });
+
+  it("falls back to global humanize when no per-track humanize is set", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const seq = makeSeq(ctx, { humanize: { velocity: 10 } });
+    seq.addTrack(inst, [{ note: "C4", at: "1:1", velocity: 100 }]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    const velocity = inst.start.mock.calls[0][0].velocity;
+    expect(velocity).toBeGreaterThanOrEqual(90);
+    expect(velocity).toBeLessThanOrEqual(110);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Track mixer (mute / solo / volume)
+// ---------------------------------------------------------------------------
+
+describe("track mixer", () => {
+  it("muteTrack skips dispatch for the muted track", () => {
+    const ctx = makeContext(0) as any;
+    const piano = makeInstrument();
+    const drums = makeInstrument();
+    const seq = makeSeq(ctx);
+    seq.addTrack(piano, [{ note: "C4", at: "1:1" }], { id: "piano" });
+    seq.addTrack(drums, [{ note: "kick", at: "1:1" }], { id: "drums" });
+    seq.muteTrack("piano");
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    expect(piano.start).not.toHaveBeenCalled();
+    expect(drums.start).toHaveBeenCalledTimes(1);
+  });
+
+  it("unmuteTrack re-enables dispatch", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const seq = makeSeq(ctx);
+    seq.addTrack(inst, [{ note: "C4", at: "1:1" }], {
+      id: "t",
+      muted: true,
+    });
+    seq.unmuteTrack("t");
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    expect(inst.start).toHaveBeenCalledTimes(1);
+  });
+
+  it("soloTrack silences non-soloed tracks", () => {
+    const ctx = makeContext(0) as any;
+    const piano = makeInstrument();
+    const drums = makeInstrument();
+    const seq = makeSeq(ctx);
+    seq.addTrack(piano, [{ note: "C4", at: "1:1" }], { id: "piano" });
+    seq.addTrack(drums, [{ note: "kick", at: "1:1" }], { id: "drums" });
+    seq.soloTrack("piano");
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    expect(piano.start).toHaveBeenCalledTimes(1);
+    expect(drums.start).not.toHaveBeenCalled();
+  });
+
+  it("unsoloing the last soloed track restores all non-muted tracks", () => {
+    const ctx = makeContext(0) as any;
+    const piano = makeInstrument();
+    const drums = makeInstrument();
+    const seq = makeSeq(ctx);
+    seq.addTrack(piano, [{ note: "C4", at: "1:1" }], { id: "piano" });
+    seq.addTrack(drums, [{ note: "kick", at: "1:1" }], { id: "drums" });
+    seq.soloTrack("piano");
+    seq.unsoloTrack("piano");
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    expect(piano.start).toHaveBeenCalledTimes(1);
+    expect(drums.start).toHaveBeenCalledTimes(1);
+  });
+
+  it("setTrackVolume scales note velocity", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const seq = makeSeq(ctx);
+    seq.addTrack(inst, [{ note: "C4", at: "1:1", velocity: 100 }], {
+      id: "t",
+    });
+    seq.setTrackVolume("t", 0.5);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    expect(inst.start.mock.calls[0][0].velocity).toBeCloseTo(50, 6);
+  });
+
+  it("mixer methods with unknown id are no-ops", () => {
+    const ctx = makeContext(0);
+    const seq = makeSeq(ctx);
+    expect(() => seq.setTrackVolume("nope", 0.5)).not.toThrow();
+    expect(() => seq.muteTrack("nope")).not.toThrow();
+    expect(() => seq.soloTrack("nope")).not.toThrow();
+    expect(() => seq.unmuteTrack("nope")).not.toThrow();
+    expect(() => seq.unsoloTrack("nope")).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pattern chain (song mode)
+// ---------------------------------------------------------------------------
+
+describe("pattern chain", () => {
+  it("default behaviour: addTrack works as before, single implicit pattern", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const seq = makeSeq(ctx);
+    seq.addTrack(inst, [{ note: "C4", at: "1:1" }]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+    expect(inst.start).toHaveBeenCalledTimes(1);
+    expect(seq.chainOrder).toEqual([0]);
+  });
+
+  it("setPatterns([A, B]) + loop: true cycles indefinitely", () => {
+    const ctx = makeContext(0) as any;
+    const instA = makeInstrument();
+    const instB = makeInstrument();
+    const onPatternChange = jest.fn();
+    const onLoop = jest.fn();
+
+    const seq = makeSeq(ctx, { loop: true });
+    seq.on("patternChange", onPatternChange);
+    seq.on("loop", onLoop);
+    // Each pattern is 1 bar (2.0s at 120bpm, 4/4)
+    seq.setPatterns([
+      {
+        tracks: [{ instrument: instA, notes: [{ note: "A4", at: "1:1" }] }],
+        loopEnd: "1m",
+      },
+      {
+        tracks: [{ instrument: instB, notes: [{ note: "B4", at: "1:1" }] }],
+        loopEnd: "1m",
+      },
+    ]);
+    seq.start();
+
+    // Flush 1: dispatches A's tick-0 note
+    jest.advanceTimersByTime(50);
+    expect(instA.start).toHaveBeenCalledTimes(1);
+    expect(instB.start).toHaveBeenCalledTimes(0);
+
+    // Cross A's boundary at 2.0s → advance to B
+    ctx.currentTime = 1.9;
+    jest.advanceTimersByTime(50);
+    expect(onPatternChange).toHaveBeenCalledTimes(1);
+    expect(onPatternChange.mock.calls[0][0]).toBe(1);
+    expect(instB.start).toHaveBeenCalledTimes(1);
+    // chain has not yet wrapped to 0
+    expect(onLoop).not.toHaveBeenCalled();
+
+    // Cross B's boundary at 4.0s → wrap back to A, emit "loop"
+    ctx.currentTime = 3.9;
+    jest.advanceTimersByTime(50);
+    expect(onPatternChange).toHaveBeenCalledTimes(2);
+    expect(onPatternChange.mock.calls[1][0]).toBe(0);
+    expect(onLoop).toHaveBeenCalledTimes(1);
+  });
+
+  it("setPatterns([A, B]) + loop: false plays once then emits 'end'", () => {
+    const ctx = makeContext(0) as any;
+    const instA = makeInstrument();
+    const instB = makeInstrument();
+    const onEnd = jest.fn();
+    const onLoop = jest.fn();
+
+    const seq = makeSeq(ctx, { loop: false });
+    seq.on("end", onEnd);
+    seq.on("loop", onLoop);
+    seq.setPatterns([
+      {
+        tracks: [{ instrument: instA, notes: [{ note: "A4", at: "1:1" }] }],
+        loopEnd: "1m",
+      },
+      {
+        tracks: [{ instrument: instB, notes: [{ note: "B4", at: "1:1" }] }],
+        loopEnd: "1m",
+      },
+    ]);
+    seq.start();
+
+    // Pattern A plays (one flush)
+    jest.advanceTimersByTime(50);
+    expect(instA.start).toHaveBeenCalledTimes(1);
+
+    // Advance past A's boundary → pattern B
+    ctx.currentTime = 1.9;
+    jest.advanceTimersByTime(50);
+    expect(instB.start).toHaveBeenCalledTimes(1);
+
+    // Window must reach B's end (4.0s) to schedule auto-stop: ctx=3.85 → toTick≥384
+    ctx.currentTime = 3.85;
+    jest.advanceTimersByTime(50);
+    // Then advance jest timers past the auto-stop setTimeout delay
+    jest.advanceTimersByTime(500);
+
+    expect(onLoop).not.toHaveBeenCalled();
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    expect(seq.state).toBe("stopped");
+  });
+
+  it("chainOrder controls playback order", () => {
+    const ctx = makeContext(0) as any;
+    const insts = [makeInstrument(), makeInstrument(), makeInstrument()];
+    const seq = makeSeq(ctx, { loop: true });
+    seq.setPatterns([
+      {
+        tracks: [{ instrument: insts[0], notes: [{ note: "A", at: "1:1" }] }],
+        loopEnd: "1m",
+      },
+      {
+        tracks: [{ instrument: insts[1], notes: [{ note: "B", at: "1:1" }] }],
+        loopEnd: "1m",
+      },
+      {
+        tracks: [{ instrument: insts[2], notes: [{ note: "C", at: "1:1" }] }],
+        loopEnd: "1m",
+      },
+    ]);
+    seq.chainOrder = [0, 2, 1];
+    expect(seq.chainOrder).toEqual([0, 2, 1]);
+    seq.start();
+
+    // Plays A first
+    jest.advanceTimersByTime(50);
+    expect(insts[0].start).toHaveBeenCalledTimes(1);
+
+    // Then C (index 2)
+    ctx.currentTime = 1.9;
+    jest.advanceTimersByTime(50);
+    expect(insts[2].start).toHaveBeenCalledTimes(1);
+
+    // Then B (index 1)
+    ctx.currentTime = 3.9;
+    jest.advanceTimersByTime(50);
+    expect(insts[1].start).toHaveBeenCalledTimes(1);
+  });
+
+  it("addTrack after setPatterns throws", () => {
+    const seq = makeSeq(makeContext());
+    seq.setPatterns([{ tracks: [] }]);
+    expect(() =>
+      seq.addTrack(makeInstrument(), [{ note: "C4", at: "1:1" }]),
+    ).toThrow(/setPatterns/);
+  });
+
+  it("removeTrack after setPatterns throws", () => {
+    const seq = makeSeq(makeContext());
+    const inst = makeInstrument();
+    seq.setPatterns([{ tracks: [{ instrument: inst, notes: [] }] }]);
+    expect(() => seq.removeTrack(inst)).toThrow(/setPatterns/);
+  });
+
+  it("clearTracks after setPatterns throws", () => {
+    const seq = makeSeq(makeContext());
+    seq.setPatterns([{ tracks: [] }]);
+    expect(() => seq.clearTracks()).toThrow(/setPatterns/);
+  });
+
+  it("setPatterns([]) throws", () => {
+    const seq = makeSeq(makeContext());
+    expect(() => seq.setPatterns([])).toThrow();
+  });
+
+  it("chainOrder rejects out-of-range indices", () => {
+    const seq = makeSeq(makeContext());
+    seq.setPatterns([{ tracks: [] }, { tracks: [] }]);
+    expect(() => {
+      seq.chainOrder = [0, 5];
+    }).toThrow();
+  });
+
+  it("chainOrder rejects empty array", () => {
+    const seq = makeSeq(makeContext());
+    expect(() => {
+      seq.chainOrder = [];
+    }).toThrow();
+  });
+
+  it("mixer state on pattern A's tracks doesn't affect pattern B's tracks", () => {
+    const ctx = makeContext(0) as any;
+    const instA = makeInstrument();
+    const instB = makeInstrument();
+    const seq = makeSeq(ctx, { loop: true });
+    seq.setPatterns([
+      {
+        tracks: [
+          {
+            instrument: instA,
+            notes: [{ note: "A4", at: "1:1" }],
+            id: "lead",
+            muted: true,
+          },
+        ],
+        loopEnd: "1m",
+      },
+      {
+        tracks: [
+          {
+            instrument: instB,
+            notes: [{ note: "B4", at: "1:1" }],
+            id: "lead",
+          },
+        ],
+        loopEnd: "1m",
+      },
+    ]);
+    seq.start();
+
+    // Pattern A's "lead" is muted → no dispatch
+    jest.advanceTimersByTime(50);
+    expect(instA.start).not.toHaveBeenCalled();
+
+    // Advance to pattern B → its "lead" is not muted, so dispatches
+    ctx.currentTime = 1.9;
+    jest.advanceTimersByTime(50);
+    expect(instB.start).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Ratchet
+// ---------------------------------------------------------------------------
+
+describe("ratchet", () => {
+  it("expands a note into N evenly-spaced sub-notes over its duration", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const seq = makeSeq(ctx);
+    // 4n at 120bpm, ppq=96 = 0.5s → 4 sub-notes at 0, 0.125, 0.25, 0.375
+    seq.addTrack(inst, [{ note: "C4", at: "1:1", duration: "4n", ratchet: 4 }]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    expect(inst.start).toHaveBeenCalledTimes(4);
+    const times = inst.start.mock.calls.map((c: any[]) => c[0].time);
+    expect(times[0]).toBeCloseTo(0, 4);
+    expect(times[1]).toBeCloseTo(0.125, 4);
+    expect(times[2]).toBeCloseTo(0.25, 4);
+    expect(times[3]).toBeCloseTo(0.375, 4);
+
+    // Each sub-note's duration is original / ratchet
+    for (const call of inst.start.mock.calls) {
+      expect(call[0].duration).toBeCloseTo(0.125, 4);
+    }
+  });
+
+  it("applies ratchetVelocityDecay multiplicatively", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const seq = makeSeq(ctx);
+    seq.addTrack(inst, [
+      {
+        note: "C4",
+        at: "1:1",
+        duration: "4n",
+        velocity: 100,
+        ratchet: 4,
+        ratchetVelocityDecay: 0.25,
+      },
+    ]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    expect(inst.start).toHaveBeenCalledTimes(4);
+    const velocities = inst.start.mock.calls.map((c: any[]) => c[0].velocity);
+    // 100 * (0.75)^0, ^1, ^2, ^3 = 100, 75, 56.25, 42.1875
+    expect(velocities[0]).toBeCloseTo(100, 3);
+    expect(velocities[1]).toBeCloseTo(75, 3);
+    expect(velocities[2]).toBeCloseTo(56.25, 3);
+    expect(velocities[3]).toBeCloseTo(42.1875, 3);
+  });
+
+  it("ratchet=1 behaves identically to a non-ratcheted note", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const seq = makeSeq(ctx);
+    seq.addTrack(inst, [{ note: "C4", at: "1:1", duration: "4n", ratchet: 1 }]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    expect(inst.start).toHaveBeenCalledTimes(1);
+    expect(inst.start.mock.calls[0][0].duration).toBeCloseTo(0.5, 4);
+  });
+
+  it("ratchet without duration is silently ignored", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const seq = makeSeq(ctx);
+    seq.addTrack(inst, [{ note: "C4", at: "1:1", ratchet: 4 }]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    expect(inst.start).toHaveBeenCalledTimes(1);
+  });
+
+  it("ratcheted noteId is suffixed with #r so sub-voices can be stopped independently", () => {
+    const ctx = makeContext(0) as any;
+    const stopFns = [jest.fn(), jest.fn(), jest.fn(), jest.fn()];
+    let callIndex = 0;
+    const inst = { start: jest.fn(() => stopFns[callIndex++]) };
+    const seq = makeSeq(ctx);
+    seq.addTrack(inst, [
+      { id: "kick", note: "C4", at: "1:1", duration: "4n", ratchet: 4 },
+    ]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    expect(inst.start.mock.calls.map((c: any[]) => c[0].noteId)).toEqual([
+      "kick#0",
+      "kick#1",
+      "kick#2",
+      "kick#3",
+    ]);
+
+    seq.stopNote("kick#1");
+    expect(stopFns[1]).toHaveBeenCalledTimes(1);
+    expect(stopFns[0]).not.toHaveBeenCalled();
+  });
+
+  it("noteOn event references the original SequencerNote, not the sub-notes", () => {
+    const ctx = makeContext(0) as any;
+    const inst = makeInstrument();
+    const onNoteOn = jest.fn();
+    const seq = makeSeq(ctx);
+    seq.on("noteOn", onNoteOn);
+    seq.addTrack(inst, [{ note: "C4", at: "1:1", duration: "4n", ratchet: 2 }]);
+    seq.start();
+    jest.advanceTimersByTime(50);
+
+    // Two sub-notes scheduled
+    expect(inst.start).toHaveBeenCalledTimes(2);
+    // Simulate instrument firing onStart for each sub-note
+    for (const call of inst.start.mock.calls) {
+      call[0].onStart({ noteId: call[0].noteId });
+    }
+    // Both noteOn events reference the same original note (with ratchet:2)
+    expect(onNoteOn).toHaveBeenCalledTimes(2);
+    expect(onNoteOn.mock.calls[0][0].note).toMatchObject({ ratchet: 2 });
+    expect(onNoteOn.mock.calls[1][0].note).toMatchObject({ ratchet: 2 });
   });
 });
 
