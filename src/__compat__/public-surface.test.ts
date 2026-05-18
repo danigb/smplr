@@ -94,18 +94,37 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
     expect(typeExports.has("SmplrImpl")).toBe(false);
   });
 
-  it("exports all 4 auxiliary classes as values", () => {
+  it("exports all 5 auxiliary factories as values", () => {
     for (const name of [
       "Reverb",
       "Sequencer",
       "CacheStorage",
+      "Scheduler",
       "SampleLoader",
     ]) {
       expect(valueExports.has(name)).toBe(true);
     }
   });
 
-  it("exports all 10 first-party factories as values", () => {
+  it("declares a same-named instance type alongside each auxiliary factory", () => {
+    // Dual export pattern, same as the instrument factories above:
+    // `const X` (factory) + `type X = ReturnType<typeof X>`. Lets users write
+    // `useState<Sequencer | undefined>()` without `ReturnType<typeof Sequencer>`.
+    for (const name of [
+      "Reverb",
+      "Sequencer",
+      "CacheStorage",
+      "Scheduler",
+      "SampleLoader",
+    ]) {
+      expect(dts).toMatch(
+        new RegExp(`^type ${name}\\s*=\\s*ReturnType<typeof ${name}>`, "m"),
+      );
+      expect(valueExports.has(name)).toBe(true);
+    }
+  });
+
+  it("exports all 10 first-party factories as values (with Soundfont2Sampler as deprecated alias)", () => {
     for (const name of [
       "Sampler",
       "Soundfont",
@@ -116,6 +135,7 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
       "Mellotron",
       "Smolken",
       "Versilian",
+      "Soundfont2",
       "Soundfont2Sampler",
     ]) {
       expect(valueExports.has(name)).toBe(true);
@@ -127,6 +147,8 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
     // users write `useState<Sampler | undefined>()` without reaching for
     // `ReturnType<typeof Sampler>`. TS collapses dual value+type exports into
     // one entry in the export block, so we assert on the declaration directly.
+    // `Soundfont2Sampler` is excluded — it's a deprecated alias of `Soundfont2`
+    // (`type Soundfont2Sampler = Soundfont2`), not its own `ReturnType<typeof ...>`.
     for (const name of [
       "Sampler",
       "Soundfont",
@@ -137,7 +159,7 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
       "Mellotron",
       "Smolken",
       "Versilian",
-      "Soundfont2Sampler",
+      "Soundfont2",
     ]) {
       expect(dts).toMatch(
         new RegExp(`^type ${name}\\s*=\\s*ReturnType<typeof ${name}>`, "m"),

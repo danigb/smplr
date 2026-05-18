@@ -91,7 +91,7 @@ type Soundfont2SamplerExtras = {
   loadInstrument(instrumentName: string): Promise<void> | undefined;
 };
 
-export const Soundfont2Sampler = Instrument(
+export const Soundfont2 = Instrument(
   (ctx: BaseAudioContext, options: Soundfont2Options, smplr) => {
     // Mutable closure state — extras read these; parse promise populates them.
     let soundfont: Sf2 | undefined = undefined;
@@ -127,8 +127,13 @@ export const Soundfont2Sampler = Instrument(
   },
 );
 
-/** Instance type returned by the {@link Soundfont2Sampler} factory. */
-export type Soundfont2Sampler = ReturnType<typeof Soundfont2Sampler>;
+/** Instance type returned by the {@link Soundfont2} factory. */
+export type Soundfont2 = ReturnType<typeof Soundfont2>;
+
+/** @deprecated Use `Soundfont2` instead. */
+export const Soundfont2Sampler = Soundfont2;
+/** @deprecated Use `Soundfont2` instead. */
+export type Soundfont2Sampler = Soundfont2;
 
 async function loadSoundfont(options: Soundfont2Options) {
   const buffer = await fetch(options.url).then((res) => res.arrayBuffer());

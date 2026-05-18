@@ -1,3 +1,4 @@
+import { asConstructable } from "../smplr/as-constructable";
 import { parseTicks } from "./time-parser";
 import { TransportClock } from "./transport-clock";
 
@@ -169,7 +170,7 @@ type Pattern = {
 // Sequencer
 // ---------------------------------------------------------------------------
 
-export class Sequencer {
+class SequencerImpl {
   private readonly _context: BaseAudioContext;
   private readonly _clock: TransportClock;
   private readonly _ppq: number;
@@ -979,3 +980,6 @@ export class Sequencer {
     }
   }
 }
+
+export const Sequencer = asConstructable(SequencerImpl);
+export type Sequencer = ReturnType<typeof Sequencer>;

@@ -179,7 +179,7 @@ export class SmplrImpl implements Smplr {
     });
 
     // 2. Scheduler — shared or private
-    this.scheduler = options?.scheduler ?? new Scheduler(context);
+    this.scheduler = options?.scheduler ?? Scheduler(context);
 
     // 3. Region matcher — pre-processes groups/regions once
     this.#matcher = new RegionMatcher(json ?? EMPTY_JSON);
@@ -189,8 +189,7 @@ export class SmplrImpl implements Smplr {
 
     // 5. Sample loader — shared or private
     this.loader =
-      options?.loader ??
-      new SampleLoader(context, { storage: options?.storage });
+      options?.loader ?? SampleLoader(context, { storage: options?.storage });
 
     if (json) {
       // Pattern A: load immediately

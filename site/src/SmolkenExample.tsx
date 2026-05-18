@@ -24,8 +24,8 @@ export function SmolkenExample({ className }: { className?: string }) {
     if (instrument) instrument.dispose();
     setStatus("loading");
     const context = getAudioContext();
-    reverb ??= new Reverb(context);
-    storage ??= new CacheStorage("smolken");
+    reverb ??= Reverb(context);
+    storage ??= CacheStorage("smolken");
     const newInstrument = Smolken(context, {
       instrument: instrumentName,
       volume,

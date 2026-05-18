@@ -23,7 +23,7 @@ export function ElectricPianoExample({ className }: { className?: string }) {
     if (piano) piano.dispose();
     setStatus("loading");
     const context = getAudioContext();
-    reverb ??= new Reverb(context);
+    reverb ??= Reverb(context);
     const newPiano = ElectricPiano(context, { instrument, volume, onLoadProgress, formats: [format] });
     newPiano.output.addEffect("reverb", reverb, reverbMix);
     setPiano(newPiano);

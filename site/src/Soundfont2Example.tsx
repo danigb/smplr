@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Reverb, Soundfont2Sampler, Storage } from "smplr";
+import { Reverb, Soundfont2, Storage } from "smplr";
 import { SoundFont2 } from "soundfont2";
 import { ConnectMidi } from "./ConnectMidi";
 import { PianoKeyboard } from "./PianoKeyboard";
@@ -27,7 +27,7 @@ let samplerNames: string[] = [
 ];
 
 export function Soundfont2Example({ className }: { className?: string }) {
-  const [sampler, setSampler] = useState<Soundfont2Sampler | undefined>(
+  const [sampler, setSampler] = useState<Soundfont2 | undefined>(
     undefined
   );
   const [samplerName, setSamplerName] = useState<string>(samplerNames[0]);
@@ -47,9 +47,9 @@ export function Soundfont2Example({ className }: { className?: string }) {
     const isUrl = nameOrUrl.startsWith("http");
     setSamplerName(isUrl ? "_custom" : nameOrUrl);
 
-    reverb ??= new Reverb(context);
+    reverb ??= Reverb(context);
     const url = isUrl ? nameOrUrl : SF2_INSTRUMENTS[nameOrUrl];
-    const newSampler = Soundfont2Sampler(context, {
+    const newSampler = Soundfont2(context, {
       url,
       createSoundfont: (data) => new SoundFont2(data),
     });

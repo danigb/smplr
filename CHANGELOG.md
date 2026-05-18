@@ -35,6 +35,26 @@
 - **`PatternInput`, `TimeSignature`, `AddTrackOptions`** types exported from
   `smplr/sequencer`.
 
+### New: factory-function consistency for auxiliary classes
+
+- **`Sequencer`, `Reverb`, `CacheStorage`, `Scheduler`, `SampleLoader`** are
+  now callable as factory functions in addition to the existing `new X(...)`
+  form. `Sequencer(ctx, opts)` is the documented form going forward; the
+  `new` form continues to work and is marked `@deprecated` on the type's
+  construct overload. Matches the dual call/construct signature already
+  shipped by every instrument factory.
+- **`Soundfont2Sampler` renamed to `Soundfont2`** to match the naming
+  pattern of every other instrument factory (`Sampler`, `Soundfont`,
+  `DrumMachine`, …). The old `Soundfont2Sampler` name remains as a
+  `@deprecated` alias — existing imports keep working without source
+  changes; update at your leisure.
+
+### Internal
+
+- Internal default-construction sites for `Scheduler` and `SampleLoader`
+  in `SmplrImpl` switched from `new X(...)` to bare-call form. No runtime
+  behavior change; pure stylistic alignment with the documented public form.
+
 ### Changed (semi-breaking)
 
 - **`"beat"` event** now fires once per `denominator`-defined note rather

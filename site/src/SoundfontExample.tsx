@@ -22,7 +22,7 @@ export function SoundfontExample({ className }: { className?: string }) {
 
   function loadSoundfont(kit: string, instrument: string) {
     const context = getAudioContext();
-    reverb ??= new Reverb(context);
+    reverb ??= Reverb(context);
     const soundfont = Soundfont(context, {
       kit,
       instrument,

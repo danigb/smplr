@@ -23,7 +23,7 @@ export function MalletExample({ className }: { className?: string }) {
     if (instrument) instrument.dispose();
     setStatus("loading");
     const context = getAudioContext();
-    reverb ??= new Reverb(context);
+    reverb ??= Reverb(context);
     const newPiano = Mallet(context, {
       instrument: instrumentName,
       volume,

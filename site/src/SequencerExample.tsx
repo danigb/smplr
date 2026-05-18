@@ -51,7 +51,7 @@ export function SequencerExample({ className }: { className?: string }) {
         setGrid(initGrid);
         setChance(initChance);
 
-        const seq = new Sequencer(context, {
+        const seq = Sequencer(context, {
           bpm: 120,
           loop: true,
           loopEnd: LOOP_TICKS,

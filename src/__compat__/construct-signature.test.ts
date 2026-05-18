@@ -14,7 +14,13 @@ import {
   Mellotron,
   Smolken,
   Versilian,
+  Soundfont2,
   Soundfont2Sampler,
+  CacheStorage,
+  Scheduler,
+  SampleLoader,
+  Reverb,
+  Sequencer,
 } from "..";
 import { createAudioContextMock } from "../test-helpers";
 
@@ -137,7 +143,24 @@ describe("B1 — dual call/construct signature", () => {
     expect(typeof viaCall.start).toBe("function");
   });
 
-  it("Soundfont2Sampler accepts `new` and call forms", () => {
+  it("Soundfont2 accepts `new` and call forms", () => {
+    const ctx = createAudioContextMock();
+    const opts = {
+      url: "http://example.test/empty.sf2",
+      createSoundfont: () => ({ instruments: [] }),
+    };
+    const viaNew = new Soundfont2(ctx as any, opts);
+    const viaCall = Soundfont2(ctx as any, opts);
+    swallow(viaNew.load);
+    swallow(viaCall.load);
+    expect(typeof viaNew.start).toBe("function");
+    expect(typeof viaCall.start).toBe("function");
+    // sync extra surfaces immediately
+    expect(Array.isArray(viaNew.instrumentNames)).toBe(true);
+    expect(typeof viaNew.loadInstrument).toBe("function");
+  });
+
+  it("Soundfont2Sampler (deprecated alias) accepts `new` and call forms", () => {
     const ctx = createAudioContextMock();
     const opts = {
       url: "http://example.test/empty.sf2",
@@ -149,8 +172,50 @@ describe("B1 — dual call/construct signature", () => {
     swallow(viaCall.load);
     expect(typeof viaNew.start).toBe("function");
     expect(typeof viaCall.start).toBe("function");
-    // sync extra surfaces immediately
-    expect(Array.isArray(viaNew.instrumentNames)).toBe(true);
-    expect(typeof viaNew.loadInstrument).toBe("function");
+    // Alias points at the same factory.
+    expect(Soundfont2Sampler).toBe(Soundfont2);
+  });
+
+  it("CacheStorage accepts `new` and call forms", () => {
+    const viaNew = new CacheStorage();
+    const viaCall = CacheStorage();
+    expect(typeof viaNew.fetch).toBe("function");
+    expect(typeof viaCall.fetch).toBe("function");
+  });
+
+  it("Scheduler accepts `new` and call forms", () => {
+    const ctx = createAudioContextMock();
+    const viaNew = new Scheduler(ctx as any);
+    const viaCall = Scheduler(ctx as any);
+    expect(typeof viaNew.schedule).toBe("function");
+    expect(typeof viaCall.schedule).toBe("function");
+  });
+
+  it("SampleLoader accepts `new` and call forms", () => {
+    const ctx = createAudioContextMock();
+    const viaNew = new SampleLoader(ctx as any);
+    const viaCall = SampleLoader(ctx as any);
+    expect(typeof viaNew.load).toBe("function");
+    expect(typeof viaCall.load).toBe("function");
+  });
+
+  it("Reverb accepts `new` and call forms", () => {
+    const ctx = createAudioContextMock();
+    const viaNew = new Reverb(ctx as any);
+    const viaCall = Reverb(ctx as any);
+    expect(typeof viaNew.connect).toBe("function");
+    expect(typeof viaCall.connect).toBe("function");
+    // ready() resolves to the wrapped instance (Promise<this>).
+    swallow(viaNew.ready());
+    swallow(viaCall.ready());
+  });
+
+  it("Sequencer accepts `new` and call forms", () => {
+    const ctx = createAudioContextMock();
+    const viaNew = new Sequencer(ctx as any);
+    const viaCall = Sequencer(ctx as any);
+    expect(typeof viaNew.start).toBe("function");
+    expect(typeof viaCall.start).toBe("function");
+    expect(viaCall.state).toBe("stopped");
   });
 });

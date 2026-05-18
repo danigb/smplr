@@ -25,7 +25,7 @@ const context = new AudioContext();
 const piano = SplendidGrandPiano(context);
 const drums = DrumMachine(context, { instrument: "TR-808" });
 
-const seq = new Sequencer(context, { bpm: 110, loop: true });
+const seq = Sequencer(context, { bpm: 110, loop: true });
 seq.addTrack(piano, [
   { note: "C4", at: "1:1", duration: "4n" },
   { note: "E4", at: "1:2", duration: "4n" },
@@ -47,7 +47,7 @@ import { SplendidGrandPiano, Reverb, renderOffline } from "smplr";
 
 const wav = await renderOffline(async (context) => {
   const piano = await SplendidGrandPiano(context).load;
-  piano.output.addEffect("reverb", new Reverb(context), 0.3);
+  piano.output.addEffect("reverb", Reverb(context), 0.3);
   ["C4", "E4", "G4", "C5"].forEach((note, i) => {
     piano.start({ note, time: i * 0.4, duration: 0.4 });
   });
@@ -111,7 +111,7 @@ The package needs to be served as a URL from a service like [unpkg](https://unpk
 
 ### Defining an instrument
 
-`smplr` ships ten instruments out of the box — `SplendidGrandPiano`, `Soundfont`, `DrumMachine`, `ElectricPiano`, `Mallet`, `Mellotron`, `Smolken`, `Versilian`, `Sampler`, `Soundfont2Sampler`. If none of them fit your use case, you can author your own with the `Instrument` builder and the `Smplr` interface.
+`smplr` ships ten instruments out of the box — `SplendidGrandPiano`, `Soundfont`, `DrumMachine`, `ElectricPiano`, `Mallet`, `Mellotron`, `Smolken`, `Versilian`, `Sampler`, `Soundfont2`. If none of them fit your use case, you can author your own with the `Instrument` builder and the `Smplr` interface.
 
 See **[Defining an instrument](./AUTHORING.md)** for the full authoring guide — sync and async examples, third-party package layout, and how to use `Smplr` as a TypeScript type for generic helpers.
 
@@ -179,7 +179,7 @@ All instruments share some configuration options, passed as the second argument 
 - `volumeToGain`: a function to map MIDI volume to a linear gain. Uses the MIDI standard curve by default.
 - `storage`: a [storage backend](#cache-requests) used to fetch sample buffers. `HttpStorage` by default.
 - `loader`: a shared `SampleLoader` instance. Pass the same loader to multiple instruments to cache buffers across them (see [Buffer reuse](#buffer-reuse)).
-- `scheduler`: a shared `Scheduler` instance. Construct your own to tune scheduling — for example, `new Scheduler(context, { lookaheadMs: 100, intervalMs: 25 })` — or omit to get a per-instrument default.
+- `scheduler`: a shared `Scheduler` instance. Construct your own to tune scheduling — for example, `Scheduler(context, { lookaheadMs: 100, intervalMs: 25 })` — or omit to get a per-instrument default.
 - `onLoadProgress`: a function called after each sample buffer is decoded. Receives `{ loaded, total }` where `total` is the full count known before loading starts.
 - `onStart`: called when a note is dispatched to the audio engine. Receives the started note. See ⚠️ note under [Events](#events) on timing precision.
 - `onEnded`: called when each voice's audio node ends. Receives the started note.
@@ -384,7 +384,7 @@ Use `output.addEffect(name, effect, mix)` to connect an effect using a send bus:
 
 ```js
 import { Reverb, SplendidGrandPiano } from "smplr";
-const reverb = new Reverb(context);
+const reverb = Reverb(context);
 const piano = SplendidGrandPiano(context, { volume });
 piano.output.addEffect("reverb", reverb, 0.2);
 ```
@@ -407,7 +407,7 @@ To cache samples in the browser, use a `CacheStorage` object:
 import { SplendidGrandPiano, CacheStorage } from "smplr";
 
 const context = new AudioContext();
-const storage = new CacheStorage();
+const storage = CacheStorage();
 // First time the instrument loads, will fetch the samples from http. Subsequent times from cache.
 const piano = SplendidGrandPiano(context, { storage });
 ```
@@ -416,7 +416,7 @@ const piano = SplendidGrandPiano(context, { storage });
 
 ## Sequencer
 
-`Sequencer` schedules notes from one or more tracks against any smplr instrument with sample-accurate timing. Unlike instruments, it's a regular class — always constructed with `new Sequencer(context, opts)`.
+`Sequencer` schedules notes from one or more tracks against any smplr instrument with sample-accurate timing. Constructed as `Sequencer(context, opts)` (the `new Sequencer(...)` form also still works as a deprecated alias).
 
 ```js
 import { Sequencer, SplendidGrandPiano, DrumMachine } from "smplr";
@@ -425,7 +425,7 @@ const context = new AudioContext();
 const piano = SplendidGrandPiano(context);
 const drums = DrumMachine(context, { instrument: "TR-808" });
 
-const seq = new Sequencer(context, { bpm: 120, loop: true });
+const seq = Sequencer(context, { bpm: 120, loop: true });
 
 seq.addTrack(piano, [
   { note: "C4", at: "1:1", duration: "4n" },
@@ -462,7 +462,7 @@ Note positions and durations accept several formats:
 #### Constructor options
 
 ```js
-const seq = new Sequencer(context, {
+const seq = Sequencer(context, {
   bpm: 120, // default 120
   ppq: 480, // pulses per quarter note, default 480
   timeSignature: 4, // accepts `4` (→ 4/4) or `{ numerator, denominator }`
@@ -647,7 +647,7 @@ seq.addTrack(piano, [
 Add subtle randomisation to timing and velocity for a more natural feel:
 
 ```js
-const seq = new Sequencer(context, {
+const seq = Sequencer(context, {
   bpm: 90,
   humanize: { timingMs: 12, velocity: 8 },
 });
@@ -761,7 +761,7 @@ If you already have an instrument loaded, pass the same `SampleLoader` to avoid 
 ```js
 import { SplendidGrandPiano, SampleLoader, renderOffline } from "smplr";
 
-const loader = new SampleLoader(audioContext);
+const loader = SampleLoader(audioContext);
 const piano = SplendidGrandPiano(audioContext, { loader });
 await piano.load;
 
@@ -1053,16 +1053,16 @@ const context = new AudioContext();
 const versilian = Versilian(context, { instrument: instrumentNames[0] });
 ```
 
-### Soundfont2Sampler
+### Soundfont2
 
-Sampler capable of reading .sf2 files directly:
+Sampler capable of reading .sf2 files directly. Previously named `Soundfont2Sampler`; the old name remains as a deprecated alias.
 
 ```ts
-import { Soundfont2Sampler } from "smplr";
+import { Soundfont2 } from "smplr";
 import { SoundFont2 } from "soundfont2";
 
 const context = new AudioContext();
-const sampler = Soundfont2Sampler(context, {
+const sampler = Soundfont2(context, {
   url: "https://smpldsnds.github.io/soundfonts/soundfonts/galaxy-electric-pianos.sf2",
   createSoundfont: (data) => new SoundFont2(data),
 });

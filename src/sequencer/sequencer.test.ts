@@ -1,4 +1,4 @@
-import { Sequencer, SequencerNote } from "./sequencer";
+import { Sequencer, SequencerNote, type SequencerOptions } from "./sequencer";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -22,10 +22,7 @@ function makeInstrument() {
 const PPQ = 96;
 const BPM = 120;
 
-function makeSeq(
-  ctx: BaseAudioContext,
-  opts: ConstructorParameters<typeof Sequencer>[1] = {},
-) {
+function makeSeq(ctx: BaseAudioContext, opts: SequencerOptions = {}) {
   return new Sequencer(ctx, {
     bpm: BPM,
     ppq: PPQ,

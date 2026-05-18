@@ -41,8 +41,8 @@ export function VersilianExample({ className }: { className?: string }) {
     if (instrument) instrument.dispose();
     setStatus("loading");
     const context = getAudioContext();
-    reverb ??= new Reverb(context);
-    storage ??= new CacheStorage("smolken");
+    reverb ??= Reverb(context);
+    storage ??= CacheStorage("smolken");
     const newInstrument = Versilian(context, {
       instrument: instrumentName,
       volume,
