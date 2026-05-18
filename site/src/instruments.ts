@@ -8,6 +8,7 @@ import { MellotronExample } from "src/MellotronExample";
 import { SmolkenExample } from "src/SmolkenExample";
 import { VersilianExample } from "src/VersilianExample";
 import { DrumMachineExample } from "src/DrumMachineExample";
+import { DrumAbuseExample } from "src/DrumAbuseExample";
 
 export type InstrumentGroup = "keyboards" | "general-midi" | "percussion";
 
@@ -34,5 +35,10 @@ export const INSTRUMENTS: InstrumentEntry[] = [
     slug: "drum-machine",
     group: "percussion",
     Component: DrumMachineExample,
+  },
+  {
+    slug: "drum-abuse",
+    group: "percussion",
+    Component: DrumAbuseExample,
   },
 ];
