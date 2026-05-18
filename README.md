@@ -111,7 +111,7 @@ The package needs to be served as a URL from a service like [unpkg](https://unpk
 
 ### Defining an instrument
 
-`smplr` ships ten instruments out of the box — `SplendidGrandPiano`, `Soundfont`, `DrumMachine`, `ElectricPiano`, `Mallet`, `Mellotron`, `Smolken`, `Versilian`, `Sampler`, `Soundfont2`. If none of them fit your use case, you can author your own with the `Instrument` builder and the `Smplr` interface.
+`smplr` ships eleven instruments out of the box — `SplendidGrandPiano`, `Soundfont`, `DrumMachine`, `DrumAbuse`, `ElectricPiano`, `Mallet`, `Mellotron`, `Smolken`, `Versilian`, `Sampler`, `Soundfont2`. If none of them fit your use case, you can author your own with the `Instrument` builder and the `Smplr` interface.
 
 See **[Defining an instrument](./AUTHORING.md)** for the full authoring guide — sync and async examples, third-party package layout, and how to use `Smplr` as a TypeScript type for generic helpers.
 
@@ -804,6 +804,7 @@ Each instrument family exposes a synchronous helper that returns the names you c
 | `Mallet`        | `getMalletNames(): string[]`                   |
 | `Mellotron`     | `getMellotronNames(): string[]`                |
 | `DrumMachine`   | `getDrumMachineNames(): string[]`              |
+| `DrumAbuse`     | `getDrumAbuseMachineNames(): string[]`         |
 | `Smolken`       | `getSmolkenNames(): string[]`                  |
 | `Versilian`     | `getVersilianInstruments(): Promise<string[]>` |
 
@@ -1023,6 +1024,61 @@ drums.getSampleNamesForGroup("kick"); // => ['kick-1', 'kick-2']
 // You can trigger samples by group name or specific sample
 drums.start("kick"); // Play the first sample of the group
 drums.start("kick-1"); // Play this specific sample
+```
+
+### DrumAbuse
+
+Sampled instrument for the [Synthabuse](https://www.youtube.com/watch?v=Ay-U9eYKmGA) drum-machine collection — 5 packs covering ~210 classic drum machines and synths. Samples hosted at `smpldsnds.github.io/drum-abuse-{pack}/`.
+
+Two source modes: load a single machine's full kit, or load a cross-machine instrument list from a pack.
+
+#### Machine mode
+
+```js
+import { DrumAbuse, getDrumAbuseMachineNames } from "smplr";
+
+const machines = getDrumAbuseMachineNames(); // ~210 machine ids
+
+const context = new AudioContext();
+const drums = DrumAbuse(context, {
+  source: { kind: "machine", machine: "roland-tr-808" },
+});
+await drums.load;
+
+drums.start({ note: "kick" });
+
+// Samples are grouped by instrument name, like DrumMachine:
+drums.getGroupNames();                // => ["kick", "snare", "hi-hat", ...]
+drums.getSampleNamesForGroup("kick"); // => ["kick/1", "kick/2", ...]
+drums.start({ note: "kick" });        // first sample in the group
+drums.start({ note: "kick/1" });      // a specific sample
+```
+
+If a machine has more than one sample set, pass `set` to pick a specific one. Omit to load the first set.
+
+```js
+const drums = DrumAbuse(context, {
+  source: { kind: "machine", machine: "roland-tr-808", set: "kit-a" },
+});
+```
+
+#### Pack mode
+
+A pack is a cross-machine catalog of named instruments (e.g. all the kicks across `vol1`). Pass `source: { kind: "pack", pack, instrument }`:
+
+```js
+import {
+  DrumAbuse,
+  getDrumAbusePackNames,
+  getDrumAbuseMachinesForPack,
+} from "smplr";
+
+getDrumAbusePackNames();               // => ["vol1", "vol2", "vol3", "vol4", "vol5"]
+getDrumAbuseMachinesForPack("vol1");   // => machine ids in vol1
+
+const drums = DrumAbuse(new AudioContext(), {
+  source: { kind: "pack", pack: "vol1", instrument: "bass-drum" },
+});
 ```
 
 ### Smolken double bass

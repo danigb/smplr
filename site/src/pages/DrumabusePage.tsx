@@ -13,8 +13,6 @@ import { useTitle } from "../useTitle";
 const STEPS = 16;
 const STEP_TICKS = 120; // 480 PPQ / 4 = 16th note
 const LOOP_TICKS = STEPS * STEP_TICKS;
-const RATCHET_STEPS = 8;
-const RATCHET_STEP_TICKS = LOOP_TICKS / RATCHET_STEPS; // 8th notes
 const DEFAULT_MACHINE = "roland-tr-808";
 
 type TrackId = "kick" | "snare" | "hat" | "ride";
@@ -47,11 +45,6 @@ export function DrumabusePage() {
 
   const [humanizeTiming, setHumanizeTiming] = useState(0);
   const [humanizeVelocity, setHumanizeVelocity] = useState(0);
-
-  const [ratchets, setRatchets] = useState<number[]>(() =>
-    Array<number>(RATCHET_STEPS).fill(0),
-  );
-  const [ratchetDecay, setRatchetDecay] = useState(0.3);
 
   tracksRef.current = tracks;
 
@@ -102,7 +95,6 @@ export function DrumabusePage() {
 
         setTracks(initialTracks);
         setGrid(initialTracks.map(() => Array<boolean>(STEPS).fill(false)));
-        setRatchets(Array<number>(RATCHET_STEPS).fill(0));
         setStatus("ready");
       })
       .catch((err) => {
@@ -111,8 +103,8 @@ export function DrumabusePage() {
       });
   }
 
-  // Rebuild all sequencer tracks whenever the pattern, humanize, or ratchet
-  // settings change. Mute/solo/volume live changes are applied directly via
+  // Rebuild all sequencer tracks whenever the pattern or humanize settings
+  // change. Mute/solo/volume live changes are applied directly via
   // seq.muteTrack / seq.setTrackVolume in `updateTrack` to avoid rebuilds
   // mid-playback; the rebuild uses tracksRef so it picks up current values
   // when other deps trigger it.
@@ -151,39 +143,7 @@ export function DrumabusePage() {
         });
       }
     });
-
-    const hat = currentTracks.find((t) => t.id === "hat");
-    if (hat && ratchets.some((r) => r > 0)) {
-      const ratchetNotes: SequencerNote[] = ratchets.flatMap((r, i) =>
-        r > 0
-          ? [
-              {
-                note: hat.group,
-                at: i * RATCHET_STEP_TICKS,
-                duration: RATCHET_STEP_TICKS,
-                ratchet: r,
-                ratchetVelocityDecay: ratchetDecay,
-              },
-            ]
-          : [],
-      );
-      seq.addTrack(drums, ratchetNotes, {
-        id: "ratchet-hat",
-        volume: hat.volume,
-        humanize: {
-          timingMs: humanizeTiming,
-          velocity: humanizeVelocity,
-        },
-      });
-    }
-  }, [
-    grid,
-    humanizeTiming,
-    humanizeVelocity,
-    ratchets,
-    ratchetDecay,
-    status,
-  ]);
+  }, [grid, humanizeTiming, humanizeVelocity, status]);
 
   // Position readout via rAF while playing.
   useEffect(() => {
@@ -226,12 +186,6 @@ export function DrumabusePage() {
       prev.map((row, r) =>
         r === rowIdx ? row.map((on, s) => (s === step ? !on : on)) : row,
       ),
-    );
-  }
-
-  function cycleRatchet(step: number) {
-    setRatchets((prev) =>
-      prev.map((r, i) => (i === step ? (r + 1) % 5 : r)),
     );
   }
 
@@ -278,7 +232,7 @@ export function DrumabusePage() {
           Synthabuse
         </a>{" "}
         drum-machine collection (~210 vintage machines across 5 packs). Step
-        grid, per-track mixer, humanize, and a ratchet row — all driven by{" "}
+        grid, per-track mixer, and humanize — all driven by{" "}
         <code>Sequencer</code>.
       </p>
 
@@ -360,7 +314,7 @@ export function DrumabusePage() {
         </div>
 
         {/* Step grid with per-track mixer column */}
-        <div className="overflow-x-auto mb-4">
+        <div className="overflow-x-auto">
           {tracks.map((t, rowIdx) => (
             <div key={t.id} className="flex gap-2 mb-1 items-center">
               <div className="w-16 text-sm">{t.id}</div>
@@ -425,47 +379,6 @@ export function DrumabusePage() {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Ratchet row (8 eighth-note cells, drives the hat group) */}
-        <div className="bg-zinc-800/40 rounded-sm p-3">
-          <div className="flex gap-4 items-center mb-2">
-            <h2 className="text-sm text-zinc-400 font-mono">
-              Ratchet (hat) ·{" "}
-              {tracks.find((t) => t.id === "hat")?.group ?? "—"}
-            </h2>
-            <label className="flex gap-2 items-center text-sm">
-              <span className="text-zinc-400">Vel decay</span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={ratchetDecay}
-                onChange={(e) => setRatchetDecay(e.target.valueAsNumber)}
-              />
-              <span className="w-10 font-mono">{ratchetDecay.toFixed(2)}</span>
-            </label>
-            <p className="text-xs text-zinc-500">
-              Click to cycle 0→4 sub-divisions per eighth note.
-            </p>
-          </div>
-          <div className="flex gap-1">
-            {ratchets.map((r, step) => (
-              <button
-                key={step}
-                className={[
-                  "w-12 h-12 rounded-sm text-sm font-mono transition-colors",
-                  r > 0
-                    ? "bg-teal-600 hover:bg-teal-500"
-                    : "bg-zinc-700 hover:bg-zinc-600",
-                ].join(" ")}
-                onClick={() => cycleRatchet(step)}
-              >
-                {r > 0 ? `×${r}` : "·"}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     </div>
