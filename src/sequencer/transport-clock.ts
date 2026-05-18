@@ -27,10 +27,12 @@ type Checkpoint = {
   bpm: number;
 };
 
+import type { TimeSignature } from "./sequencer";
+
 export type TransportClockOptions = {
   bpm?: number;
   ppq?: number;
-  timeSignature?: number;
+  timeSignature?: TimeSignature;
 };
 
 export class TransportClock {
@@ -38,7 +40,7 @@ export class TransportClock {
 
   private _bpm: number;
   readonly ppq: number;
-  private _timeSignature: number;
+  private _timeSignature: TimeSignature;
 
   private _state: TransportState = "stopped";
   private _checkpoints: Checkpoint[] = [];
@@ -48,7 +50,10 @@ export class TransportClock {
     this._context = context;
     this._bpm = options.bpm ?? 120;
     this.ppq = options.ppq ?? 480;
-    this._timeSignature = options.timeSignature ?? 4;
+    this._timeSignature = options.timeSignature ?? {
+      numerator: 4,
+      denominator: 4,
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -81,11 +86,11 @@ export class TransportClock {
     this._bpm = value;
   }
 
-  get timeSignature(): number {
+  get timeSignature(): TimeSignature {
     return this._timeSignature;
   }
 
-  set timeSignature(value: number) {
+  set timeSignature(value: TimeSignature) {
     this._timeSignature = value;
   }
 

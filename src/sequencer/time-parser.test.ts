@@ -1,8 +1,10 @@
 import { parseTicks } from "./time-parser";
+import type { TimeSignature } from "./sequencer";
 
-// Default test context: ppq=96, timeSignature=4 (4/4)
+// Default test context: ppq=96, timeSignature=4/4
 const PPQ = 96;
-const TS = 4;
+const TS_NUMERATOR = 4;
+const TS: TimeSignature = { numerator: 4, denominator: 4 };
 
 function pt(time: string | number) {
   return parseTicks(time, PPQ, TS);
@@ -82,15 +84,15 @@ describe("dotted notes", () => {
 
 describe("measures", () => {
   it("1m = ppq * timeSignature", () => {
-    expect(pt("1m")).toBe(PPQ * TS); // 384
+    expect(pt("1m")).toBe(PPQ * TS_NUMERATOR); // 384
   });
 
   it("2m = 2 * ppq * timeSignature", () => {
-    expect(pt("2m")).toBe(2 * PPQ * TS); // 768
+    expect(pt("2m")).toBe(2 * PPQ * TS_NUMERATOR); // 768
   });
 
   it("0.5m = half a measure", () => {
-    expect(pt("0.5m")).toBe(0.5 * PPQ * TS); // 192
+    expect(pt("0.5m")).toBe(0.5 * PPQ * TS_NUMERATOR); // 192
   });
 });
 
@@ -100,7 +102,9 @@ describe("measures", () => {
 
 describe("measures in 3/4", () => {
   it("1m in 3/4 = ppq * 3", () => {
-    expect(parseTicks("1m", PPQ, 3)).toBe(PPQ * 3); // 288
+    expect(parseTicks("1m", PPQ, { numerator: 3, denominator: 4 })).toBe(
+      PPQ * 3,
+    ); // 288
   });
 });
 
@@ -122,15 +126,15 @@ describe("position bar:beat", () => {
   });
 
   it("2:1 = one full measure in (bar 2, beat 1)", () => {
-    expect(pt("2:1")).toBe(PPQ * TS); // 384
+    expect(pt("2:1")).toBe(PPQ * TS_NUMERATOR); // 384
   });
 
   it("2:3 = bar 2 + 2 beats", () => {
-    expect(pt("2:3")).toBe(PPQ * TS + 2 * PPQ); // 384 + 192 = 576
+    expect(pt("2:3")).toBe(PPQ * TS_NUMERATOR + 2 * PPQ); // 384 + 192 = 576
   });
 
   it("3:1 = two full measures in", () => {
-    expect(pt("3:1")).toBe(2 * PPQ * TS); // 768
+    expect(pt("3:1")).toBe(2 * PPQ * TS_NUMERATOR); // 768
   });
 });
 
@@ -148,11 +152,11 @@ describe("position bar:beat:tick", () => {
   });
 
   it("2:1:0 = one measure", () => {
-    expect(pt("2:1:0")).toBe(PPQ * TS); // 384
+    expect(pt("2:1:0")).toBe(PPQ * TS_NUMERATOR); // 384
   });
 
   it("2:3:48 = bar2 + 2 beats + 48 ticks", () => {
-    expect(pt("2:3:48")).toBe(PPQ * TS + 2 * PPQ + 48); // 384 + 192 + 48 = 624
+    expect(pt("2:3:48")).toBe(PPQ * TS_NUMERATOR + 2 * PPQ + 48); // 384 + 192 + 48 = 624
   });
 });
 
@@ -166,7 +170,7 @@ describe("fractional beats", () => {
   });
 
   it("2:2.5 = bar 2, beat 2.5", () => {
-    expect(pt("2:2.5")).toBe(PPQ * TS + PPQ * 1.5); // 384 + 144 = 528
+    expect(pt("2:2.5")).toBe(PPQ * TS_NUMERATOR + PPQ * 1.5); // 384 + 144 = 528
   });
 });
 
@@ -176,11 +180,41 @@ describe("fractional beats", () => {
 
 describe("custom ppq", () => {
   it("4n at ppq=480 = 480 ticks", () => {
-    expect(parseTicks("4n", 480, 4)).toBe(480);
+    expect(parseTicks("4n", 480, { numerator: 4, denominator: 4 })).toBe(480);
   });
 
-  it("1m at ppq=24, ts=4 = 96 ticks", () => {
-    expect(parseTicks("1m", 24, 4)).toBe(96);
+  it("1m at ppq=24, ts=4/4 = 96 ticks", () => {
+    expect(parseTicks("1m", 24, { numerator: 4, denominator: 4 })).toBe(96);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Non-4/4 time signatures
+// ---------------------------------------------------------------------------
+
+describe("non-4/4 time signatures", () => {
+  it("1m in 6/8 = 6 eighth notes = 3 quarter notes worth", () => {
+    expect(parseTicks("1m", PPQ, { numerator: 6, denominator: 8 })).toBe(
+      PPQ * 3,
+    );
+  });
+
+  it("1m in 7/8 = 7 eighth notes", () => {
+    expect(parseTicks("1m", PPQ, { numerator: 7, denominator: 8 })).toBe(
+      PPQ * 3.5,
+    );
+  });
+
+  it("1:2 in 6/8 = one eighth note in", () => {
+    expect(parseTicks("1:2", PPQ, { numerator: 6, denominator: 8 })).toBe(
+      PPQ / 2,
+    );
+  });
+
+  it("2:1 in 6/8 = one bar = 3 quarters in", () => {
+    expect(parseTicks("2:1", PPQ, { numerator: 6, denominator: 8 })).toBe(
+      PPQ * 3,
+    );
   });
 });
 
