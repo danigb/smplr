@@ -291,6 +291,28 @@ export class SmplrImpl implements Smplr {
   }
 
   /**
+   * Set the cents detune applied to every future note. Mutates the instrument's
+   * playback defaults in place; takes effect on notes scheduled after the call.
+   * In-flight notes are unaffected.
+   */
+  setDetune(cents: number): void {
+    this.#assertNotDisposed("set detune");
+    if (!this.#defaults) this.#defaults = {};
+    this.#defaults.detune = cents;
+  }
+
+  /**
+   * Set whether every future note plays its sample reversed. The reversed-buffer
+   * cache is populated lazily on demand; no cache invalidation is needed in
+   * either direction.
+   */
+  setReverse(reverse: boolean): void {
+    this.#assertNotDisposed("set reverse");
+    if (!this.#defaults) this.#defaults = {};
+    this.#defaults.reverse = reverse;
+  }
+
+  /**
    * Start playing a note. Returns a StopFn that cancels the note if it hasn't
    * played yet, or stops the resulting voices if it has.
    */
@@ -397,8 +419,9 @@ export class SmplrImpl implements Smplr {
 
     // Create a voice for each matched region
     let voiceStarted = false;
+    const effectiveReverse = reverse ?? this.#defaults?.reverse ?? false;
     for (const match of matches) {
-      const buffer = this.#getBuffer(match.sample, reverse ?? false);
+      const buffer = this.#getBuffer(match.sample, effectiveReverse);
       if (!buffer) continue;
 
       const params = resolveParams(

@@ -51,6 +51,21 @@ export interface Smplr {
   getCC(cc: number): number;
 
   /**
+   * Set the cents detune applied to every future note. Mutates the instrument's
+   * playback defaults in place; takes effect on notes scheduled after the call.
+   * In-flight notes are unaffected.
+   */
+  setDetune(cents: number): void;
+
+  /**
+   * Set whether every future note plays its sample reversed. Mutates the
+   * instrument's playback defaults in place. The reversed-buffer cache is
+   * populated lazily on demand; no cache invalidation is needed in either
+   * direction.
+   */
+  setReverse(reverse: boolean): void;
+
+  /**
    * Stop all voices, dispose the output channel, and stop the scheduler.
    * The instance must not be used after this call — subsequent `start`/`stop`/
    * `setCC`/`getCC`/`setControlValue`/`loadInstrument` calls throw. Subsequent
