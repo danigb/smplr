@@ -1,5 +1,66 @@
 # smplr
 
+## 0.24.0
+
+### New
+
+- **`SequencerNote.ratchet` + `ratchetVelocityDecay`** — native sub-step
+  expansion of a single note into N evenly-distributed sub-notes over the
+  note's duration. Requires `duration`; silently ignored if omitted. Each
+  sub-note's `noteId` is suffixed with `#0`, `#1`, … so individual ratchet
+  voices can be stopped via `stopNote("id#0")`.
+- **`Sequencer.addTrack(inst, notes, options?)`** — third options arg
+  restored. `AddTrackOptions`: `id`, `humanize`, `volume`, `muted`, `solo`.
+  Per-track `humanize` overrides the sequencer's global humanize.
+- **Track mixer**: `setTrackVolume(id, v)`, `muteTrack(id)`,
+  `unmuteTrack(id)`, `soloTrack(id)`, `unsoloTrack(id)` on `Sequencer`.
+  Per-track mixer state is scoped to the pattern that owns the track.
+- **`SequencerOptions.timeSignature` accepts `{ numerator, denominator }`**
+  in addition to a plain `number` (treated as `{ numerator, denominator: 4 }`).
+  The `timeSignature` getter always returns the object form.
+- **`Smplr.setDetune(cents)` / `Smplr.setReverse(on)`** — universal live
+  setters on every instrument. Mutate `SmplrPreset.defaults` in place; affect
+  notes scheduled after the call. In-flight notes are unaffected.
+- **`pan?: number` on every instrument's typed config** — was already
+  accepted at construction; now discoverable in IDE autocomplete on
+  `Sampler`, `SplendidGrandPiano`, `ElectricPiano`, `Mallet`, `Mellotron`,
+  `Smolken`, `Versilian`, `Soundfont`, `Soundfont2Sampler`. (`DrumMachine`
+  already had it.)
+- **Pattern chain (song mode)**: `seq.setPatterns([...])` plus
+  `seq.chainOrder = [...]`. Each pattern owns its own tracks and optional
+  `loopEnd`. New `"patternChange"` event fires when the chain advances.
+  `loop: true` loops the chain; `loop: false` plays the chain once and emits
+  `"end"`. `addTrack` / `removeTrack` / `clearTracks` throw after
+  `setPatterns` — use `setPatterns` to mutate the chain.
+- **`PatternInput`, `TimeSignature`, `AddTrackOptions`** types exported from
+  `smplr/sequencer`.
+
+### Changed (semi-breaking)
+
+- **`"beat"` event** now fires once per `denominator`-defined note rather
+  than per quarter note. For 4/4 the behaviour is identical (denominator 4 →
+  quarter note); for 6/8 it changes from 4 beats per bar (wrong) to 6
+  (correct). Any consumer relying on quarter-note beat semantics in non-4/4
+  time must adapt. Migration: divide your beat count by `4 / denominator`
+  to recover the old number.
+- **`Sequencer.timeSignature` getter** now returns `TimeSignature`
+  (`{ numerator, denominator }`) instead of `number`. Callers reading the
+  scalar directly should switch to `seq.timeSignature.numerator`.
+- **`parseTicks`** signature widened: its third parameter is now
+  `TimeSignature` instead of `number`. Public-facing usage is unchanged
+  because the sequencer normalises before calling.
+
+### Documented (was load-bearing but undocumented before 0.24)
+
+- `seq.on("step", ...)` event semantics (only fires when `stepSize`
+  is configured).
+- `seq.clearTracks()`, `seq.removeTrack(instrument)`.
+- `SequencerNote.chance` field (per-pass probability gate).
+- `SmplrPreset.defaults` block (`detune`, `reverse`, `ampRelease`,
+  `lpfCutoffHz`, `loop`).
+- `SmplrPreset.samples.map` per-sample URL override.
+- `SmplrGroup.seqLength`, `SmplrRegion.seqPosition` round-robin fields.
+
 ## 0.23.0
 
 ### Changed (breaking)
