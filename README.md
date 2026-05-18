@@ -4,7 +4,7 @@
 
 > `smplr` is a collection of sampled instruments for Web Audio API ready to be used with no setup required.
 
-Examples:
+## Quick start
 
 **Play a note from a General MIDI soundfont:**
 
@@ -57,17 +57,13 @@ wav.downloadWav("arpeggio.wav");
 
 See demo: https://danigb.github.io/smplr/
 
-`smplr` is approaching 1.0. The 0.22.0 release lands the final batch of pre-1.0 API work — every documented `new X(ctx, opts)` keeps working, and the documented surface is intended to ship unchanged into 1.0. The formal stability commitment lands once the narrow `loader`/`scheduler` public interfaces sibling ticket is in (see [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md)).
-
-> **Upgrading from an earlier 0.x?** No code changes are required — every documented `new X(ctx, opts)` keeps working. New code should drop the `new` (`X(ctx, opts)`) and prefer `await x.ready` over `await x.load`.
-
 #### Library goals
 
 - No setup: specifically, all samples are online, so no need for a server.
 - Easy to use: everything should be intuitive for non-experienced developers
 - Decent sounding: uses high quality open source samples. For better or worse, it is sample based 🤷
 
-## Setup
+## Installation
 
 You can install the library with a package manager or use it directly by importing from the browser.
 
@@ -105,17 +101,35 @@ You can import directly from the browser. For example:
 
 The package needs to be served as a URL from a service like [unpkg](https://unpkg.com) or similar.
 
-> To author your own instrument or publish a third-party package, see the [Defining an instrument](./AUTHORING.md) guide.
+## Available instruments
 
-## Documentation
+`smplr` ships eleven instruments out of the box. Pick one and jump to its section in the [Instrument reference](#instrument-reference) for setup details.
 
-### Defining an instrument
+| Instrument                                  | Description                               | Names helper                  |
+| ------------------------------------------- | ----------------------------------------- | ----------------------------- |
+| [`Sampler`](#sampler)                       | Your own buffers or SFZ-style preset      | —                             |
+| [`Soundfont`](#soundfont)                   | General MIDI soundfonts                   | `getSoundfontNames()`         |
+| [`SplendidGrandPiano`](#splendidgrandpiano) | Sampled Steinway grand, 4 velocity layers | —                             |
+| [`ElectricPiano`](#electric-piano)          | CP80, PianetT, Wurlitzer, TX81Z           | `getElectricPianoNames()`     |
+| [`DrumMachine`](#drum-machines)             | Classic drum machines (TR-808, …)         | `getDrumMachineNames()`       |
+| [`DrumAbuse`](#drumabuse)                   | ~210 machines (Synthabuse collection)     | `getDrumAbuseMachineNames()`  |
+| [`Mallet`](#mallets)                        | VCSL mallets                              | `getMalletNames()`            |
+| [`Mellotron`](#mellotron)                   | Mellotron archive samples                 | `getMellotronNames()`         |
+| [`Smolken`](#smolken-double-bass)           | Smolken double bass (Arco/Pizz/Switched)  | `getSmolkenNames()`           |
+| [`Versilian`](#versilian)                   | VCSL multi-instrument (partial support)   | `getVersilianInstruments()` * |
+| [`Soundfont2`](#soundfont2)                 | Reads .sf2 files directly                 | —                             |
 
-`smplr` ships eleven instruments out of the box — `SplendidGrandPiano`, `Soundfont`, `DrumMachine`, `DrumAbuse`, `ElectricPiano`, `Mallet`, `Mellotron`, `Smolken`, `Versilian`, `Sampler`, `Soundfont2`. If none of them fit your use case, you can author your own with the `Instrument` builder and the `Smplr` interface.
+`*` `getVersilianInstruments` is async because the catalog is fetched from the network on first call (cached thereafter).
 
-See **[Defining an instrument](./AUTHORING.md)** for the full authoring guide — sync and async examples, third-party package layout, and how to use `Smplr` as a TypeScript type for generic helpers.
+Each names helper returns the strings you can pass to the corresponding factory's `instrument` option.
 
-### Create and load an instrument
+If none of the bundled instruments fits your use case, you can author your own — see [Defining your own instrument](#defining-your-own-instrument).
+
+## Using an instrument
+
+Every smplr instrument follows the same usage pattern. This section covers what's shared across all of them; for instrument-specific options, see the [Instrument reference](#instrument-reference).
+
+### Create and load
 
 Every smplr instrument is a factory function: call it with an `AudioContext` and an options object to get back an instance.
 
@@ -168,7 +182,7 @@ console.log(piano.loadProgress); // { loaded: 12, total: 48 }
 
 `total` is known before loading starts, so you can display a determinate progress bar.
 
-#### Shared configuration options
+### Shared configuration options
 
 All instruments share some configuration options, passed as the second argument to the factory. Every field is optional:
 
@@ -177,52 +191,14 @@ All instruments share some configuration options, passed as the second argument 
 - `pan`: stereo pan, -1 (full left) to +1 (full right). 0 by default.
 - `destination`: the `AudioNode` the instrument writes to. `AudioContext.destination` by default.
 - `volumeToGain`: a function to map MIDI volume to a linear gain. Uses the MIDI standard curve by default.
-- `storage`: a [storage backend](#cache-requests) used to fetch sample buffers. `HttpStorage` by default.
+- `storage`: a [storage backend](#caching-samples) used to fetch sample buffers. `HttpStorage` by default.
 - `loader`: a shared `SampleLoader` instance. Pass the same loader to multiple instruments to cache buffers across them (see [Buffer reuse](#buffer-reuse)).
 - `scheduler`: a shared `Scheduler` instance. Construct your own to tune scheduling — for example, `Scheduler(context, { lookaheadMs: 100, intervalMs: 25 })` — or omit to get a per-instrument default.
 - `onLoadProgress`: a function called after each sample buffer is decoded. Receives `{ loaded, total }` where `total` is the full count known before loading starts.
 - `onStart`: called when a note is dispatched to the audio engine. Receives the started note. See ⚠️ note under [Events](#events) on timing precision.
 - `onEnded`: called when each voice's audio node ends. Receives the started note.
 
-#### Usage with standardized-audio-context
-
-This package should be compatible with [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context):
-
-```js
-import { AudioContext } from "standardized-audio-context";
-
-const context = new AudioContext();
-const piano = SplendidGrandPiano(context);
-```
-
-However, if you are using Typescript, you might need to "force cast" the types:
-
-```ts
-import { Soundfont } from "smplr";
-import { AudioContext as StandardizedAudioContext } from "standardized-audio-context";
-
-const context = new StandardizedAudioContext() as unknown as AudioContext;
-const marimba = Soundfont(context, { instrument: "marimba" });
-```
-
-In case you need to use the `Reverb` module (or any other module that needs `AudioWorkletNode`) you need to enforce to use the one from `standardized-audio-context` package. Here is how:
-
-```ts
-import {
-  AudioWorkletNode,
-  IAudioContext,
-  AudioContext as StandardizedAudioContext,
-} from "standardized-audio-context";
-
-window.AudioWorkletNode = AudioWorkletNode as any;
-const context = new StandardizedAudioContext() as unknown as AudioContext;
-
-// ... rest of the code
-```
-
-See [standardized-audio-context issue #897](https://github.com/chrisguttandin/standardized-audio-context/issues/897) for background on why the cast is required.
-
-### Play
+### Play notes
 
 #### Start and stop notes
 
@@ -289,7 +265,9 @@ sampler.start({
 
 If `loop` is true but `loopStart` or `loopEnd` are not specified, 0 and total duration will be used by default, respectively.
 
-#### Change volume
+### Output
+
+#### Volume
 
 Instrument `output` attribute represents the main output of the instrument. The `output.volume` getter/setter accepts a number where 0 means no volume, and 127 is max volume without amplification:
 
@@ -330,20 +308,30 @@ piano.setCC(64, 0); // sustain pedal off
 
 Unset CCs default to `0` (matches MIDI's "undefined controller defaults to 0" convention).
 
-#### Disposing
+### Effects
 
-When you're done with an instrument, call `dispose()` to stop all voices, tear down the audio graph, and stop the scheduler. The instance must not be used after this call.
+#### Reverb
+
+A packaged version of the [DattorroReverbNode](https://github.com/khoin/DattorroReverbNode) algorithmic reverb is included.
+
+Use `output.addEffect(name, effect, mix)` to connect an effect using a send bus:
 
 ```js
-useEffect(() => {
-  const piano = SplendidGrandPiano(context);
-  return () => piano.dispose();
-}, []);
+import { Reverb, SplendidGrandPiano } from "smplr";
+const reverb = Reverb(context);
+const piano = SplendidGrandPiano(context, { volume });
+piano.output.addEffect("reverb", reverb, 0.2);
 ```
 
-`disconnect()` is kept as a deprecated alias and continues to work.
+To change the mix level, use `output.setEffectMix(name, mix)`:
 
-#### Events
+```js
+piano.output.setEffectMix("reverb", 0.5);
+```
+
+`output.sendEffect(name, mix)` is kept as a deprecated alias and continues to work.
+
+### Events
 
 Two events are supported `onStart` and `onEnded`. Both callbacks will receive as parameter started note.
 
@@ -374,30 +362,20 @@ Global callbacks will be invoked regardless of whether local events are defined.
 
 ⚠️ The invocation time of `onStart` is not exact: it fires slightly before the audio actually starts, by up to the scheduler's lookahead window (200ms by default; configurable via the `scheduler` option — see [Shared configuration options](#shared-configuration-options)).
 
-### Effects
+### Dispose
 
-#### Reverb
-
-A packaged version of the [DattorroReverbNode](https://github.com/khoin/DattorroReverbNode) algorithmic reverb is included.
-
-Use `output.addEffect(name, effect, mix)` to connect an effect using a send bus:
+When you're done with an instrument, call `dispose()` to stop all voices, tear down the audio graph, and stop the scheduler. The instance must not be used after this call.
 
 ```js
-import { Reverb, SplendidGrandPiano } from "smplr";
-const reverb = Reverb(context);
-const piano = SplendidGrandPiano(context, { volume });
-piano.output.addEffect("reverb", reverb, 0.2);
+useEffect(() => {
+  const piano = SplendidGrandPiano(context);
+  return () => piano.dispose();
+}, []);
 ```
 
-To change the mix level, use `output.setEffectMix(name, mix)`:
+`disconnect()` is kept as a deprecated alias and continues to work.
 
-```js
-piano.output.setEffectMix("reverb", 0.5);
-```
-
-`output.sendEffect(name, mix)` is kept as a deprecated alias and continues to work.
-
-### Cache requests
+### Caching samples
 
 The default sample sets are hosted on GitHub Pages, which rate-limits requests per second. That can be a problem, especially in a development environment with hot reload (most React frameworks).
 
@@ -413,6 +391,44 @@ const piano = SplendidGrandPiano(context, { storage });
 ```
 
 ⚠️ `CacheStorage` is based on the [Cache API](https://developer.mozilla.org/en-US/docs/Web/API/Cache) and only works in secure environments that run over `https`. Check your framework's documentation for local-HTTPS setup — for example [next-dev-https](https://www.npmjs.com/package/next-dev-https) for Next.js or [vite-plugin-mkcert](https://github.com/liuweiGL/vite-plugin-mkcert) for Vite.
+
+### Using with standardized-audio-context
+
+This package should be compatible with [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context):
+
+```js
+import { AudioContext } from "standardized-audio-context";
+
+const context = new AudioContext();
+const piano = SplendidGrandPiano(context);
+```
+
+However, if you are using Typescript, you might need to "force cast" the types:
+
+```ts
+import { Soundfont } from "smplr";
+import { AudioContext as StandardizedAudioContext } from "standardized-audio-context";
+
+const context = new StandardizedAudioContext() as unknown as AudioContext;
+const marimba = Soundfont(context, { instrument: "marimba" });
+```
+
+In case you need to use the `Reverb` module (or any other module that needs `AudioWorkletNode`) you need to enforce to use the one from `standardized-audio-context` package. Here is how:
+
+```ts
+import {
+  AudioWorkletNode,
+  IAudioContext,
+  AudioContext as StandardizedAudioContext,
+} from "standardized-audio-context";
+
+window.AudioWorkletNode = AudioWorkletNode as any;
+const context = new StandardizedAudioContext() as unknown as AudioContext;
+
+// ... rest of the code
+```
+
+See [standardized-audio-context issue #897](https://github.com/chrisguttandin/standardized-audio-context/issues/897) for background on why the cast is required.
 
 ## Sequencer
 
@@ -712,7 +728,7 @@ seq.on("patternChange", (idx) => ui.highlightPattern(idx));
 
 ---
 
-## Export Audio
+## Offline rendering
 
 Render audio offline (faster than real-time) and export it as a WAV file. Uses `OfflineAudioContext` under the hood.
 
@@ -791,24 +807,9 @@ This will download a WAV file you can attach to your issue or pull request.
 
 ---
 
-## Instruments
+## Instrument reference
 
-### Available instruments
-
-Each instrument family exposes a synchronous helper that returns the names you can pass to its factory:
-
-| Factory         | Names helper                                   |
-| --------------- | ---------------------------------------------- |
-| `Soundfont`     | `getSoundfontNames(): string[]`                |
-| `ElectricPiano` | `getElectricPianoNames(): string[]`            |
-| `Mallet`        | `getMalletNames(): string[]`                   |
-| `Mellotron`     | `getMellotronNames(): string[]`                |
-| `DrumMachine`   | `getDrumMachineNames(): string[]`              |
-| `DrumAbuse`     | `getDrumAbuseMachineNames(): string[]`         |
-| `Smolken`       | `getSmolkenNames(): string[]`                  |
-| `Versilian`     | `getVersilianInstruments(): Promise<string[]>` |
-
-`getVersilianInstruments` is async because the catalog is fetched from the network on first call (cached thereafter).
+Detailed configuration for each bundled instrument. For the shared API (load, play, output, effects, events), see [Using an instrument](#using-an-instrument).
 
 ### Sampler
 
@@ -1133,6 +1134,18 @@ sampler.load.then(() => {
 ```
 
 Still limited support. API may vary.
+
+## Defining your own instrument
+
+If none of the bundled instruments fits your use case, you can author your own with the `Instrument` builder and the `Smplr` interface.
+
+See **[Defining an instrument](./AUTHORING.md)** for the full authoring guide — sync and async examples, third-party package layout, and how to use `Smplr` as a TypeScript type for generic helpers.
+
+## Upgrading and stability
+
+`smplr` is approaching 1.0. The 0.22.0 release lands the final batch of pre-1.0 API work — every documented `new X(ctx, opts)` keeps working, and the documented surface is intended to ship unchanged into 1.0. The formal stability commitment lands once the narrow `loader`/`scheduler` public interfaces sibling ticket is in (see [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md)).
+
+> **Upgrading from an earlier 0.x?** No code changes are required — every documented `new X(ctx, opts)` keeps working. New code should drop the `new` (`X(ctx, opts)`) and prefer `await x.ready` over `await x.load`.
 
 ## License
 
