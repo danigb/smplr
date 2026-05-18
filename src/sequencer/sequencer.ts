@@ -485,6 +485,7 @@ class SequencerImpl {
     this._clock.stop();
     this._stopLoop();
     this._endScheduled = false;
+    for (const stopFn of this._activeVoices.values()) stopFn();
     this._activeVoices.clear();
     this._emitStateChange("stopped");
     return this;

@@ -30,9 +30,28 @@ export function PianoKeyboard({
   const [detune, setDetune] = useState(0);
   const [oct, setOct] = useState(60);
   const [sustain, setSustain] = useState(false);
-  const isPlaying = (midi: number) => false;
+  const [playing, setPlaying] = useState<ReadonlySet<number>>(
+    () => new Set<number>(),
+  );
+  const isPlaying = (midi: number) => playing.has(midi);
+
+  function press(note: PianoKeyboardNote) {
+    setPlaying((prev) => {
+      if (prev.has(note.note)) return prev;
+      const next = new Set(prev);
+      next.add(note.note);
+      return next;
+    });
+    onPress(note);
+  }
 
   function release(midi: number) {
+    setPlaying((prev) => {
+      if (!prev.has(midi)) return prev;
+      const next = new Set(prev);
+      next.delete(midi);
+      return next;
+    });
     if (!sustain && onRelease) onRelease(midi);
   }
 
@@ -46,7 +65,7 @@ export function PianoKeyboard({
                 className={`accidental-key ${
                   isPlaying(midi) ? "accidental-key--playing" : ""
                 }`}
-                onPointerDown={() => onPress({ note: midi, velocity, detune })}
+                onPointerDown={() => press({ note: midi, velocity, detune })}
                 onPointerUp={() => release(midi)}
                 onPointerLeave={() => release(midi)}
               >
@@ -59,7 +78,7 @@ export function PianoKeyboard({
               className={`natural-key ${
                 isPlaying(midi) ? "natural-key--playing" : ""
               }`}
-              onPointerDown={() => onPress({ note: midi, velocity, detune })}
+              onPointerDown={() => press({ note: midi, velocity, detune })}
               onPointerUp={() => release(midi)}
               onPointerLeave={() => release(midi)}
             >

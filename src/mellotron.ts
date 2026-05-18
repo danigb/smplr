@@ -116,7 +116,7 @@ export function mellotronToPreset(
     if (config.variation && !sampleName.includes(config.variation)) continue;
 
     const midi = toMidi(sampleName.split(" ")[0] ?? "");
-    if (!midi) continue;
+    if (midi === undefined) continue;
 
     entries.push([midi, sampleName]);
   }

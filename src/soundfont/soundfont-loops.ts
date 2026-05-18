@@ -25,10 +25,9 @@ export async function fetchSoundfontLoopData(
     const loopData: LoopData = {};
     Object.keys(raw).forEach((key) => {
       const midi = toMidi(key);
-      if (midi) {
-        const offsets = raw[key];
-        loopData[midi] = [offsets[0] / sampleRate, offsets[1] / sampleRate];
-      }
+      if (midi === undefined) return;
+      const offsets = raw[key];
+      loopData[midi] = [offsets[0] / sampleRate, offsets[1] / sampleRate];
     });
     return loopData;
   } catch (err) {

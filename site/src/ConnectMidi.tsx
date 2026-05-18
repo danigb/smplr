@@ -23,6 +23,7 @@ export function ConnectMidi({
 }) {
   const inst = useRef<MidiInstrument | null>(null);
   const webmidiRef = useRef<WebMidiModule | null>(null);
+  const listenersRef = useRef<Listener[] | undefined>(undefined);
   const [midiDeviceNames, setMidiDeviceNames] = useState<string[]>([]);
   const [midiDeviceName, setMidiDeviceName] = useState("");
   const [disconnectMidiDevices, setDisconnectMidiDevices] = useState<
@@ -46,12 +47,20 @@ export function ConnectMidi({
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      listenersRef.current?.forEach((listener) => listener.remove());
+      listenersRef.current = undefined;
+    };
+  }, []);
+
   inst.current = instrument ?? null;
 
   const isConnected = disconnectMidiDevices !== undefined;
 
   function disconnectMidi() {
-    disconnectMidiDevices?.forEach((listener) => listener.remove());
+    listenersRef.current?.forEach((listener) => listener.remove());
+    listenersRef.current = undefined;
     setDisconnectMidiDevices(undefined);
     return;
   }
@@ -79,10 +88,12 @@ export function ConnectMidi({
       setLastNote("");
     });
 
-    setDisconnectMidiDevices([
+    const listeners = [
       ...(Array.isArray(listener) ? listener : [listener]),
       ...(Array.isArray(listenerOff) ? listenerOff : [listenerOff]),
-    ]);
+    ];
+    listenersRef.current = listeners;
+    setDisconnectMidiDevices(listeners);
   }
 
   return (

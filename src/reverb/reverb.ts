@@ -66,7 +66,7 @@ class ReverbImpl {
   }
 
   getParam(name: (typeof PARAMS)[number]): AudioParam | undefined {
-    return this.#effect?.parameters.get("preDelay");
+    return this.#effect?.parameters.get(name);
   }
 
   get isReady(): boolean {

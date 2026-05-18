@@ -101,7 +101,7 @@ async function decodeSoundfontFile(
   await Promise.all(
     noteNames.map(async (noteName) => {
       const midi = toMidi(noteName);
-      if (!midi) return;
+      if (midi === undefined) return;
       try {
         const audioData = base64ToArrayBuffer(
           removeBase64Prefix(json[noteName]),
