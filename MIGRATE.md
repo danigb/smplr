@@ -1,6 +1,6 @@
 # Migrating smplr
 
-`smplr` is approaching 1.0. Pre-1.0 API work began in 0.22.0 and lands its final batch in 0.26.0 — every documented `new X(ctx, opts)` keeps working, and the documented surface is intended to ship unchanged into 1.0. The formal stability commitment lands once the narrow `loader`/`scheduler` public interfaces sibling ticket is in (see [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md)).
+`smplr` 0.26.0 is the last release before 1.0. Pre-1.0 API work began in 0.22.0 and completes in 0.26.0 — every documented `new X(ctx, opts)` keeps working, and the documented surface is intended to ship unchanged into 1.0 (see [CHANGELOG](https://github.com/danigb/smplr/blob/main/CHANGELOG.md)).
 
 > **TL;DR for upgrading from an earlier 0.x:** No code changes are required — every documented `new X(ctx, opts)` keeps working. New code should drop the `new` (`X(ctx, opts)`) and prefer `await x.ready` over `await x.load`.
 
@@ -17,6 +17,7 @@ Every alias below continues to work; editors will mark the old form as `@depreca
 | `output.sendEffect(name, mix)` | `output.addEffect(name, effect, mix)` |                                                                            |
 | `disconnect()`                 | `dispose()`                           |                                                                            |
 | `Soundfont2Sampler`            | `Soundfont2`                          | Class renamed.                                                             |
+| `loader.load(json, fn)`        | `loader.load(json, { onProgress: fn })` | Pass an options object. Bare-callback form still works.                    |
 
 ## Removed APIs
 

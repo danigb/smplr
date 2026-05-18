@@ -4,38 +4,68 @@ import { HttpStorage, Storage } from "../storage";
 import { SmplrPreset } from "./types";
 
 /**
- * Loads and caches AudioBuffers for all samples referenced in a SmplrPreset.
- *
- * The cache is keyed by resolved URL, so the same audio file is never fetched
- * or decoded twice. Multiple Smplr instances can share one SampleLoader by
- * passing it via SmplrOptions.loader.
+ * Loads and decodes AudioBuffers for the samples referenced by a {@link SmplrPreset}.
+ * Used internally by every smplr instrument; pass an instance via
+ * {@link SmplrOptions.loader} to share buffer caching across multiple instruments.
  */
-class SampleLoaderImpl {
+export interface SampleLoader {
+  /**
+   * Load all samples referenced by `json`. Returns a Map keyed by sample
+   * name (`region.sample`), values are decoded `AudioBuffer`s. Failed
+   * samples are silently omitted (callers handle absence at lookup time).
+   *
+   * Internally cached by resolved URL, so repeated calls with the same
+   * baseUrl/format/path do not re-fetch.
+   *
+   * @param json The preset describing samples to load.
+   * @param options
+   *   - `buffers`: pre-decoded buffers keyed by sample name — skip fetch for these.
+   *   - `onProgress`: called with `(loaded, total)` per sample (including cache hits).
+   */
+  load(
+    json: SmplrPreset,
+    options?: SampleLoaderLoadOptions,
+  ): Promise<Map<string, AudioBuffer>>;
+
+  /**
+   * @deprecated Pass `{ onProgress }` instead. The bare-callback form is kept
+   * for compatibility; the options form is the canonical 1.x signature.
+   */
+  load(
+    json: SmplrPreset,
+    onProgress: (loaded: number, total: number) => void,
+  ): Promise<Map<string, AudioBuffer>>;
+}
+
+/** Options accepted by `SampleLoader(context, options)`. */
+export type SampleLoaderOptions = {
+  /** Custom storage backend (e.g. `CacheStorage` for offline). Defaults to `HttpStorage`. */
+  storage?: Storage;
+};
+
+/** Options accepted by `loader.load(json, options)`. */
+export type SampleLoaderLoadOptions = {
+  /** Pre-decoded buffers keyed by sample name — skip fetch for these. */
+  buffers?: Map<string, AudioBuffer>;
+  /** Called once per sample (including cache hits) with cumulative progress. */
+  onProgress?: (loaded: number, total: number) => void;
+};
+
+class SampleLoaderImpl implements SampleLoader {
   #context: BaseAudioContext;
   #storage: Storage;
   #cache: Map<string, AudioBuffer> = new Map();
 
-  constructor(context: BaseAudioContext, options?: { storage?: Storage }) {
+  constructor(context: BaseAudioContext, options?: SampleLoaderOptions) {
     this.#context = context;
     this.#storage = options?.storage ?? HttpStorage;
   }
 
-  /**
-   * Load all samples referenced in `json`. Returns a Map of sample name →
-   * AudioBuffer. Progress is reported via `onProgress` callback or via
-   * options object.
-   *
-   * - `buffers` in options: pre-loaded buffers — skips fetch for these names.
-   * - All samples load in parallel. Failed samples are silently omitted.
-   */
   async load(
     json: SmplrPreset,
     onProgressOrOptions?:
       | ((loaded: number, total: number) => void)
-      | {
-          buffers?: Map<string, AudioBuffer>;
-          onProgress?: (loaded: number, total: number) => void;
-        },
+      | SampleLoaderLoadOptions,
   ): Promise<Map<string, AudioBuffer>> {
     // Normalise the second argument: support legacy callback or new options object
     const preloaded =
@@ -110,5 +140,11 @@ function collectSampleNames(json: SmplrPreset): string[] {
   return [...seen];
 }
 
-export const SampleLoader = asConstructable(SampleLoaderImpl);
-export type SampleLoader = ReturnType<typeof SampleLoader>;
+type SampleLoaderFactory = {
+  (context: BaseAudioContext, options?: SampleLoaderOptions): SampleLoader;
+  /** @deprecated Call as a function: `SampleLoader(...)` instead of `new SampleLoader(...)`. */
+  new (context: BaseAudioContext, options?: SampleLoaderOptions): SampleLoader;
+};
+
+export const SampleLoader: SampleLoaderFactory =
+  asConstructable(SampleLoaderImpl);

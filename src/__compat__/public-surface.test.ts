@@ -110,13 +110,10 @@ describeIfBuilt("public surface (dist/index.d.ts)", () => {
     // Dual export pattern, same as the instrument factories above:
     // `const X` (factory) + `type X = ReturnType<typeof X>`. Lets users write
     // `useState<Sequencer | undefined>()` without `ReturnType<typeof Sequencer>`.
-    for (const name of [
-      "Reverb",
-      "Sequencer",
-      "CacheStorage",
-      "Scheduler",
-      "SampleLoader",
-    ]) {
+    //
+    // `Scheduler` and `SampleLoader` use a narrowed-interface form instead
+    // (locked down in `loader-scheduler-surface.test.ts`).
+    for (const name of ["Reverb", "Sequencer", "CacheStorage"]) {
       expect(dts).toMatch(
         new RegExp(`^type ${name}\\s*=\\s*ReturnType<typeof ${name}>`, "m"),
       );

@@ -1,5 +1,34 @@
 # smplr
 
+## 0.26.0
+
+Final pre-1.0 release. Lands the last gating item from the 1.0 stability
+checklist (CHANGELOG §0.21 "Stability — 1.0 candidate") — narrow public
+interfaces for `Scheduler` and `SampleLoader`. After this release the
+documented surface is intended to ship unchanged into 1.0.
+
+### Changed
+
+- **`Scheduler` and `SampleLoader` are now narrowed interfaces, not impl
+  classes.** The factory call signature is unchanged (`Scheduler(ctx, opts)` /
+  `SampleLoader(ctx, opts)` — and `new` form continues to work as a
+  `@deprecated` alias). The returned shape now exposes only the documented
+  methods: `schedule` / `stop` on `Scheduler`, `load` on `SampleLoader`.
+  Implementation classes (`SchedulerImpl`, `SampleLoaderImpl`) no longer
+  appear in `dist/index.d.ts`. A new `__compat__/loader-scheduler-surface.test.ts`
+  tripwire locks the surface against future drift.
+- **New exported types**: `SchedulerOptions`, `SampleLoaderOptions`,
+  `SampleLoaderLoadOptions` — make the documented factory option shapes
+  typeable. `Scheduler(ctx, { lookaheadMs: 100, intervalMs: 25 })` now has
+  IDE autocomplete on the options bag.
+
+### Deprecated (still works)
+
+- **`loader.load(json, (loaded, total) => void)`** — bare-callback form of
+  the second argument is `@deprecated` in TSDoc. Pass an options object
+  instead: `loader.load(json, { onProgress: (loaded, total) => …, buffers })`.
+  Both forms continue to work in 1.x. See [MIGRATE.md](./MIGRATE.md).
+
 ## 0.25.0
 
 ### New
