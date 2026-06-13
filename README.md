@@ -144,10 +144,10 @@ const marimba = Soundfont(context, { instrument: "marimba" });
 You can start playing notes as soon as one sample is loaded. To wait for all of them, await either:
 
 - `piano.ready` — resolves to `void` (preferred for new code).
-- `piano.load` — resolves to the instrument itself, so you can create and await in one line:
 
 ```js
-const piano = await SplendidGrandPiano(context).load;
+const piano = SplendidGrandPiano(context);
+await piano.ready;
 ```
 
 > Upgrading from older versions? See [MIGRATE.md](./MIGRATE.md).
@@ -235,7 +235,7 @@ const now = context.currentTime;
 
 #### Looping
 
-You can loop a note by using `loop`, `loopStart` and `loopEnd`:
+You can loop a note by using `loop`, `loopStart` and `loopEnd` (positions in seconds):
 
 ```js
 const context = new AudioContext();
@@ -313,6 +313,8 @@ To change the mix level, use `output.setEffectMix(name, mix)`:
 ```js
 piano.output.setEffectMix("reverb", 0.5);
 ```
+
+Send buses are **post-fader**: they tap the signal after `output.volume` (and after any inserts), so turning `output.volume` down proportionally reduces what reaches the effect. Set `output.volume` to 0 and the send goes silent too.
 
 ### Events
 

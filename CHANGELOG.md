@@ -1,5 +1,45 @@
 # smplr
 
+## 1.0.0
+
+First stable release.
+
+### Changed (contract)
+
+- **`offset` is now in seconds** (was sample frames), matching `loopStart` /
+  `loopEnd`. Every playback time field now speaks one unit. No in-tree
+  instrument set `offset`; external presets that did must divide their old
+  frame value by the sample rate. See [MIGRATE.md](./MIGRATE.md).
+- **`loopStart` / `loopEnd` documented as seconds.** No behavior change — the
+  player and both Soundfont loaders already treated them as seconds; only the
+  type comments and `PRESET_SCHEMA.md` (which wrongly said "sample frames / 0–1
+  fraction") were corrected. For a fraction of the buffer, use `loopAuto`.
+- **Send buses are documented as post-fader.** `output.addEffect(...)` taps the
+  signal after `output.volume` and after inserts; lowering volume lowers the
+  send. No behavior change — the routing is pinned by a new test.
+- **`Soundfont2.loadInstrument(name)` throws on an unknown name** instead of
+  silently returning `undefined`.
+
+### Removed
+
+- **`SmplrRegion.ampVelCurve`** — Removed from the public types and the SFZ
+  converter. A proper multi-point velocity curve may return additively in a later 1.x.
+
+### Fixed
+
+- **Fetch errors are clear.** SFZ / metadata fetches in ElectricPiano,
+  Mellotron, Smolken, Versilian, and the Soundfont loop-data path now reject
+  with `smplr: failed to fetch <url> (<status>)` instead of feeding an HTML
+  error body to a parser.
+- **`drum-abuse` JSON cache no longer caches rejections** — a transient network
+  failure can now retry instead of permanently re-rejecting.
+- **Soundfont base64 decode is SSR-safe** — uses `atob` instead of
+  `window.atob`, so it runs in Node / offline contexts.
+- **Cache write failures warn once** instead of being silently swallowed.
+- **Reverb `connect()` before the worklet is ready** now routes correctly
+  (previously it could silently misroute). The worklet Blob URL is revoked
+  after `addModule`, fixing a per-context leak.
+
 ## 0.26.0
 
 Final pre-1.0 release. Lands the last gating item from the 1.0 stability
