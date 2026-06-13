@@ -46,7 +46,8 @@ seq.start();
 import { SplendidGrandPiano, Reverb, renderOffline } from "smplr";
 
 const wav = await renderOffline(async (context) => {
-  const piano = await SplendidGrandPiano(context).load;
+  const piano = SplendidGrandPiano(context);
+  await piano.ready;
   piano.output.addEffect("reverb", Reverb(context), 0.3);
   ["C4", "E4", "G4", "C5"].forEach((note, i) => {
     piano.start({ note, time: i * 0.4, duration: 0.4 });
@@ -723,7 +724,8 @@ Render audio offline (faster than real-time) and export it as a WAV file. Uses `
 import { renderOffline } from "smplr";
 
 const result = await renderOffline(async (context) => {
-  const piano = await SplendidGrandPiano(context).load;
+  const piano = SplendidGrandPiano(context);
+  await piano.ready;
   piano.start({ note: "C4", time: 0, duration: 1 });
   piano.start({ note: "E4", time: 0.5, duration: 1 });
 });
@@ -766,11 +768,12 @@ import { SplendidGrandPiano, SampleLoader, renderOffline } from "smplr";
 
 const loader = SampleLoader(audioContext);
 const piano = SplendidGrandPiano(audioContext, { loader });
-await piano.load;
+await piano.ready;
 
 // Offline render reuses cached buffers — no re-fetch
 const result = await renderOffline(async (context) => {
-  const offlinePiano = await SplendidGrandPiano(context, { loader }).load;
+  const offlinePiano = SplendidGrandPiano(context, { loader });
+  await offlinePiano.ready;
   offlinePiano.start({ note: "C4", time: 0, duration: 1 });
 });
 ```
@@ -784,7 +787,8 @@ const { renderOffline, SplendidGrandPiano } =
   await import("https://esm.sh/smplr");
 
 const result = await renderOffline(async (context) => {
-  const piano = await SplendidGrandPiano(context).load;
+  const piano = SplendidGrandPiano(context);
+  await piano.ready;
   piano.start({ note: "C4", time: 0, duration: 2 });
 });
 result.downloadWav16("bug-report.wav");
@@ -1031,7 +1035,7 @@ const context = new AudioContext();
 const drums = DrumAbuse(context, {
   source: { kind: "machine", machine: "roland-tr-808" },
 });
-await drums.load;
+await drums.ready;
 
 drums.start({ note: "kick" });
 
@@ -1078,7 +1082,8 @@ const instruments = getSmolkenNames(); // => Arco, Pizzicato & Switched
 
 // Create an instrument
 const context = new AudioContext();
-const doubleBass = await Smolken(context, { instrument: "Arco" }).load;
+const doubleBass = Smolken(context, { instrument: "Arco" });
+await doubleBass.ready;
 ```
 
 ### Versilian
@@ -1111,7 +1116,7 @@ const sampler = Soundfont2(context, {
   createSoundfont: (data) => new SoundFont2(data),
 });
 
-sampler.load.then(() => {
+sampler.ready.then(() => {
   // list all available instruments for the soundfont
   console.log(sampler.instrumentNames);
 

@@ -123,17 +123,17 @@ describe("ElectricPiano", () => {
     const ep = ElectricPiano(ctx as unknown as AudioContext, {
       instrument: "PianetT",
     });
-    ep.load.catch(() => {});
+    ep.ready.catch(() => {});
     expect(typeof ep.start).toBe("function");
     expect(typeof ep.stop).toBe("function");
   });
 
   it("constructs via `new` (deprecated alias)", () => {
     const ctx = makeContext();
-    const ep = new ElectricPiano(ctx as unknown as AudioContext, {
+    const ep = ElectricPiano(ctx as unknown as AudioContext, {
       instrument: "PianetT",
     });
-    ep.load.catch(() => {});
+    ep.ready.catch(() => {});
     expect(typeof ep.start).toBe("function");
   });
 
@@ -151,7 +151,7 @@ describe("ElectricPiano", () => {
     const ep = ElectricPiano(ctx as unknown as AudioContext, {
       instrument: "PianetT",
     });
-    ep.load.catch(() => {});
+    ep.ready.catch(() => {});
 
     expect(typeof ep.tremolo.level).toBe("function");
     expect(() => ep.tremolo.level(30)).not.toThrow();
@@ -162,7 +162,7 @@ describe("ElectricPiano", () => {
     const ep = ElectricPiano(ctx as unknown as AudioContext, {
       instrument: "WurlitzerEP200",
     });
-    ep.load.catch(() => {});
+    ep.ready.catch(() => {});
 
     expect(() => ep.tremolo.level(0)).not.toThrow();
     expect(() => ep.tremolo.level(64)).not.toThrow();
@@ -173,7 +173,7 @@ describe("ElectricPiano", () => {
     const ctx = makeContext();
     ElectricPiano(ctx as unknown as AudioContext, {
       instrument: "PianetT",
-    }).load.catch(() => {});
+    }).ready.catch(() => {});
 
     // The tremolo node is built from createOscillator + createGain — assert
     // at least one oscillator was created during construction.
@@ -185,7 +185,7 @@ describe("ElectricPiano", () => {
     const ep = ElectricPiano(ctx as unknown as AudioContext, {
       instrument: "PianetT",
     });
-    await ep.load;
+    await ep.ready;
 
     expect((global as any).fetch).toHaveBeenCalled();
     expect(ep.loadProgress).toHaveProperty("loaded");
@@ -197,7 +197,7 @@ describe("ElectricPiano", () => {
     const ep = ElectricPiano(ctx as unknown as AudioContext, {
       instrument: "PianetT",
     });
-    ep.load.catch(() => {});
+    ep.ready.catch(() => {});
     ep.output.volume = 50;
     expect(ep.output.volume).toBe(50);
   });

@@ -61,7 +61,7 @@ export class Channel {
 
     const volume = createControl(this.#config.volume);
     this.#volumeControl = volume;
-    this.setVolume = volume.set;
+    this.setVolume = volume.set; // deprecation-ok: implements the deprecated alias
     this.#unsubscribe = volume.subscribe((volume) => {
       this.#volume.gain.value = this.#config.volumeToGain(volume);
     });

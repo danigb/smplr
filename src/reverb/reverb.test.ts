@@ -43,7 +43,7 @@ beforeEach(() => {
 describe("Reverb", () => {
   it("routes correctly when connect() is called before ready() resolves", async () => {
     const ctx = makeReverbContext();
-    const reverb = new Reverb(ctx);
+    const reverb = Reverb(ctx);
     const custom = new FakeNode();
 
     // Called synchronously, before the worklet promise resolves.
@@ -57,8 +57,8 @@ describe("Reverb", () => {
 
   it("adds the worklet module once per context and revokes the blob URL", async () => {
     const ctx = makeReverbContext();
-    const a = new Reverb(ctx);
-    const b = new Reverb(ctx);
+    const a = Reverb(ctx);
+    const b = Reverb(ctx);
     await Promise.all([a.ready(), b.ready()]);
 
     expect(ctx.audioWorklet.addModule).toHaveBeenCalledTimes(1);

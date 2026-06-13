@@ -53,7 +53,7 @@ beforeEach(() => {
 
 describe("URL resolution", () => {
   it("builds URL as baseUrl/sampleName.format", async () => {
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     await loader.load(makeJson());
 
     expect(mockLoadBuffer).toHaveBeenCalledWith(
@@ -64,7 +64,7 @@ describe("URL resolution", () => {
   });
 
   it("strips trailing slash from baseUrl", async () => {
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     await loader.load(
       makeJson({
         samples: {
@@ -82,7 +82,7 @@ describe("URL resolution", () => {
   });
 
   it("applies samples.map when present", async () => {
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     await loader.load(
       makeJson({
         samples: {
@@ -101,7 +101,7 @@ describe("URL resolution", () => {
   });
 
   it("uses sample name as path when not in map", async () => {
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     await loader.load(
       makeJson({
         samples: {
@@ -127,7 +127,7 @@ describe("URL resolution", () => {
 describe("format selection", () => {
   it("uses the format returned by findFirstSupportedFormat", async () => {
     mockFindFormat.mockReturnValue("mp3");
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     await loader.load(makeJson());
 
     expect(mockLoadBuffer).toHaveBeenCalledWith(
@@ -139,7 +139,7 @@ describe("format selection", () => {
 
   it("falls back to formats[0] when findFirstSupportedFormat returns null", async () => {
     mockFindFormat.mockReturnValue(null);
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     await loader.load(
       makeJson({
         samples: {
@@ -158,7 +158,7 @@ describe("format selection", () => {
 
   it("falls back to 'ogg' when findFirstSupportedFormat returns null and formats is empty", async () => {
     mockFindFormat.mockReturnValue(null);
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     await loader.load(
       makeJson({
         samples: { baseUrl: "https://example.com/samples", formats: [] },
@@ -181,7 +181,7 @@ describe("result map", () => {
   it("returns a Map with sample name → AudioBuffer", async () => {
     const buf = makeBuffer("test");
     mockLoadBuffer.mockResolvedValue(buf);
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     const result = await loader.load(makeJson());
 
     expect(result.get("C4")).toBe(buf);
@@ -189,7 +189,7 @@ describe("result map", () => {
 
   it("omits samples whose buffer could not be loaded", async () => {
     mockLoadBuffer.mockResolvedValue(undefined);
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     const result = await loader.load(makeJson());
 
     expect(result.size).toBe(0);
@@ -205,7 +205,7 @@ describe("result map", () => {
       .mockResolvedValueOnce(bufC4) // C4 succeeds
       .mockResolvedValueOnce(undefined); // D4 fails
 
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     const result = await loader.load(json);
 
     expect(result.get("C4")).toBe(bufC4);
@@ -227,7 +227,7 @@ describe("deduplication", () => {
       ],
     };
 
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     await loader.load(json);
 
     expect(mockLoadBuffer).toHaveBeenCalledTimes(1);
@@ -239,7 +239,7 @@ describe("deduplication", () => {
       groups: [{ regions: [{ sample: "C4" }, { sample: "D4" }] }],
     };
 
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     await loader.load(json);
 
     expect(mockLoadBuffer).toHaveBeenCalledTimes(2);
@@ -252,7 +252,7 @@ describe("deduplication", () => {
 
 describe("caching", () => {
   it("does not call loadAudioBuffer again for a URL already in cache", async () => {
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
 
     await loader.load(makeJson());
     expect(mockLoadBuffer).toHaveBeenCalledTimes(1);
@@ -265,7 +265,7 @@ describe("caching", () => {
   it("returns the cached buffer on second load", async () => {
     const buf = makeBuffer("cached");
     mockLoadBuffer.mockResolvedValue(buf);
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
 
     await loader.load(makeJson());
     const result2 = await loader.load(makeJson());
@@ -274,7 +274,7 @@ describe("caching", () => {
   });
 
   it("cache is keyed by resolved URL, so different baseUrls are fetched separately", async () => {
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
 
     await loader.load(
       makeJson({ samples: { baseUrl: "https://a.com", formats: ["ogg"] } }),
@@ -299,8 +299,10 @@ describe("onProgress callback", () => {
     };
 
     const calls: [number, number][] = [];
-    const loader = new SampleLoader(makeContext());
-    await loader.load(json, (loaded, total) => calls.push([loaded, total]));
+    const loader = SampleLoader(makeContext());
+    await loader.load(json, {
+      onProgress: (loaded, total) => calls.push([loaded, total]),
+    });
 
     expect(calls).toHaveLength(2);
     // total is always 2 (known upfront)
@@ -311,13 +313,13 @@ describe("onProgress callback", () => {
   });
 
   it("fires for cache hits as well", async () => {
-    const loader = new SampleLoader(makeContext());
+    const loader = SampleLoader(makeContext());
     await loader.load(makeJson()); // fills cache
 
     const calls: [number, number][] = [];
-    await loader.load(makeJson(), (loaded, total) =>
-      calls.push([loaded, total]),
-    );
+    await loader.load(makeJson(), {
+      onProgress: (loaded, total) => calls.push([loaded, total]),
+    });
 
     expect(calls).toHaveLength(1);
     expect(calls[0]).toEqual([1, 1]);
@@ -326,10 +328,10 @@ describe("onProgress callback", () => {
   it("fires even when buffer fails to load", async () => {
     mockLoadBuffer.mockResolvedValue(undefined);
     const calls: [number, number][] = [];
-    const loader = new SampleLoader(makeContext());
-    await loader.load(makeJson(), (loaded, total) =>
-      calls.push([loaded, total]),
-    );
+    const loader = SampleLoader(makeContext());
+    await loader.load(makeJson(), {
+      onProgress: (loaded, total) => calls.push([loaded, total]),
+    });
 
     expect(calls).toHaveLength(1);
     expect(calls[0]).toEqual([1, 1]);
@@ -344,8 +346,8 @@ describe("onProgress callback", () => {
     };
 
     const totals: number[] = [];
-    const loader = new SampleLoader(makeContext());
-    await loader.load(json, (_, total) => totals.push(total));
+    const loader = SampleLoader(makeContext());
+    await loader.load(json, { onProgress: (_, total) => totals.push(total) });
 
     // 2 unique samples (C4, D4), so total should be 2
     expect(totals.every((t) => t === 2)).toBe(true);
