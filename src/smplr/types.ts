@@ -9,10 +9,10 @@ export type PlaybackParams = {
   ampRelease?: number; // release envelope time in seconds
   ampAttack?: number; // attack time in seconds (not yet implemented)
   lpfCutoffHz?: number; // low-pass filter cutoff frequency in Hz
-  offset?: number; // start playback from this position in sample frames
+  offset?: number; // start playback from this position in seconds
   loop?: boolean;
-  loopStart?: number; // sample frames, or 0-1 as fraction of buffer duration
-  loopEnd?: number; // sample frames, or 0-1 as fraction of buffer duration (0 = end)
+  loopStart?: number; // loop start in seconds
+  loopEnd?: number; // loop end in seconds (0 = end of buffer)
   reverse?: boolean; // play the sample backwards
 };
 
@@ -30,7 +30,6 @@ export type SmplrRegion = PlaybackParams & {
   group?: number; // exclusive group membership
   offBy?: number; // triggering this stops voices in this group number
   trigger?: "first" | "legato";
-  ampVelCurve?: [number, number]; // [velocity, gain] — single-point velocity curve
   /** Auto-compute loop points from buffer duration ratios (0–1). */
   loopAuto?: { startRatio: number; endRatio: number };
 };
@@ -126,7 +125,7 @@ export type LoadProgress = {
 
 /**
  * Fully resolved playback parameters for a single Voice.
- * Output of resolveParams() — all fields are required, no optionals except ampVelCurve/loopAuto.
+ * Output of resolveParams() — all fields are required, no optionals except loopAuto.
  */
 export type VoiceParams = {
   detune: number; // cents (pitch transpose + tune + detune + note override)
@@ -135,11 +134,10 @@ export type VoiceParams = {
   ampRelease: number; // release envelope time in seconds
   ampAttack: number; // attack time in seconds
   lpfCutoffHz: number; // low-pass filter cutoff in Hz
-  offset: number; // start position in sample frames
+  offset: number; // start position in seconds
   loop: boolean;
-  loopStart: number; // sample frames
-  loopEnd: number; // sample frames (0 = end of buffer)
-  ampVelCurve?: [number, number]; // [velocity, gain] single-point velocity curve
+  loopStart: number; // seconds
+  loopEnd: number; // seconds (0 = end of buffer)
   /** If set, loop points are computed from buffer.duration at play time. */
   loopAuto?: { startRatio: number; endRatio: number };
   reverse?: boolean; // buffer passed in is already reversed; mirror offset if needed
