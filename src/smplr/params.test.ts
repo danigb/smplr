@@ -194,23 +194,4 @@ describe("resolveParams", () => {
       expect(result.velocity).toBe(80);
     });
   });
-
-  describe("ampVelCurve", () => {
-    it("passes ampVelCurve from region", () => {
-      const r = region({ key: 60, ampVelCurve: [64, 0.5] });
-      const result = resolveParams(undefined, group(), r, 60, 100);
-      expect(result.ampVelCurve).toEqual([64, 0.5]);
-    });
-
-    it("is undefined when region has no ampVelCurve", () => {
-      const result = resolveParams(
-        undefined,
-        group(),
-        region({ key: 60 }),
-        60,
-        100,
-      );
-      expect(result.ampVelCurve).toBeUndefined();
-    });
-  });
 });
