@@ -236,7 +236,9 @@ function removeBase64Prefix(audioBase64: string) {
 }
 
 function base64ToArrayBuffer(base64: string) {
-  const decoded = window.atob(base64);
+  // `atob` is a global in browsers and Node 16+ — avoid `window` so this works
+  // in Node/SSR contexts (e.g. unit tests, offline rendering).
+  const decoded = atob(base64);
   const len = decoded.length;
   const bytes = new Uint8Array(len);
   for (let i = 0; i < len; i++) {

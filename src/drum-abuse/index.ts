@@ -347,6 +347,11 @@ function fetchJSON<T>(url: string, storage: Storage): Promise<T> {
       return r.json() as Promise<T>;
     });
     jsonCache.set(url, p);
+    // Drop the entry on rejection so a transient network failure can retry,
+    // instead of permanently re-rejecting from the cached promise.
+    p.catch(() => {
+      if (jsonCache.get(url) === p) jsonCache.delete(url);
+    });
   }
   return p;
 }

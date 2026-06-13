@@ -19,6 +19,7 @@ export const HttpStorage: Storage = {
 
 class CacheStorageImpl implements Storage {
   #cache: Promise<Cache>;
+  #warned = false;
 
   constructor(name = "smplr") {
     if (typeof window === "undefined" || !("caches" in window)) {
@@ -53,7 +54,14 @@ class CacheStorageImpl implements Storage {
     try {
       const cache = await this.#cache;
       await cache.put(request, response.clone());
-    } catch (err) {}
+    } catch (err) {
+      // Quota-exceeded, private browsing, or an unsupported context. Warn once
+      // so a broken cache is visible without spamming on every fetch.
+      if (!this.#warned) {
+        this.#warned = true;
+        console.warn("smplr: failed to cache response", err);
+      }
+    }
   }
 }
 
