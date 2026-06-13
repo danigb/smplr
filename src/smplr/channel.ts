@@ -99,6 +99,15 @@ export class Channel {
     ]);
   }
 
+  /**
+   * Add a send effect on a parallel bus.
+   *
+   * The send is **post-fader**: it taps the channel signal after the volume
+   * gain (and after any inserts added via {@link addInsert}), before the
+   * panner. Lowering `volume` proportionally lowers the send level; `volume = 0`
+   * silences the send too. Inserts are upstream of the tap, so they are heard
+   * on the send.
+   */
   addEffect(
     name: string,
     effect: AudioNode | { input: AudioNode },
