@@ -54,19 +54,19 @@ The resolved fetch URL is `${baseUrl}/${region.sample}.${chosenFormat}`, or `${b
 
 Inheritable playback parameters. Can appear at `defaults`, group, or region level. More specific levels override less specific ones.
 
-| Field         | Type      | Description                                                                     |
-| ------------- | --------- | ------------------------------------------------------------------------------- |
-| `volume`      | `number`  | dB adjustment (0 = no change).                                                  |
-| `tune`        | `number`  | Pitch adjustment in semitones.                                                  |
-| `detune`      | `number`  | Fine pitch adjustment in cents.                                                 |
-| `ampRelease`  | `number`  | Release envelope time in seconds.                                               |
-| `ampAttack`   | `number`  | Attack time in seconds. _(Not yet implemented — accepted but ignored.)_         |
-| `lpfCutoffHz` | `number`  | Low-pass filter cutoff frequency in Hz.                                         |
-| `offset`      | `number`  | Start playback from this position in sample frames.                             |
-| `loop`        | `boolean` | Loop the sample.                                                                |
-| `loopStart`   | `number`  | Loop start, in sample frames, **or** 0–1 as a fraction of buffer duration.      |
-| `loopEnd`     | `number`  | Loop end, in sample frames, **or** 0–1 as a fraction (`0` means end of buffer). |
-| `reverse`     | `boolean` | Play the sample backwards.                                                      |
+| Field         | Type      | Description                                                             |
+| ------------- | --------- | ----------------------------------------------------------------------- |
+| `volume`      | `number`  | dB adjustment (0 = no change).                                          |
+| `tune`        | `number`  | Pitch adjustment in semitones.                                          |
+| `detune`      | `number`  | Fine pitch adjustment in cents.                                         |
+| `ampRelease`  | `number`  | Release envelope time in seconds.                                       |
+| `ampAttack`   | `number`  | Attack time in seconds. _(Not yet implemented — accepted but ignored.)_ |
+| `lpfCutoffHz` | `number`  | Low-pass filter cutoff frequency in Hz.                                 |
+| `offset`      | `number`  | Start playback from this position in seconds.                           |
+| `loop`        | `boolean` | Loop the sample.                                                        |
+| `loopStart`   | `number`  | Loop start in seconds. (For a fraction of the buffer, use `loopAuto`.)  |
+| `loopEnd`     | `number`  | Loop end in seconds (`0` means end of buffer).                          |
+| `reverse`     | `boolean` | Play the sample backwards.                                              |
 
 ### Inheritance rules
 
@@ -113,7 +113,6 @@ An individual sample region. Maps a sample to a range of notes and velocities.
 | `group`       | `number`                                   | Exclusive group membership.                                 |
 | `offBy`       | `number`                                   | Triggering this stops voices in this group number.          |
 | `trigger`     | `"first" \| "legato"`                      | Note-trigger filtering.                                     |
-| `ampVelCurve` | `[number, number]`                         | `[velocity, gain]` single-point velocity curve.             |
 | `loopAuto`    | `{ startRatio: number; endRatio: number }` | Auto-compute loop points from buffer-relative ratios (0–1). |
 
 `SmplrRegion` also accepts every `PlaybackParams` field; region values override the group and the preset defaults.

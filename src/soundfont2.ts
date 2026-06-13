@@ -88,7 +88,7 @@ export function sf2InstrumentToPreset(
 
 type Soundfont2SamplerExtras = {
   readonly instrumentNames: string[];
-  loadInstrument(instrumentName: string): Promise<void> | undefined;
+  loadInstrument(instrumentName: string): Promise<void>;
 };
 
 export const Soundfont2 = Instrument(
@@ -110,7 +110,11 @@ export const Soundfont2 = Instrument(
         const sf2inst = soundfont?.instruments.find(
           (inst: Sf2Instrument) => inst.header.name === instrumentName,
         );
-        if (!sf2inst) return undefined;
+        if (!sf2inst) {
+          throw new Error(
+            `Soundfont2: instrument "${instrumentName}" not found`,
+          );
+        }
         const { json, buffers } = sf2InstrumentToPreset(sf2inst, ctx);
         return baseLoadInstrument(json, buffers);
       },

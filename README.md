@@ -46,7 +46,8 @@ seq.start();
 import { SplendidGrandPiano, Reverb, renderOffline } from "smplr";
 
 const wav = await renderOffline(async (context) => {
-  const piano = await SplendidGrandPiano(context).load;
+  const piano = SplendidGrandPiano(context);
+  await piano.ready;
   piano.output.addEffect("reverb", Reverb(context), 0.3);
   ["C4", "E4", "G4", "C5"].forEach((note, i) => {
     piano.start({ note, time: i * 0.4, duration: 0.4 });
@@ -144,10 +145,10 @@ const marimba = Soundfont(context, { instrument: "marimba" });
 You can start playing notes as soon as one sample is loaded. To wait for all of them, await either:
 
 - `piano.ready` — resolves to `void` (preferred for new code).
-- `piano.load` — resolves to the instrument itself, so you can create and await in one line:
 
 ```js
-const piano = await SplendidGrandPiano(context).load;
+const piano = SplendidGrandPiano(context);
+await piano.ready;
 ```
 
 > Upgrading from older versions? See [MIGRATE.md](./MIGRATE.md).
@@ -235,7 +236,7 @@ const now = context.currentTime;
 
 #### Looping
 
-You can loop a note by using `loop`, `loopStart` and `loopEnd`:
+You can loop a note by using `loop`, `loopStart` and `loopEnd` (positions in seconds):
 
 ```js
 const context = new AudioContext();
@@ -313,6 +314,8 @@ To change the mix level, use `output.setEffectMix(name, mix)`:
 ```js
 piano.output.setEffectMix("reverb", 0.5);
 ```
+
+Send buses are **post-fader**: they tap the signal after `output.volume` (and after any inserts), so turning `output.volume` down proportionally reduces what reaches the effect. Set `output.volume` to 0 and the send goes silent too.
 
 ### Events
 
@@ -721,7 +724,8 @@ Render audio offline (faster than real-time) and export it as a WAV file. Uses `
 import { renderOffline } from "smplr";
 
 const result = await renderOffline(async (context) => {
-  const piano = await SplendidGrandPiano(context).load;
+  const piano = SplendidGrandPiano(context);
+  await piano.ready;
   piano.start({ note: "C4", time: 0, duration: 1 });
   piano.start({ note: "E4", time: 0.5, duration: 1 });
 });
@@ -764,11 +768,12 @@ import { SplendidGrandPiano, SampleLoader, renderOffline } from "smplr";
 
 const loader = SampleLoader(audioContext);
 const piano = SplendidGrandPiano(audioContext, { loader });
-await piano.load;
+await piano.ready;
 
 // Offline render reuses cached buffers — no re-fetch
 const result = await renderOffline(async (context) => {
-  const offlinePiano = await SplendidGrandPiano(context, { loader }).load;
+  const offlinePiano = SplendidGrandPiano(context, { loader });
+  await offlinePiano.ready;
   offlinePiano.start({ note: "C4", time: 0, duration: 1 });
 });
 ```
@@ -782,7 +787,8 @@ const { renderOffline, SplendidGrandPiano } =
   await import("https://esm.sh/smplr");
 
 const result = await renderOffline(async (context) => {
-  const piano = await SplendidGrandPiano(context).load;
+  const piano = SplendidGrandPiano(context);
+  await piano.ready;
   piano.start({ note: "C4", time: 0, duration: 2 });
 });
 result.downloadWav16("bug-report.wav");
@@ -1029,7 +1035,7 @@ const context = new AudioContext();
 const drums = DrumAbuse(context, {
   source: { kind: "machine", machine: "roland-tr-808" },
 });
-await drums.load;
+await drums.ready;
 
 drums.start({ note: "kick" });
 
@@ -1076,7 +1082,8 @@ const instruments = getSmolkenNames(); // => Arco, Pizzicato & Switched
 
 // Create an instrument
 const context = new AudioContext();
-const doubleBass = await Smolken(context, { instrument: "Arco" }).load;
+const doubleBass = Smolken(context, { instrument: "Arco" });
+await doubleBass.ready;
 ```
 
 ### Versilian
@@ -1109,7 +1116,7 @@ const sampler = Soundfont2(context, {
   createSoundfont: (data) => new SoundFont2(data),
 });
 
-sampler.load.then(() => {
+sampler.ready.then(() => {
   // list all available instruments for the soundfont
   console.log(sampler.instrumentNames);
 

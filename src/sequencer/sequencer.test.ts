@@ -23,7 +23,7 @@ const PPQ = 96;
 const BPM = 120;
 
 function makeSeq(ctx: BaseAudioContext, opts: SequencerOptions = {}) {
-  return new Sequencer(ctx, {
+  return Sequencer(ctx, {
     bpm: BPM,
     ppq: PPQ,
     lookaheadMs: 200,
@@ -54,7 +54,7 @@ describe("initial state", () => {
 
   it("bpm defaults to 120", () => {
     const ctx = makeContext();
-    const seq = new Sequencer(ctx, { ppq: PPQ });
+    const seq = Sequencer(ctx, { ppq: PPQ });
     expect(seq.bpm).toBe(120);
   });
 

@@ -9,6 +9,13 @@
 import { SplendidGrandPiano } from "../splendid-grand-piano";
 import { createAudioContextMock } from "../test-helpers";
 
+// Stub the audio fetch/decode so constructing an instrument doesn't fire real
+// network requests to the sample CDN (which leave the jest worker hanging).
+jest.mock("../smplr/load-audio", () => ({
+  findFirstSupportedFormat: jest.fn().mockReturnValue("ogg"),
+  loadAudioBuffer: jest.fn().mockResolvedValue(undefined),
+}));
+
 describe("B5 — output channel aliases stay callable", () => {
   it("output exposes setVolume, sendEffect, addEffect, addInsert", () => {
     const ctx = createAudioContextMock();

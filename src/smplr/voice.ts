@@ -81,14 +81,14 @@ export class Voice {
     const startAt = startTime ?? context.currentTime;
     this.#startAt = startAt;
 
-    // Offset: VoiceParams.offset is in sample frames; source.start() takes seconds.
+    // Offset: VoiceParams.offset is in seconds (matches loopStart/loopEnd).
     // When playing in reverse (buffer is already reversed), mirror the offset so
-    // offset=N from the start of the original buffer maps to (length-N) in the reversed one.
+    // offset=T from the start of the original buffer maps to (duration-T) in the reversed one.
     let offsetSec = 0;
     if (params.offset > 0) {
       offsetSec = params.reverse
-        ? (buffer.length - params.offset) / buffer.sampleRate
-        : params.offset / buffer.sampleRate;
+        ? buffer.duration - params.offset
+        : params.offset;
     }
     source.start(startAt, offsetSec);
 

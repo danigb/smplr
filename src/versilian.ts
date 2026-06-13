@@ -3,15 +3,16 @@ import { Instrument } from "./smplr";
 import type { PluginSmplr } from "./smplr/instrument";
 import { LoadProgress } from "./smplr/types";
 import { sfzToPreset } from "./smplr/sfz-convert";
+import { fetchOk } from "./fetch-ok";
 
 const VCSL_BASE_URL = "https://smpldsnds.github.io/sgossner-vcsl";
 
 let instrumentsPromise: Promise<string[]> | undefined;
 
 export function getVersilianInstruments(): Promise<string[]> {
-  return (instrumentsPromise ??= fetch(VCSL_BASE_URL + "/sfz_files.json").then(
-    (res) => res.json(),
-  ));
+  return (instrumentsPromise ??= fetchOk(
+    VCSL_BASE_URL + "/sfz_files.json",
+  ).then((res) => res.json()));
 }
 
 export type VersilianConfig = {
@@ -58,7 +59,7 @@ export function loadVersilianInstrument(
   const base = instrument.slice(0, instrument.lastIndexOf("/") + 1);
   const sampleBaseUrl = `${VCSL_BASE_URL}/${base}`;
 
-  return fetch(sfzUrl)
+  return fetchOk(sfzUrl)
     .then((r) => r.text())
     .then((sfzText) =>
       smplr.loadInstrument(

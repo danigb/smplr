@@ -1,4 +1,5 @@
 import { toMidi } from "../smplr/midi";
+import { fetchOk } from "../fetch-ok";
 
 export type LoopData = Record<number, [number, number]>;
 
@@ -18,9 +19,8 @@ export async function fetchSoundfontLoopData(
 ): Promise<LoopData | undefined> {
   if (!url) return undefined;
   try {
-    const req = await fetch(url);
-    if (req.status !== 200) return;
-
+    // Loop data is optional — a missing/failed file soft-fails to undefined.
+    const req = await fetchOk(url);
     const raw = await req.json();
     const loopData: LoopData = {};
     Object.keys(raw).forEach((key) => {

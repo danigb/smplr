@@ -201,10 +201,6 @@ function buildRegion(
   const ampRelease = num(props, "ampeg_release");
   if (ampRelease !== undefined) region.ampRelease = ampRelease;
 
-  // Velocity curve
-  const ampVelcurve = numArr(props, "amp_velcurve");
-  if (ampVelcurve) region.ampVelCurve = ampVelcurve;
-
   return region;
 }
 
@@ -348,21 +344,5 @@ function str(
 ): string | undefined {
   const v = props[key];
   if (typeof v === "string") return v;
-  return undefined;
-}
-
-function numArr(
-  props: Record<string, string | number>,
-  _prefix: string,
-): [number, number] | undefined {
-  // SFZ amp_velcurve_N=V format: key is amp_velcurve_<velocity>
-  for (const [k, v] of Object.entries(props)) {
-    if (k.startsWith("amp_velcurve_")) {
-      const vel = Number(k.slice("amp_velcurve_".length));
-      if (!isNaN(vel) && typeof v === "number") {
-        return [vel, v];
-      }
-    }
-  }
   return undefined;
 }

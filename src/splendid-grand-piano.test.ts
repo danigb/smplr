@@ -295,15 +295,15 @@ describe("pianoToPreset", () => {
 describe("SplendidGrandPiano", () => {
   it("load resolves with the piano instance", async () => {
     const ctx = makeContext();
-    const piano = new SplendidGrandPiano(ctx as unknown as AudioContext);
-    const result = await piano.load;
+    const piano = SplendidGrandPiano(ctx as unknown as AudioContext);
+    const result = await piano.load; // deprecation-ok: verifies the .load alias resolves to the instance
     expect(result).toBe(piano);
   });
 
   it("loadProgress is a LoadProgress object", async () => {
     const ctx = makeContext();
-    const piano = new SplendidGrandPiano(ctx as unknown as AudioContext);
-    await piano.load;
+    const piano = SplendidGrandPiano(ctx as unknown as AudioContext);
+    await piano.ready;
     expect(piano.loadProgress).toHaveProperty("loaded");
     expect(piano.loadProgress).toHaveProperty("total");
   });
@@ -311,55 +311,55 @@ describe("SplendidGrandPiano", () => {
   it("calls onLoadProgress during loading", async () => {
     const ctx = makeContext();
     const calls: number[] = [];
-    await new SplendidGrandPiano(ctx as unknown as AudioContext, {
+    await SplendidGrandPiano(ctx as unknown as AudioContext, {
       onLoadProgress: ({ loaded }) => calls.push(loaded),
-    }).load;
+    }).ready;
     expect(calls.length).toBeGreaterThan(0);
   });
 
   it("output has setVolume", () => {
     const ctx = makeContext();
-    const piano = new SplendidGrandPiano(ctx as unknown as AudioContext);
-    expect(typeof piano.output.setVolume).toBe("function");
+    const piano = SplendidGrandPiano(ctx as unknown as AudioContext);
+    expect(typeof piano.output.setVolume).toBe("function"); // deprecation-ok: verifies the setVolume alias
   });
 
   it("start() returns a StopFn", async () => {
     const ctx = makeContext();
-    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext)
-      .load;
+    const piano = SplendidGrandPiano(ctx as unknown as AudioContext);
+    await piano.ready;
     const stop = piano.start({ note: "C4", velocity: 50 });
     expect(typeof stop).toBe("function");
   });
 
   it("start() creates a voice for a note in range", async () => {
     const ctx = makeContext();
-    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext)
-      .load;
+    const piano = SplendidGrandPiano(ctx as unknown as AudioContext);
+    await piano.ready;
     piano.start({ note: "C4", velocity: 50 });
     expect(ctx.createBufferSource).toHaveBeenCalled();
   });
 
   it("stop() does not throw", async () => {
     const ctx = makeContext();
-    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext)
-      .load;
+    const piano = SplendidGrandPiano(ctx as unknown as AudioContext);
+    await piano.ready;
     piano.start({ note: "C4", velocity: 50 });
     expect(() => piano.stop()).not.toThrow();
   });
 
   it("disconnect() does not throw", async () => {
     const ctx = makeContext();
-    const piano = await new SplendidGrandPiano(ctx as unknown as AudioContext)
-      .load;
-    expect(() => piano.disconnect()).not.toThrow();
+    const piano = SplendidGrandPiano(ctx as unknown as AudioContext);
+    await piano.ready;
+    expect(() => piano.disconnect()).not.toThrow(); // deprecation-ok: verifies the disconnect alias
   });
 
   it("uses the provided baseUrl for sample loading", async () => {
     const ctx = makeContext();
-    const piano = new SplendidGrandPiano(ctx as unknown as AudioContext, {
+    const piano = SplendidGrandPiano(ctx as unknown as AudioContext, {
       baseUrl: "https://custom.example.com/piano",
     });
-    await piano.load;
+    await piano.ready;
 
     const calls = mockLoadBuffer.mock.calls as [unknown, string][];
     expect(
@@ -371,9 +371,9 @@ describe("SplendidGrandPiano", () => {
 
   it("notesToLoad limits the number of buffers fetched", async () => {
     const ctx = makeContext();
-    await new SplendidGrandPiano(ctx as unknown as AudioContext, {
+    await SplendidGrandPiano(ctx as unknown as AudioContext, {
       notesToLoad: { notes: [60], velocityRange: [105, 127] },
-    }).load;
+    }).ready;
 
     // Only FF layer, only MIDI 60 — should fetch exactly 1 buffer
     expect(mockLoadBuffer).toHaveBeenCalledTimes(1);

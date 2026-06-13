@@ -98,7 +98,6 @@ export function resolveParams(
     loop: overrides?.loop ?? merged.loop,
     loopStart: merged.loopStart,
     loopEnd: merged.loopEnd,
-    ampVelCurve: region.ampVelCurve,
     loopAuto: region.loopAuto,
     reverse: overrides?.reverse ?? merged.reverse,
   };

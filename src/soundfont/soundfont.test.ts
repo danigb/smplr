@@ -173,17 +173,17 @@ describe("Soundfont", () => {
     const sf = Soundfont(ctx as unknown as AudioContext, {
       instrument: "marimba",
     });
-    sf.load.catch(() => {});
+    sf.ready.catch(() => {});
     expect(typeof sf.start).toBe("function");
     expect(typeof sf.stop).toBe("function");
   });
 
   it("constructs via `new` (deprecated alias)", () => {
     const ctx = makeContext();
-    const sf = new Soundfont(ctx as unknown as AudioContext, {
+    const sf = Soundfont(ctx as unknown as AudioContext, {
       instrument: "marimba",
     });
-    sf.load.catch(() => {});
+    sf.ready.catch(() => {});
     expect(typeof sf.start).toBe("function");
   });
 
@@ -197,7 +197,7 @@ describe("Soundfont", () => {
     const sf = Soundfont(ctx as unknown as AudioContext, {
       instrument: "marimba",
     });
-    sf.load.catch(() => {});
+    sf.ready.catch(() => {});
     sf.output.volume = 90;
     expect(sf.output.volume).toBe(90);
   });
@@ -206,7 +206,7 @@ describe("Soundfont", () => {
     const ctx = makeContext();
     Soundfont(ctx as unknown as AudioContext, {
       instrument: "marimba",
-    }).load.catch(() => {});
+    }).ready.catch(() => {});
     // The Soundfont factory creates a gain node with value = config.extraGain (default 5)
     // and inserts it via smplr.output.addInsert. A gain node is created.
     const gainCalls = (ctx.createGain as jest.Mock).mock.results;
@@ -222,7 +222,7 @@ describe("Soundfont", () => {
     Soundfont(ctx as unknown as AudioContext, {
       instrument: "marimba",
       extraGain: 1,
-    }).load.catch(() => {});
+    }).ready.catch(() => {});
     const gainCalls = (ctx.createGain as jest.Mock).mock.results;
     const hasGainOf1 = gainCalls.some(
       (r: jest.MockResult<{ gain: { value: number } }>) =>
@@ -236,7 +236,7 @@ describe("Soundfont", () => {
     const sf = Soundfont(ctx as unknown as AudioContext, {
       instrument: "marimba",
     });
-    await sf.load;
+    await sf.ready;
     expect(sf.loadProgress).toHaveProperty("loaded");
     expect(sf.loadProgress).toHaveProperty("total");
   });

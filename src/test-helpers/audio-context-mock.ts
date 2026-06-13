@@ -154,6 +154,10 @@ export class AudioContextMock {
 export function createAudioContextMock() {
   (global as any).GainNode = GainNodeMock;
   (global as any).BufferSourceMock = BufferSourceMock;
+  // Production code (e.g. Sampler) narrows inputs via `instanceof AudioBuffer`.
+  // jsdom doesn't ship the constructor, so install a stand-in — otherwise the
+  // check throws on `undefined` instead of evaluating to a boolean.
+  (global as any).AudioBuffer ??= AudioBufferMock;
   return new AudioContextMock();
 }
 
@@ -162,6 +166,7 @@ export function createFetchMock(data: Record<string, any>) {
     const value = data[url];
     if (!value) throw new Error("Url not mocked: " + url);
     return {
+      ok: true,
       status: 200,
       async json() {
         return value;

@@ -22,7 +22,7 @@ function makeScheduler(
   ctx: BaseAudioContext,
   options?: { lookaheadMs?: number; intervalMs?: number },
 ) {
-  return new Scheduler(ctx, { lookaheadMs: 200, intervalMs: 50, ...options });
+  return Scheduler(ctx, { lookaheadMs: 200, intervalMs: 50, ...options });
 }
 
 // ---------------------------------------------------------------------------

@@ -303,10 +303,15 @@ describe("offset", () => {
     expect(sources[0].startedOffset).toBe(0);
   });
 
-  it("converts sample-frame offset to seconds", () => {
-    // 44100 frames at 44100 Hz = 1 second
-    const { sources } = makeVoice({ offset: 44100 });
-    expect(sources[0].startedOffset).toBeCloseTo(1.0);
+  it("passes offset (in seconds) straight to source.start", () => {
+    const { sources } = makeVoice({ offset: 0.5 });
+    expect(sources[0].startedOffset).toBeCloseTo(0.5);
+  });
+
+  it("mirrors offset against buffer duration when reversed", () => {
+    // buffer.duration = 2.0; reversed offset 0.5s → 2.0 - 0.5 = 1.5s
+    const { sources } = makeVoice({ offset: 0.5, reverse: true });
+    expect(sources[0].startedOffset).toBeCloseTo(1.5);
   });
 });
 
