@@ -1,6 +1,6 @@
 {
   "name": "smplr",
-  "version": "0.26.0",
+  "version": "1.0.0",
   "homepage": "https://github.com/danigb/smplr#readme",
   "description": "A Sampled collection of instruments",
   "main": "dist/index.js",
@@ -29,10 +29,14 @@
     "@types/audioworklet": "^0.0.100",
     "@types/jest": "^30.0.0",
     "jest": "^30.4.2",
-    "prettier": "^3.8.3",
-    "ts-jest": "^29.4.9",
+    "prettier": "^3.8.4",
+    "ts-jest": "^29.4.11",
     "tsup": "^8.5.1",
-    "typedoc": "^0.28.19"
+    "typedoc": "^0.28.19",
+    "typescript": "^5.6.3"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
   },
   "publishConfig": {
     "access": "public"
@@ -43,6 +47,7 @@
     "test": "npm run test:unit && npm run test:types",
     "test:unit": "jest",
     "test:types": "tsc --noEmit",
+    "lint": "node scripts/check-deprecations.js",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "publish": "npm run build && npm run test"
