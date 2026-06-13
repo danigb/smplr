@@ -3,6 +3,7 @@ import { Storage } from "./storage";
 import { Instrument } from "./smplr";
 import { LoadProgress, SmplrGroup, SmplrPreset } from "./smplr/types";
 import { spreadKeyRanges } from "./smplr/utils";
+import { fetchOk } from "./fetch-ok";
 
 const INSTRUMENT_VARIATIONS: Record<string, [string, string]> = {
   "300 STRINGS CELLO": ["300 STRINGS", "CELL"],
@@ -72,7 +73,7 @@ export const Mellotron = Instrument(
     const instrumentName = variation ? variation[0] : instrument;
     const baseUrl = `https://smpldsnds.github.io/archiveorg-mellotron/${instrumentName}/`;
 
-    return fetch(baseUrl + "files.json")
+    return fetchOk(baseUrl + "files.json")
       .then((r) => r.json() as Promise<string[]>)
       .then((names) =>
         smplr.loadInstrument(

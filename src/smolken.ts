@@ -2,6 +2,7 @@ import { Storage } from "./storage";
 import { Instrument } from "./smplr";
 import { LoadProgress } from "./smplr/types";
 import { sfzToPreset } from "./smplr/sfz-convert";
+import { fetchOk } from "./fetch-ok";
 
 export function getSmolkenNames() {
   return ["Pizzicato", "Arco", "Switched"];
@@ -38,7 +39,7 @@ const SMOLKEN_BASE_URL =
 export const Smolken = Instrument(
   (ctx: BaseAudioContext, options: SmolkenOptions = {}, smplr) => {
     const sfzUrl = getSmolkenUrl(options.instrument ?? "Arco");
-    return fetch(sfzUrl)
+    return fetchOk(sfzUrl)
       .then((r) => r.text())
       .then((sfzText) =>
         smplr.loadInstrument(

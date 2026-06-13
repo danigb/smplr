@@ -2,6 +2,7 @@ import { Storage } from "./storage";
 import { Instrument } from "./smplr";
 import { LoadProgress } from "./smplr/types";
 import { sfzToPreset } from "./smplr/sfz-convert";
+import { fetchOk } from "./fetch-ok";
 import { createControl } from "./smplr/signals";
 import { midiVelToGain } from "./smplr/volume";
 import { createTremolo } from "./tremolo";
@@ -93,7 +94,7 @@ export const ElectricPiano = Instrument(
     const tremoloNode = createTremolo(ctx, depth.subscribe);
     smplr.output.addInsert(tremoloNode);
 
-    const ready = fetch(config.sfzUrl)
+    const ready = fetchOk(config.sfzUrl)
       .then((r) => r.text())
       .then((sfzText) =>
         smplr.loadInstrument(

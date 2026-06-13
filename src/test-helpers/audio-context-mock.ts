@@ -162,6 +162,7 @@ export function createFetchMock(data: Record<string, any>) {
     const value = data[url];
     if (!value) throw new Error("Url not mocked: " + url);
     return {
+      ok: true,
       status: 200,
       async json() {
         return value;

@@ -43,13 +43,15 @@ describe("README — Soundfont2Sampler", () => {
     await decoded;
   });
 
-  it("L824: `loadInstrument(unknown)` returns undefined", async () => {
+  it("`loadInstrument(unknown)` throws a clear error", async () => {
     const context = makeContext();
     const sampler = await new Soundfont2Sampler(context, {
       url: "https://example.test/galaxy.sf2",
       createSoundfont: () => FAKE_SF2 as any,
     }).load;
 
-    expect(sampler.loadInstrument("does-not-exist")).toBeUndefined();
+    expect(() => sampler.loadInstrument("does-not-exist")).toThrow(
+      /instrument "does-not-exist" not found/,
+    );
   });
 });
