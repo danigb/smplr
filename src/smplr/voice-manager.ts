@@ -10,6 +10,12 @@ export class VoiceManager {
   #voices: Set<Voice> = new Set();
   #byStopId: Map<string | number, Set<Voice>> = new Map();
   #byGroup: Map<number, Set<Voice>> = new Map();
+  #maxVoices: number;
+
+  /** @param maxVoices Cap on simultaneous voices; unlimited when omitted. */
+  constructor(maxVoices?: number) {
+    this.#maxVoices = maxVoices !== undefined && maxVoices > 0 ? maxVoices : Infinity;
+  }
 
   /**
    * Register a voice. Indexes it by stopId and group, then auto-removes it
@@ -28,6 +34,23 @@ export class VoiceManager {
 
     // Auto-remove when the voice's source node fires onended
     voice.onEnded(() => this.#remove(voice));
+
+    this.#stealIfOverCap(voice);
+  }
+
+  /**
+   * Over the cap: release the earliest-started voice that is still playing, at the new voice's
+   * start time (voices are scheduled ahead, so "oldest" is by start time, not creation order).
+   */
+  #stealIfOverCap(newest: Voice): void {
+    let playing = 0;
+    let oldest: Voice | undefined;
+    for (const voice of this.#voices) {
+      if (!voice.isPlaying || voice.startTime > newest.startTime) continue; // only voices sounding by then
+      playing += 1;
+      if (voice !== newest && (!oldest || voice.startTime < oldest.startTime)) oldest = voice;
+    }
+    if (playing > this.#maxVoices && oldest) oldest.stop(newest.startTime);
   }
 
   /** Stop all active voices. */

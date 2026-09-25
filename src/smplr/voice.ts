@@ -150,6 +150,16 @@ export class Voice {
     }
   }
 
+  /** Audio-context time the voice starts (or started) sounding. */
+  get startTime(): number {
+    return this.#startAt;
+  }
+
+  /** True until stop() is first called (a stopping voice is still audible but already released). */
+  get isPlaying(): boolean {
+    return this.#state === "playing";
+  }
+
   get isActive(): boolean {
     return this.#state !== "stopped";
   }

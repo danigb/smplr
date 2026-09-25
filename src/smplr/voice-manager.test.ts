@@ -254,3 +254,69 @@ describe("auto-cleanup", () => {
     expect(mgr.activeCount).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// maxVoices
+// ---------------------------------------------------------------------------
+
+describe("maxVoices", () => {
+  function playing(stopId: string, startTime: number) {
+    return { ...makeVoice(stopId), startTime, isPlaying: true };
+  }
+
+  it("releases the earliest-started voice at the new voice's start time when over the cap", () => {
+    const mgr = new VoiceManager(2);
+    const a = playing("a", 1);
+    const b = playing("b", 2);
+    const c = playing("c", 3);
+    mgr.add(a as any);
+    mgr.add(b as any);
+    mgr.add(c as any);
+
+    expect(a.stop).toHaveBeenCalledWith(3);
+    expect(b.stop).not.toHaveBeenCalled();
+    expect(c.stop).not.toHaveBeenCalled();
+  });
+
+  it("ignores voices that only start after the new voice", () => {
+    const mgr = new VoiceManager(1);
+    const later = playing("later", 5);
+    const earlier = playing("earlier", 2);
+    mgr.add(later as any);
+    mgr.add(earlier as any);
+
+    expect(later.stop).not.toHaveBeenCalled();
+    expect(earlier.stop).not.toHaveBeenCalled(); // never steals the voice being added
+  });
+
+  it("picks the earliest start among voices already sounding, not creation order", () => {
+    const mgr = new VoiceManager(2);
+    const b = playing("b", 2);
+    const a = playing("a", 1);
+    const c = playing("c", 3);
+    mgr.add(b as any);
+    mgr.add(a as any);
+    mgr.add(c as any);
+
+    expect(a.stop).toHaveBeenCalledWith(3);
+    expect(b.stop).not.toHaveBeenCalled();
+  });
+
+  it("does not count or steal voices that are already stopping", () => {
+    const mgr = new VoiceManager(1);
+    const releasing = { ...playing("r", 1), isPlaying: false };
+    const next = playing("n", 2);
+    mgr.add(releasing as any);
+    mgr.add(next as any);
+
+    expect(releasing.stop).not.toHaveBeenCalled();
+  });
+
+  it("is unlimited when omitted", () => {
+    const mgr = new VoiceManager();
+    const voices = Array.from({ length: 200 }, (_, i) => playing(String(i), i));
+    voices.forEach((v) => mgr.add(v as any));
+
+    expect(voices.every((v) => v.stop.mock.calls.length === 0)).toBe(true);
+  });
+});

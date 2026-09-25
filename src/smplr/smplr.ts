@@ -46,6 +46,11 @@ export type SmplrOptions = {
   onStart?: (event: NoteEvent) => void;
   /** Called when each voice's audio node ends. */
   onEnded?: (event: NoteEvent) => void;
+  /**
+   * Max voices sounding at once for this instrument. When a new voice would exceed it, the voice
+   * that started earliest is released at the new voice's start time. Unlimited when omitted.
+   */
+  maxVoices?: number;
 };
 
 /** Options accepted by `loadInstrument(json, options)`. */
@@ -203,7 +208,7 @@ export class SmplrImpl implements Smplr {
     this.#matcher = new RegionMatcher(json ?? EMPTY_JSON);
 
     // 4. Voice manager — tracks active voices for stop operations
-    this.#voices = new VoiceManager();
+    this.#voices = new VoiceManager(options?.maxVoices);
 
     // 5. Sample loader — shared or private
     this.loader =
