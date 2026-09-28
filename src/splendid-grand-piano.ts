@@ -1,5 +1,6 @@
 import { HttpStorage, Storage } from "./storage";
 import { Instrument } from "./smplr";
+import { NotesToLoad } from "./smplr/notes-to-load";
 import { LoadProgress, SmplrGroup, SmplrPreset } from "./smplr/types";
 import { spreadKeyRanges } from "./smplr/utils";
 
@@ -25,11 +26,12 @@ export type SplendidGrandPianoConfig = {
   onLoadProgress?: (progress: LoadProgress) => void;
   /** Audio formats to try, in order of preference. Defaults to ["ogg", "m4a"]. */
   formats?: string[];
-  /** Limit which notes are fetched. Useful for reducing initial load time. */
-  notesToLoad?: {
-    notes: number[];
-    velocityRange: [number, number];
-  };
+  /**
+   * Limit which notes are fetched. Useful for reducing initial load time.
+   * `fallback` defaults to `"nearest"`: notes that weren't loaded play the
+   * nearest loaded one, pitch-shifted.
+   */
+  notesToLoad?: NotesToLoad;
 };
 
 const BASE_URL =
@@ -49,7 +51,12 @@ export const SplendidGrandPiano = Instrument(
     ctx: BaseAudioContext,
     options: Partial<SplendidGrandPianoConfig> = {},
     smplr,
-  ) => smplr.loadInstrument(pianoToPreset({ ...DEFAULTS, ...options })),
+  ) => {
+    const { notesToLoad, ...config } = { ...DEFAULTS, ...options };
+    return smplr.loadInstrument(pianoToPreset(config), {
+      notesToLoad: { fallback: "nearest", ...notesToLoad },
+    });
+  },
 );
 
 /** Instance type returned by the {@link SplendidGrandPiano} factory. */
@@ -61,8 +68,15 @@ export type SplendidGrandPiano = ReturnType<typeof SplendidGrandPiano>;
 
 type PianoJsonOptions = Pick<
   SplendidGrandPianoConfig,
-  "baseUrl" | "detune" | "decayTime" | "notesToLoad" | "formats"
->;
+  "baseUrl" | "detune" | "decayTime" | "formats"
+> & {
+  /**
+   * Keep only these sample roots and velocity layers, spread across the
+   * whole keyboard. `SplendidGrandPiano` itself uses the core `notesToLoad`
+   * option instead.
+   */
+  notesToLoad?: { notes: number[]; velocityRange: [number, number] };
+};
 
 /**
  * Convert the LAYERS array and user options into a SmplrPreset descriptor.

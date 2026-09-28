@@ -378,4 +378,52 @@ describe("SplendidGrandPiano", () => {
     // Only FF layer, only MIDI 60 — should fetch exactly 1 buffer
     expect(mockLoadBuffer).toHaveBeenCalledTimes(1);
   });
+
+  it("notesToLoad loads the sample covering a note without its own sample", async () => {
+    const ctx = makeContext();
+    await SplendidGrandPiano(ctx as unknown as AudioContext, {
+      notesToLoad: { notes: [61], velocityRange: [105, 127] },
+    }).ready;
+
+    // 61 has no sample of its own; it is covered by the C3 sample (MIDI 60)
+    const calls = mockLoadBuffer.mock.calls as [unknown, string][];
+    expect(calls.map(([, url]) => url.split("/").pop())).toEqual(["FF C3.ogg"]);
+  });
+
+  it("notesToLoad falls back to the nearest loaded note by default", async () => {
+    const ctx = makeContext();
+    const piano = SplendidGrandPiano(ctx as unknown as AudioContext, {
+      notesToLoad: { notes: [60] },
+    });
+    await piano.ready;
+
+    piano.start({ note: 84, velocity: 110 });
+    expect(ctx.createBufferSource).toHaveBeenCalledTimes(1);
+  });
+
+  it("notesToLoad fallback is resolved per velocity layer", async () => {
+    // 87 has its own sample in the PP layer but not in FF, where the sample
+    // at 86 covers it. So 86 is loaded at FF velocities but not at PP ones.
+    const ctx = makeContext();
+    const piano = SplendidGrandPiano(ctx as unknown as AudioContext, {
+      notesToLoad: { notes: [87] },
+    });
+    await piano.ready;
+
+    piano.start({ note: 86, velocity: 50 }); // PP layer
+    expect(ctx.createBufferSource).toHaveBeenCalledTimes(1);
+  });
+
+  it("notesToLoad fallback can be disabled", async () => {
+    const ctx = makeContext();
+    const piano = SplendidGrandPiano(ctx as unknown as AudioContext, {
+      notesToLoad: { notes: [60], fallback: "none" },
+    });
+    await piano.ready;
+
+    piano.start({ note: 84, velocity: 110 });
+    expect(ctx.createBufferSource).not.toHaveBeenCalled();
+    piano.start({ note: 60, velocity: 110 });
+    expect(ctx.createBufferSource).toHaveBeenCalledTimes(1);
+  });
 });

@@ -1,6 +1,7 @@
 export { Instrument } from "./instrument";
 export type { Smplr, SmplrPlugin } from "./instrument";
-export type { SmplrOptions } from "./smplr";
+export type { SmplrOptions, LoadInstrumentOptions } from "./smplr";
+export type { NotesToLoad } from "./notes-to-load";
 export { Scheduler } from "./scheduler";
 export type { SchedulerOptions } from "./scheduler";
 export { SampleLoader } from "./sample-loader";

@@ -321,3 +321,35 @@ describe("refs", () => {
     expect(match.regionRef).toBe(r);
   });
 });
+
+describe("hasMatch", () => {
+  it("is true when any region covers the note and velocity", () => {
+    const m = new RegionMatcher(
+      json([
+        group([region({ sample: "soft", key: 60, velRange: [1, 63] })]),
+        group([region({ sample: "high", key: 72 })], { velRange: [64, 127] }),
+      ]),
+    );
+    expect(m.hasMatch(60, 50, NO_CC)).toBe(true);
+    expect(m.hasMatch(60, 100, NO_CC)).toBe(false);
+    expect(m.hasMatch(72, 100, NO_CC)).toBe(true);
+    expect(m.hasMatch(72, 50, NO_CC)).toBe(false);
+  });
+
+  it("does not advance round-robin counters", () => {
+    const m = new RegionMatcher(
+      json([
+        group(
+          [
+            region({ sample: "a", seqPosition: 1 }),
+            region({ sample: "b", seqPosition: 2 }),
+          ],
+          { seqLength: 2 },
+        ),
+      ]),
+    );
+    expect(m.hasMatch(60, 100, NO_CC)).toBe(true);
+    expect(m.hasMatch(60, 100, NO_CC)).toBe(true);
+    expect(m.match(60, 100, NO_CC).map((r) => r.sample)).toEqual(["a"]);
+  });
+});

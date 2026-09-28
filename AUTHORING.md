@@ -86,6 +86,8 @@ const plugin: SmplrPlugin<MyInstrumentOptions, MyInstrumentExtras> = (
   smplr,
 ) => {
   // Inside the plugin, `smplr.loadInstrument(json, buffers?)` is available.
+  // The second argument can also be `{ buffers, notesToLoad }`; the
+  // `notesToLoad` option is applied automatically either way.
   // The instance your users receive does *not* expose this method by default —
   // they call your factory and you do the loading internally. Factories that
   // want to support runtime content swaps add a method via extras (see
