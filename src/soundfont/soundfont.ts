@@ -3,6 +3,7 @@ import { Instrument } from "../smplr";
 import { LoadProgress, SmplrGroup, SmplrPreset } from "../smplr/types";
 import { spreadKeyRanges } from "../smplr/utils";
 import { toMidi } from "../smplr/midi";
+import { filterPreset, NotesToLoad } from "../smplr/notes-to-load";
 import {
   SOUNDFONT_INSTRUMENTS,
   SOUNDFONT_KITS,
@@ -41,6 +42,8 @@ export type SoundfontOptions = Partial<
     pan?: number;
     velocity?: number;
     onLoadProgress?: (progress: LoadProgress) => void;
+    /** Only decode the samples needed to play these notes. */
+    notesToLoad?: NotesToLoad;
   }
 >;
 
@@ -54,9 +57,8 @@ export const Soundfont = Instrument(
     gain.gain.value = config.extraGain;
     smplr.output.addInsert(gain);
 
-    return loadSoundfontData(ctx, config).then(
-      ({ buffers, noteNames, loopData }) =>
-        smplr.loadInstrument(soundfontToPreset(noteNames, loopData), buffers),
+    return loadSoundfontData(ctx, config, options.notesToLoad).then(
+      ({ preset, buffers }) => smplr.loadInstrument(preset, buffers),
     );
   },
 );
@@ -69,55 +71,84 @@ export type Soundfont = ReturnType<typeof Soundfont>;
 // ---------------------------------------------------------------------------
 
 type SoundfontData = {
+  preset: SmplrPreset;
   buffers: Map<string, AudioBuffer>;
-  noteNames: string[];
-  loopData?: LoopData;
 };
 
+/**
+ * Fetch a MIDI.js file and decode the notes needed by `notesToLoad` (all of
+ * them when omitted). The preset only includes notes that decoded, so their
+ * neighbours cover the ones that failed.
+ */
 async function loadSoundfontData(
   context: BaseAudioContext,
   config: SoundfontConfig,
+  notesToLoad: NotesToLoad | undefined,
 ): Promise<SoundfontData> {
-  const [{ buffers, noteNames }, loopData] = await Promise.all([
-    decodeSoundfontFile(context, config),
+  const [json, loopData] = await Promise.all([
+    fetchMidiJs(config),
     fetchSoundfontLoopData(config.loopDataUrl),
   ]);
+  const noteNames = Object.keys(json).filter(
+    (noteName) => toMidi(noteName) !== undefined,
+  );
+  const buffers = new Map<string, AudioBuffer>();
+  const failed = new Set<string>();
 
-  return { buffers, noteNames, loopData };
+  // A failed decode changes which neighbour covers that note, and the
+  // neighbour may not be decoded yet — so repeat until nothing is missing.
+  while (true) {
+    const preset = soundfontToPreset(
+      noteNames.filter((noteName) => !failed.has(noteName)),
+      loopData,
+    );
+    const missing = sampleNames(
+      filterPreset(preset, notesToLoad).preset,
+    ).filter((noteName) => !buffers.has(noteName));
+    if (missing.length === 0) return { preset, buffers };
+
+    await Promise.all(
+      missing.map(async (noteName) => {
+        const buffer = await decodeNote(context, noteName, json[noteName]);
+        if (buffer) buffers.set(noteName, buffer);
+        else failed.add(noteName);
+      }),
+    );
+  }
 }
 
-async function decodeSoundfontFile(
-  context: BaseAudioContext,
+async function fetchMidiJs(
   config: SoundfontConfig,
-): Promise<{ buffers: Map<string, AudioBuffer>; noteNames: string[] }> {
+): Promise<Record<string, string>> {
   const sourceFile = await (
     await config.storage.fetch(config.instrumentUrl)
   ).text();
-  const json = midiJsToJson(sourceFile);
+  return midiJsToJson(sourceFile);
+}
 
-  const noteNames = Object.keys(json);
-  const buffers = new Map<string, AudioBuffer>();
+async function decodeNote(
+  context: BaseAudioContext,
+  noteName: string,
+  data: string,
+): Promise<AudioBuffer | undefined> {
+  try {
+    const audioData = base64ToArrayBuffer(removeBase64Prefix(data));
+    return await context.decodeAudioData(audioData);
+  } catch (error) {
+    console.warn(
+      `Soundfont: failed to decode note ${noteName}`,
+      error instanceof Error ? error.message : error,
+    );
+    return undefined;
+  }
+}
 
-  await Promise.all(
-    noteNames.map(async (noteName) => {
-      const midi = toMidi(noteName);
-      if (midi === undefined) return;
-      try {
-        const audioData = base64ToArrayBuffer(
-          removeBase64Prefix(json[noteName]),
-        );
-        const buffer = await context.decodeAudioData(audioData);
-        buffers.set(noteName, buffer);
-      } catch (error) {
-        console.warn(
-          `Soundfont: failed to decode note ${noteName}`,
-          error instanceof Error ? error.message : error,
-        );
-      }
-    }),
-  );
-
-  return { buffers, noteNames: [...buffers.keys()] };
+function sampleNames(preset: SmplrPreset): string[] {
+  const names = new Set<string>();
+  for (const group of preset.groups) {
+    for (const region of group.regions) names.add(region.sample);
+  }
+  return [...names];
 }
 
 // ---------------------------------------------------------------------------

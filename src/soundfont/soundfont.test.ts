@@ -240,4 +240,53 @@ describe("Soundfont", () => {
     expect(sf.loadProgress).toHaveProperty("loaded");
     expect(sf.loadProgress).toHaveProperty("total");
   });
+
+  describe("notesToLoad", () => {
+    it("only decodes the requested notes", async () => {
+      const ctx = makeContext();
+      const sf = Soundfont(ctx as unknown as AudioContext, {
+        instrument: "marimba",
+        notesToLoad: { notes: ["C4"] },
+      });
+      await sf.ready;
+
+      expect(ctx.decodeAudioData).toHaveBeenCalledTimes(1);
+      expect(mockLoadBuffer).not.toHaveBeenCalled();
+      expect(sf.loadProgress).toEqual({ loaded: 1, total: 1 });
+    });
+
+    it("does not play notes that weren't loaded", async () => {
+      const ctx = makeContext();
+      const sf = Soundfont(ctx as unknown as AudioContext, {
+        instrument: "marimba",
+        notesToLoad: { notes: ["C4"] },
+      });
+      await sf.ready;
+
+      sf.start({ note: "C5" });
+      expect(ctx.createBufferSource).not.toHaveBeenCalled();
+      sf.start({ note: "C4" });
+      expect(ctx.createBufferSource).toHaveBeenCalledTimes(1);
+    });
+
+    it("decodes the neighbour when a requested note fails to decode", async () => {
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const ctx = makeContext();
+      ctx.decodeAudioData.mockImplementationOnce(() =>
+        Promise.reject(new Error("decode failed")),
+      );
+      const sf = Soundfont(ctx as unknown as AudioContext, {
+        instrument: "marimba",
+        notesToLoad: { notes: ["C4"] },
+      });
+      await sf.ready;
+
+      // C4 failed, so C5 now covers it and is decoded in a second pass
+      expect(ctx.decodeAudioData).toHaveBeenCalledTimes(2);
+      expect(mockLoadBuffer).not.toHaveBeenCalled();
+      sf.start({ note: "C4" });
+      expect(ctx.createBufferSource).toHaveBeenCalledTimes(1);
+      warn.mockRestore();
+    });
+  });
 });

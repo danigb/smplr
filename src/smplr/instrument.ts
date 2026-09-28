@@ -1,7 +1,11 @@
 import type { OutputChannel } from "./channel";
 import type { SampleLoader } from "./sample-loader";
 import type { Scheduler } from "./scheduler";
-import { SmplrImpl, type SmplrOptions } from "./smplr";
+import {
+  SmplrImpl,
+  type LoadInstrumentOptions,
+  type SmplrOptions,
+} from "./smplr";
 import type {
   LoadProgress,
   NoteEvent,
@@ -87,14 +91,15 @@ export interface Smplr {
 export interface PluginSmplr extends Smplr {
   /**
    * Replace the current instrument JSON and re-fetch buffers. Pre-decoded
-   * buffers (e.g. base64-decoded from a soundfont) can be passed via the
-   * `buffers` parameter.
+   * buffers (e.g. base64-decoded from a soundfont) can be passed directly or
+   * as `{ buffers }`. `{ notesToLoad }` overrides the instance's option for
+   * this load (e.g. to change the default `fallback`).
    *
    * Resolves when all samples are ready.
    */
   loadInstrument(
     json: SmplrPreset,
-    buffers?: Map<string, AudioBuffer>,
+    buffersOrOptions?: Map<string, AudioBuffer> | LoadInstrumentOptions,
   ): Promise<void>;
 }
 
@@ -167,6 +172,7 @@ const SMPLR_OPTION_KEYS = [
   "loader",
   "scheduler",
   "onLoadProgress",
+  "notesToLoad",
   "onStart",
   "onEnded",
 ] as const;

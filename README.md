@@ -170,6 +170,26 @@ console.log(piano.loadProgress); // { loaded: 12, total: 48 }
 
 `total` is known before loading starts, so you can display a determinate progress bar.
 
+#### Load only the notes you need
+
+Every instrument accepts a `notesToLoad` option to load only the samples needed to play some notes and velocities, for example the notes of a MIDI file you are about to play:
+
+```js
+const marimba = Soundfont(context, {
+  instrument: "marimba",
+  notesToLoad: { notes: ["C4", "E4", 67] },
+});
+
+const drums = DrumMachine(context, {
+  instrument: "TR-808",
+  notesToLoad: { notes: ["kick", "snare"] },
+});
+```
+
+- `notes`: MIDI numbers, note names or the instrument's sample names (like `"kick"`). Every sample that covers one of them is loaded. Omit it to load all notes; an empty list loads none. Entries that match nothing are ignored with a console warning.
+- `velocityRange`: `[low, high]`. Only load samples for velocities in this range.
+- `fallback`: what to play for a note that wasn't loaded. `"none"` (the default, except for `SplendidGrandPiano`) plays nothing; `"nearest"` plays the nearest loaded note, pitch-shifted.
+
 ### Shared configuration options
 
 All instruments share some configuration options, passed as the second argument to the factory. Every field is optional:
@@ -183,6 +203,7 @@ All instruments share some configuration options, passed as the second argument 
 - `loader`: a shared `SampleLoader` instance. Pass the same loader to multiple instruments to cache buffers across them (see [Buffer reuse](#buffer-reuse)).
 - `scheduler`: a shared `Scheduler` instance. Construct your own to tune scheduling — for example, `Scheduler(context, { lookaheadMs: 100, intervalMs: 25 })` — or omit to get a per-instrument default.
 - `onLoadProgress`: a function called after each sample buffer is decoded. Receives `{ loaded, total }` where `total` is the full count known before loading starts.
+- `notesToLoad`: only load the samples needed for some notes and velocities. See [Load only the notes you need](#load-only-the-notes-you-need).
 - `onStart`: called when a note is dispatched to the audio engine. Receives the started note. See ⚠️ note under [Events](#events) on timing precision.
 - `onEnded`: called when each voice's audio node ends. Receives the started note.
 
@@ -928,7 +949,7 @@ The second argument of the constructor accepts the following options:
 - `velocity`: default velocity (100 if not specified)
 - `volume`: default volume (100 if not specified)
 - `decayTime`: default decay time (0.5 seconds)
-- `notesToLoad`: an object with the following shape: `{ notes: number[], velocityRange: [number, number]}` to specify a subset of notes to load
+- `notesToLoad`: load a subset of notes and velocity layers (see [Load only the notes you need](#load-only-the-notes-you-need)). For the piano, `fallback` defaults to `"nearest"`, so every key still plays using the nearest loaded sample.
 
 Example:
 

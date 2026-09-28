@@ -128,6 +128,33 @@ export class RegionMatcher {
   }
 
   /**
+   * Whether any region would play this note, ignoring round-robin position.
+   * Unlike {@link match}, it doesn't advance round-robin counters.
+   */
+  hasMatch(
+    midi: number,
+    velocity: number,
+    ccState: Map<number, number>,
+  ): boolean {
+    return this.#groups.some(
+      (group) =>
+        midi >= group.keyLow &&
+        midi <= group.keyHigh &&
+        velocity >= group.velLow &&
+        velocity <= group.velHigh &&
+        matchesCc(ccState, group.ccRange) &&
+        group.regions.some(
+          (region) =>
+            midi >= region.keyLow &&
+            midi <= region.keyHigh &&
+            velocity >= region.velLow &&
+            velocity <= region.velHigh &&
+            matchesCc(ccState, region.ccRange),
+        ),
+    );
+  }
+
+  /**
    * Match a note event against all groups and regions.
    *
    * For each group that passes key/vel/cc filters:

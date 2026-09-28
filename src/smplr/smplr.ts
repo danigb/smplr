@@ -1,6 +1,7 @@
 import { Channel, OutputChannel } from "./channel";
 import type { Smplr } from "./instrument";
 import { toMidi } from "./midi";
+import { filterPreset, findNearestKey, NotesToLoad } from "./notes-to-load";
 import { Storage } from "../storage";
 import { resolveParams } from "./params";
 import { RegionMatcher } from "./region-matcher";
@@ -36,10 +37,23 @@ export type SmplrOptions = {
   scheduler?: Scheduler;
   /** Called after each buffer is loaded (or served from cache). */
   onLoadProgress?: (progress: LoadProgress) => void;
+  /**
+   * Only load the samples needed to play these notes and velocities.
+   * Applies to every instrument loaded into this instance.
+   */
+  notesToLoad?: NotesToLoad;
   /** Called when a note is dispatched to the audio engine (slightly before playback). */
   onStart?: (event: NoteEvent) => void;
   /** Called when each voice's audio node ends. */
   onEnded?: (event: NoteEvent) => void;
+};
+
+/** Options accepted by `loadInstrument(json, options)`. */
+export type LoadInstrumentOptions = {
+  /** Pre-decoded buffers keyed by sample name — skip fetch for these. */
+  buffers?: Map<string, AudioBuffer>;
+  /** Overrides the instance's `notesToLoad` for this load. */
+  notesToLoad?: NotesToLoad;
 };
 
 /**
@@ -128,6 +142,8 @@ export class SmplrImpl implements Smplr {
   #defaults: PlaybackParams | undefined;
   #defaultVelocity: number;
   #aliases: Map<string, number> | undefined;
+  #notesToLoad: NotesToLoad | undefined;
+  #fallback: NotesToLoad["fallback"];
   #matcher: RegionMatcher;
   #voices: VoiceManager;
   #channel: Channel;
@@ -154,12 +170,14 @@ export class SmplrImpl implements Smplr {
     jsonOrOptions?: SmplrPreset | SmplrOptions,
     maybeOptions?: SmplrOptions,
   ) {
-    const json = isSmplrJson(jsonOrOptions) ? jsonOrOptions : undefined;
+    const fullJson = isSmplrJson(jsonOrOptions) ? jsonOrOptions : undefined;
     const options = isSmplrJson(jsonOrOptions)
       ? maybeOptions
       : (jsonOrOptions as SmplrOptions | undefined);
 
     this.context = context;
+    this.#notesToLoad = options?.notesToLoad;
+    const json = fullJson && this.#filter(fullJson, this.#notesToLoad);
     this.#defaults = json?.defaults;
     this.#defaultVelocity = options?.velocity ?? 100;
     this.#onLoadProgress = options?.onLoadProgress;
@@ -236,11 +254,21 @@ export class SmplrImpl implements Smplr {
    * parameter — those skip the fetch step.
    */
   loadInstrument(
-    json: SmplrPreset,
-    buffers?: Map<string, AudioBuffer>,
+    fullJson: SmplrPreset,
+    buffersOrOptions?: Map<string, AudioBuffer> | LoadInstrumentOptions,
   ): Promise<void> {
     this.#assertNotDisposed("load an instrument");
     const token = ++this.#loadToken;
+    const options =
+      buffersOrOptions instanceof Map
+        ? { buffers: buffersOrOptions }
+        : buffersOrOptions;
+    const buffers = options?.buffers;
+    const notesToLoad =
+      options && "notesToLoad" in options
+        ? options.notesToLoad
+        : this.#notesToLoad;
+    const { preset: json, filtered } = filterAndWarn(fullJson, notesToLoad);
 
     return this.loader
       .load(json, {
@@ -257,6 +285,7 @@ export class SmplrImpl implements Smplr {
           ? new Map(Object.entries(json.aliases))
           : undefined;
         this.#matcher = new RegionMatcher(json);
+        this.#fallback = filtered ? notesToLoad?.fallback : undefined;
         this.#reversedBuffers = new Map();
         this.#buffers = newBuffers;
       });
@@ -409,7 +438,22 @@ export class SmplrImpl implements Smplr {
       onEnded,
     } = event;
 
-    const matches = this.#matcher.match(midi, velocity, this.#ccState);
+    // Notes that weren't loaded (see notesToLoad) play the nearest loaded
+    // note when fallback is "nearest", pitch-shifted to the played note.
+    // Checked per velocity: layers can have samples on different keys.
+    let matchMidi = midi;
+    if (
+      this.#fallback === "nearest" &&
+      !this.#matcher.hasMatch(midi, velocity, this.#ccState)
+    ) {
+      const nearest = findNearestKey(midi, (key) =>
+        this.#matcher.hasMatch(key, velocity, this.#ccState),
+      );
+      if (nearest === undefined) return;
+      matchMidi = nearest;
+    }
+
+    const matches = this.#matcher.match(matchMidi, velocity, this.#ccState);
 
     // Stop exclusive groups before starting new voices
     for (const match of matches) {
@@ -425,13 +469,26 @@ export class SmplrImpl implements Smplr {
       const buffer = this.#getBuffer(match.sample, effectiveReverse);
       if (!buffer) continue;
 
+      // A region without a root pitch plays untransposed at any key, so a
+      // fallback to it needs the shift added explicitly.
+      const hasPitch =
+        match.regionRef.pitch !== undefined ||
+        match.regionRef.key !== undefined;
+      const fallbackCents = hasPitch ? 0 : (midi - matchMidi) * 100;
+
       const params = resolveParams(
         this.#defaults,
         match.groupRef,
         match.regionRef,
         midi,
         velocity,
-        { detune, lpfCutoffHz, loop, ampRelease, reverse },
+        {
+          detune: fallbackCents !== 0 ? (detune ?? 0) + fallbackCents : detune,
+          lpfCutoffHz,
+          loop,
+          ampRelease,
+          reverse,
+        },
       );
 
       const voice = new Voice(
@@ -467,6 +524,16 @@ export class SmplrImpl implements Smplr {
     }
   }
 
+  /** Apply notesToLoad to a preset given at construction (Pattern A). */
+  #filter(
+    fullJson: SmplrPreset,
+    notesToLoad: NotesToLoad | undefined,
+  ): SmplrPreset {
+    const { preset, filtered } = filterAndWarn(fullJson, notesToLoad);
+    this.#fallback = filtered ? notesToLoad?.fallback : undefined;
+    return preset;
+  }
+
   #normalizeNoteEvent(event: NoteEvent): NormalizedNoteEvent {
     if (typeof event === "string" || typeof event === "number") {
       const midi = toMidi(event) ?? this.#aliases?.get(String(event)) ?? 0;
@@ -490,4 +557,23 @@ export class SmplrImpl implements Smplr {
       onEnded: compose(this.#onEnded, event.onEnded),
     };
   }
+}
+
+/**
+ * {@link filterPreset}, warning once about `notesToLoad.notes` entries that
+ * are neither a MIDI number, a note name nor an alias of the preset.
+ */
+function filterAndWarn(
+  json: SmplrPreset,
+  notesToLoad: NotesToLoad | undefined,
+) {
+  const result = filterPreset(json, notesToLoad);
+  if (result.unresolved.length > 0) {
+    console.warn(
+      `smplr: notesToLoad entries not found: ${result.unresolved
+        .map((note) => JSON.stringify(note))
+        .join(", ")}`,
+    );
+  }
+  return result;
 }

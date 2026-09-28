@@ -1,5 +1,31 @@
 # smplr
 
+## Unreleased
+
+### Added
+
+- **`notesToLoad` works with every instrument** (#137). Load only the samples
+  needed to play some notes and velocities:
+  `notesToLoad: { notes?, velocityRange?, fallback? }`. `notes` accepts MIDI
+  numbers, note names and preset aliases (e.g. `"kick"`); omitting it loads
+  all notes and `[]` loads none. With `fallback: "nearest"`, notes that weren't
+  loaded play the nearest loaded note, pitch-shifted; the default `"none"`
+  plays nothing. Entries that match nothing are ignored with one console
+  warning per load. `Soundfont` only decodes the notes it needs. Thanks
+  @fa-sharp for the original idea (#132).
+- **`loadInstrument(json, options)`** for plugin authors: the second argument
+  also accepts `{ buffers, notesToLoad }`. Passing a buffers `Map` still works.
+- New exported types: `NotesToLoad`, `LoadInstrumentOptions`.
+
+### Changed
+
+- **`SplendidGrandPiano` uses the shared `notesToLoad`.** Existing options keep
+  working and sound the same: `fallback` defaults to `"nearest"`, matching the
+  previous behavior of spreading the loaded samples across the keyboard. Now
+  `notes` and `velocityRange` are optional, note names are accepted, and a
+  note without a sample of its own (e.g. `61`) loads the sample that covers it
+  instead of nothing. `pianoToPreset` keeps its previous filtering.
+
 ## 1.0.1
 
 ### Fixed

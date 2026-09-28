@@ -958,3 +958,133 @@ describe("Pattern B: new SmplrImpl(ctx, opts) + loadInstrument(json)", () => {
     expect(ctxWithCreate.createBuffer).toHaveBeenCalledTimes(2);
   });
 });
+
+// ---------------------------------------------------------------------------
+// notesToLoad
+// ---------------------------------------------------------------------------
+
+describe("notesToLoad", () => {
+  /** Regions keyed to C4 (60), E4 (64) and G4 (67). */
+  function makeChordJson(): SmplrPreset {
+    return makeJson({
+      groups: [
+        {
+          regions: [
+            { sample: "C4", key: 60 },
+            { sample: "E4", key: 64 },
+            { sample: "G4", key: 67 },
+          ],
+        },
+      ],
+    });
+  }
+
+  function fetchedSamples(): string[] {
+    return (mockLoadBuffer.mock.calls as [unknown, string][]).map(
+      ([, url]) => url.split("/").pop()!,
+    );
+  }
+
+  it("only fetches the samples for the requested notes", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, {
+      notesToLoad: { notes: ["C4", 67] },
+    });
+    await smplr.loadInstrument(makeChordJson());
+
+    expect(fetchedSamples()).toEqual(["C4.ogg", "G4.ogg"]);
+    expect(smplr.loadProgress).toEqual({ loaded: 2, total: 2 });
+  });
+
+  it("also filters a preset given at construction", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(
+      ctx as unknown as AudioContext,
+      makeChordJson(),
+      { notesToLoad: { notes: [64] } },
+    );
+    await smplr.ready;
+
+    expect(fetchedSamples()).toEqual(["E4.ogg"]);
+  });
+
+  it("does not play notes that weren't loaded by default", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, {
+      notesToLoad: { notes: [60] },
+    });
+    await smplr.loadInstrument(makeChordJson());
+
+    smplr.start({ note: 64 });
+    expect(ctx._sources).toHaveLength(0);
+    smplr.start({ note: 60 });
+    expect(ctx._sources).toHaveLength(1);
+  });
+
+  it("plays the nearest loaded note, pitch-shifted, with fallback nearest", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, {
+      notesToLoad: { notes: [60, 67], fallback: "nearest" },
+    });
+    await smplr.loadInstrument(makeChordJson());
+
+    smplr.start({ note: 62 }); // nearest: C4 (60), +2 semitones
+    smplr.start({ note: 65 }); // nearest: G4 (67), -2 semitones
+    expect(ctx._sources.map((s) => s.detune.value)).toEqual([200, -200]);
+  });
+
+  it("shifts regions without a root pitch when falling back", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, {
+      notesToLoad: { notes: [60], fallback: "nearest" },
+    });
+    await smplr.loadInstrument(
+      makeJson({
+        groups: [{ regions: [{ sample: "C4", keyRange: [60, 60] }] }],
+      }),
+    );
+
+    smplr.start({ note: 63, detune: 10 });
+    expect(ctx._sources[0].detune.value).toBe(310);
+  });
+
+  it("loadInstrument options override the instance notesToLoad", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, {
+      notesToLoad: { notes: [60] },
+    });
+    await smplr.loadInstrument(makeChordJson(), {
+      notesToLoad: { notes: [64], fallback: "nearest" },
+    });
+
+    expect(fetchedSamples()).toEqual(["E4.ogg"]);
+    smplr.start({ note: 60 });
+    expect(ctx._sources[0].detune.value).toBe(-400);
+  });
+
+  it("loadInstrument options accept pre-decoded buffers", async () => {
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext);
+    await smplr.loadInstrument(makeJson(), {
+      buffers: new Map([["C4", makeBuffer()]]),
+    });
+
+    expect(mockLoadBuffer).not.toHaveBeenCalled();
+    smplr.start({ note: 60 });
+    expect(ctx._sources).toHaveLength(1);
+  });
+
+  it("warns once per load about entries that match nothing", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const ctx = makeContext();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, {
+      notesToLoad: { notes: ["C4", "kik", "C#44"] },
+    });
+    await smplr.loadInstrument(makeChordJson());
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('"kik", "C#44"');
+    expect(fetchedSamples()).toEqual(["C4.ogg"]);
+    warn.mockRestore();
+  });
+});
