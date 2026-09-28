@@ -240,4 +240,51 @@ describe("Soundfont", () => {
     expect(sf.loadProgress).toHaveProperty("loaded");
     expect(sf.loadProgress).toHaveProperty("total");
   });
+
+  it("decodes all soundfont notes when notesToLoad is omitted", async () => {
+    const ctx = makeContext();
+    const sf = Soundfont(ctx as unknown as AudioContext, {
+      instrument: "marimba",
+    });
+    await sf.ready;
+
+    expect(ctx.decodeAudioData).toHaveBeenCalledTimes(2);
+    expect(sf.loadProgress).toEqual({ loaded: 2, total: 2 });
+  });
+
+  it("limits soundfont decoding if notesToLoad is specified", async () => {
+    const ctx = makeContext();
+    const sf = Soundfont(ctx as unknown as AudioContext, {
+      instrument: "marimba",
+      notesToLoad: ["C4"],
+    });
+    await sf.ready;
+
+    expect(ctx.decodeAudioData).toHaveBeenCalledTimes(1);
+    expect(sf.loadProgress).toEqual({ loaded: 1, total: 1 });
+  });
+
+  it("accepts MIDI numbers in notesToLoad", async () => {
+    const ctx = makeContext();
+    const sf = Soundfont(ctx as unknown as AudioContext, {
+      instrument: "marimba",
+      notesToLoad: [60],
+    });
+    await sf.ready;
+
+    expect(ctx.decodeAudioData).toHaveBeenCalledTimes(1);
+    expect(sf.loadProgress).toEqual({ loaded: 1, total: 1 });
+  });
+
+  it("ignores invalid notesToLoad entries", async () => {
+    const ctx = makeContext();
+    const sf = Soundfont(ctx as unknown as AudioContext, {
+      instrument: "marimba",
+      notesToLoad: ["not-a-note", 60],
+    });
+    await sf.ready;
+
+    expect(ctx.decodeAudioData).toHaveBeenCalledTimes(1);
+    expect(sf.loadProgress).toEqual({ loaded: 1, total: 1 });
+  });
 });
