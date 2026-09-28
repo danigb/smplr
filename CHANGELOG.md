@@ -1,5 +1,22 @@
 # smplr
 
+## 1.0.1
+
+### Fixed
+
+- **`stop()` now stops notes started with a `duration`.** Such voices were
+  already in the "stopping" state, so later `stop()` calls were ignored and the
+  note kept sounding until its duration elapsed (a regression from pre-1.0).
+  A stop time earlier than the pending one now overrides it; the same or a
+  later time is still ignored. Stopping a scheduled note before it starts also
+  cancels its pending envelope. (#133, thanks @fa-sharp)
+
+### Changed
+
+- **Build and tests run before publishing.** The `publish` npm script was
+  renamed to `prepublishOnly`; npm runs a script named `publish` _after_ the
+  upload, so it could not prevent a stale `dist/` from being published.
+
 ## 1.0.0
 
 First stable release.
