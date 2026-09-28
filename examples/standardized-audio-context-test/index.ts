@@ -7,12 +7,12 @@ import {
 function main() {
   window.AudioWorkletNode = AudioWorkletNode as any;
   const context = new StandardizedAudioContext() as unknown as AudioContext;
-  const instrument = new Soundfont(context, { instrument: "marimba" });
-  instrument.output.addEffect("reverb", new Reverb(context), 0.9);
+  const instrument = Soundfont(context, { instrument: "marimba" });
+  instrument.output.addEffect("reverb", Reverb(context), 0.9);
 
   const $button = document.getElementById("btn-test") as HTMLButtonElement;
 
-  instrument.load.then(() => {
+  instrument.ready.then(() => {
     $button.disabled = false;
   });
 
