@@ -891,6 +891,15 @@ const marimba = Soundfont(context, {
 });
 ```
 
+If you want to limit which source sample notes are decoded and loaded into memory:
+
+```js
+const marimba = Soundfont(context, {
+  instrument: "marimba",
+  notesToLoad: ["C4", "E4", "G4"], // note names or MIDI numbers
+});
+```
+
 #### Soundfont sustained notes
 
 You can enable note looping to make note names indefinitely long by loading loop data:
