@@ -9,6 +9,7 @@ export class Voice {
   #source: AudioBufferSourceNode;
   #envelope: GainNode;
   #startAt: number;
+  #releaseAt: number | undefined;
   #ampRelease: number;
   #state: "playing" | "stopping" | "stopped" = "playing";
   #endedCallbacks: (() => void)[] = [];
@@ -109,17 +110,24 @@ export class Voice {
 
   /**
    * Stop the voice, applying a release envelope if time is after the start time.
-   * Idempotent — subsequent calls after the first are ignored.
+   * On subsequent calls, allows stopping at an earlier time than previously requested (e.g.
+   * to immediately stop a currently playing voice).
    */
   stop(time?: number): void {
-    if (this.#state !== "playing") return;
-    this.#state = "stopping";
+    if (this.#state === "stopped") return;
 
     const t = time ?? this.#context.currentTime;
+
+    // If a stop request was already received for an earlier time, ignore.
+    if (this.#releaseAt !== undefined && t >= this.#releaseAt) return;
+
+    this.#state = "stopping";
+    this.#releaseAt = t;
 
     if (t <= this.#startAt) {
       // Stop at or before start: cancel the note entirely
       this.#source.stop(t);
+      this.#envelope.gain.cancelScheduledValues(t);
     } else {
       // Apply release envelope then stop the source
       const stopAt = t + this.#ampRelease;

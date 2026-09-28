@@ -346,7 +346,7 @@ describe("stop()", () => {
 
     // currentTime (1) <= startAt (1): immediate stop path
     expect(sources[0].stoppedAt).toBe(1);
-    expect(envelope.gain.cancelScheduledValues).not.toHaveBeenCalled();
+    expect(envelope.gain.cancelScheduledValues).toHaveBeenCalledWith(1);
   });
 
   it("with time at or before startAt: stops source immediately without envelope", () => {
@@ -356,10 +356,30 @@ describe("stop()", () => {
     voice.stop(1); // time=1 ≤ startAt=2
 
     expect(sources[0].stoppedAt).toBe(1);
-    expect(envelope.gain.cancelScheduledValues).not.toHaveBeenCalled();
+    expect(envelope.gain.cancelScheduledValues).toHaveBeenCalledWith(1);
   });
 
-  it("is idempotent — second call does nothing", () => {
+  it("overrides stop time when called again with an earlier time", () => {
+    const { voice, sources } = makeVoice(
+      { ampRelease: 0.5 },
+      { currentTime: 1 },
+    );
+
+    voice.stop(3);
+    voice.stop(2);
+
+    // source.stop called exactly once
+    expect(sources[0].stoppedAt).toBe(2.5);
+    // Only one stop call — second stop() returned early
+    // Verify by checking the source was only stopped once (stoppedAt set once)
+    const stopCallCount = jest.fn();
+    sources[0].stop = stopCallCount;
+
+    voice.stop(2); // third call — should do nothing
+    expect(stopCallCount).not.toHaveBeenCalled();
+  });
+
+  it("ignores repeated calls with a later or same time", () => {
     const { voice, sources } = makeVoice(
       { ampRelease: 0.5 },
       { currentTime: 1 },
@@ -374,7 +394,9 @@ describe("stop()", () => {
     // Verify by checking the source was only stopped once (stoppedAt set once)
     const stopCallCount = jest.fn();
     sources[0].stop = stopCallCount;
-    voice.stop(2); // third call — should do nothing
+
+    voice.stop(2); // same time - should do nothing
+    voice.stop(3); // later time - should do nothing
     expect(stopCallCount).not.toHaveBeenCalled();
   });
 });
