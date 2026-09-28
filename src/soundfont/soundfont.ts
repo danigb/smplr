@@ -31,7 +31,6 @@ type SoundfontConfig = {
   extraGain: number;
   loadLoopData: boolean;
   loopDataUrl?: string;
-  notesToLoad?: Array<string | number>;
 };
 
 export type SoundfontOptions = Partial<
@@ -42,8 +41,6 @@ export type SoundfontOptions = Partial<
     pan?: number;
     velocity?: number;
     onLoadProgress?: (progress: LoadProgress) => void;
-    /** Limit which source sample notes are decoded. Can be MIDI note numbers or note names. */
-    notesToLoad?: Array<string | number>;
   }
 >;
 
@@ -98,15 +95,13 @@ async function decodeSoundfontFile(
   ).text();
   const json = midiJsToJson(sourceFile);
 
-  const selectedNotes = normalizeNotesToLoad(config.notesToLoad);
-  const noteNames = Object.keys(json).filter((noteName) => {
-    const midi = toMidi(noteName);
-    return midi !== undefined && (!selectedNotes || selectedNotes.has(midi));
-  });
+  const noteNames = Object.keys(json);
   const buffers = new Map<string, AudioBuffer>();
 
   await Promise.all(
     noteNames.map(async (noteName) => {
+      const midi = toMidi(noteName);
+      if (midi === undefined) return;
       try {
         const audioData = base64ToArrayBuffer(
           removeBase64Prefix(json[noteName]),
@@ -122,10 +117,7 @@ async function decodeSoundfontFile(
     }),
   );
 
-  return {
-    buffers,
-    noteNames: noteNames.filter((noteName) => buffers.has(noteName)),
-  };
+  return { buffers, noteNames: [...buffers.keys()] };
 }
 
 // ---------------------------------------------------------------------------
@@ -191,7 +183,6 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
     loadLoopData: options.loadLoopData ?? false,
     loopDataUrl: options.loopDataUrl,
     instrumentUrl: options.instrumentUrl ?? "",
-    notesToLoad: options.notesToLoad,
   };
 
   if (config.instrument && config.instrument.startsWith("http")) {
@@ -226,19 +217,6 @@ function getSoundfontConfig(options: SoundfontOptions): SoundfontConfig {
   }
 
   return config;
-}
-
-/** Normalizes array of note names and/or MIDI note numbers to a set of MIDI note numbers. */
-function normalizeNotesToLoad(
-  notes: Array<string | number> | undefined,
-): Set<number> | undefined {
-  if (!notes) return undefined;
-  const midiNotes = new Set<number>();
-  for (const note of notes) {
-    const midi = toMidi(note);
-    if (midi !== undefined) midiNotes.add(midi);
-  }
-  return midiNotes;
 }
 
 // ---------------------------------------------------------------------------
