@@ -368,10 +368,8 @@ describe("stop()", () => {
     voice.stop(3);
     voice.stop(2);
 
-    // source.stop called exactly once
+    // The earlier stop time wins: release starts at 2 and ends at 2 + 0.5
     expect(sources[0].stoppedAt).toBe(2.5);
-    // Only one stop call — second stop() returned early
-    // Verify by checking the source was only stopped once (stoppedAt set once)
     const stopCallCount = jest.fn();
     sources[0].stop = stopCallCount;
 

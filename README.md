@@ -221,6 +221,8 @@ piano.stop("C4"); // stop the note(s) started with `note: "C4"`
 piano.stop(60); // stop the note(s) started with `note: 60`
 ```
 
+Stopping also works for notes started with a `duration`: an earlier stop time overrides the one scheduled by `duration` (a later one is ignored), so `piano.stop()` cuts a sounding note right away.
+
 #### Schedule notes
 
 Schedule notes via the `time` and `duration` properties (both in seconds). `time` is measured against `audioContext.currentTime`.
