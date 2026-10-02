@@ -1,5 +1,17 @@
 # smplr
 
+## Unreleased
+
+### Fixed
+
+- **`Soundfont2` now honors a zone's `overridingRootKey`.** `Sf2Zone` gained an optional
+  `rootKey?: number`, preferred over `sample.header.originalPitch` in `sf2InstrumentToPreset()`.
+  Many real-world SF2 files leave every sample header's `originalPitch` at a
+  stale default and rely entirely on the SF2 "overridingRootKey" generator (id 58) to declare
+  each zone's true root key; without reading it, every zone but the one coincidentally rooted at
+  that default was pitch-shifted from the wrong base note. `createSoundfont` implementations
+  that parse the raw generator should populate `Sf2Zone.rootKey` from it - see README.
+
 ## 1.1.0
 
 ### Added
