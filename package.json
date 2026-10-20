@@ -42,7 +42,6 @@
     "access": "public"
   },
   "scripts": {
-    "prepare": "npm run build",
     "build": "tsup src/index.ts  --sourcemap --dts --format esm,cjs",
     "build:worklet:reverb": "esbuild src/reverb/worklet-processor.ts --bundle --minify > src/reverb/processor.min.js",
     "test": "npm run test:unit && npm run test:types",
