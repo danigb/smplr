@@ -144,12 +144,19 @@ export class Voice {
         );
       }
       if (lpf) {
-        const filterDepthHz =
-          params.lpfCutoffHz * (Math.LN2 / 1200) * params.modLfoToFilterFc;
+        // Clamped to the base cutoff so the sweep never goes below 0 Hz.
+        const filterDepthHz = clampDepth(
+          params.lpfCutoffHz * (Math.LN2 / 1200) * params.modLfoToFilterFc,
+          params.lpfCutoffHz,
+        );
         this.#connectModDepth(context, modLfo, lpf.frequency, filterDepthHz);
       }
-      const volumeDepthLinear =
-        gain.gain.value * (Math.LN10 / 200) * params.modLfoToVolume;
+      // Clamped to the base gain so tremolo dips at most to silence: no phase inversion, and
+      // no boost beyond 2x.
+      const volumeDepthLinear = clampDepth(
+        gain.gain.value * (Math.LN10 / 200) * params.modLfoToVolume,
+        gain.gain.value,
+      );
       this.#connectModDepth(context, modLfo, gain.gain, volumeDepthLinear);
     }
     if (source.detune && params.vibLfoToPitch !== 0) {
@@ -378,4 +385,9 @@ export class Voice {
   get isActive(): boolean {
     return this.#state !== "stopped";
   }
+}
+
+/** Limits an LFO depth to ±max, so the modulated param stays within [base - max, base + max]. */
+function clampDepth(depth: number, max: number): number {
+  return Math.max(-max, Math.min(max, depth));
 }

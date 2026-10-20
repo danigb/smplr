@@ -618,15 +618,49 @@ describe("LFO filter/volume modulation", () => {
     expect(oscillators).toHaveLength(1);
   });
 
+  it("clamps the filter LFO depth so the cutoff never goes below 0 Hz", () => {
+    const { oscillators, filters } = makeVoice({
+      lpfCutoffHz: 1000,
+      modLfoToFilterFc: 12000, // 10 octaves: unclamped depth would be ~5.8x the cutoff
+    });
+    const depth = oscillators[0].connected.find(
+      (c) => (c as any).connected?.[0] === filters[0].frequency,
+    ) as ReturnType<typeof makeGain>;
+    expect(depth.gain.value).toBe(1000);
+  });
+
+  it("clamps a negative filter LFO depth the same way", () => {
+    const { oscillators, filters } = makeVoice({
+      lpfCutoffHz: 1000,
+      modLfoToFilterFc: -12000,
+    });
+    const depth = oscillators[0].connected.find(
+      (c) => (c as any).connected?.[0] === filters[0].frequency,
+    ) as ReturnType<typeof makeGain>;
+    expect(depth.gain.value).toBe(-1000);
+  });
+
+  it("clamps the volume LFO depth: no phase inversion and no boost beyond 2x", () => {
+    const { gains, oscillators } = makeVoice({
+      velocity: 127,
+      volume: 0,
+      modLfoToVolume: 960, // 96 dB: unclamped depth would be ~11x the base gain
+    });
+    const depth = oscillators[0].connected.find(
+      (c) => (c as any).connected?.[0] === gains[0].gain,
+    ) as ReturnType<typeof makeGain>;
+    expect(depth.gain.value).toBe(1); // base gain is 1
+  });
+
   it("connects the mod LFO to gain.gain, depth linearized around the base velocity/volume gain", () => {
     // velocity=127, volume=0dB -> base linear gain = 1 (exact, see midiVelToGain)
     const { gains, oscillators } = makeVoice({
       velocity: 127,
       volume: 0,
-      modLfoToVolume: 100, // 10dB (100 centibels) of SF2 depth
+      modLfoToVolume: 50, // 5dB (50 centibels) of SF2 depth
     });
     expect(oscillators).toHaveLength(1);
-    const expectedDepthLinear = 1 * (Math.LN10 / 200) * 100;
+    const expectedDepthLinear = 1 * (Math.LN10 / 200) * 50;
     const velocityGain = gains[0];
     const depth = oscillators[0].connected.find(
       (c) => (c as any).connected?.[0] === velocityGain.gain,
