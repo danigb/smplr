@@ -609,12 +609,13 @@ describe("LFO filter/volume modulation", () => {
     expect(depth.gain.value).toBeCloseTo(expectedDepthHz);
   });
 
-  it("does not create an oscillator for modLfoToFilterFc when there's no LPF to modulate (lpfCutoffHz = 20000)", () => {
-    const { oscillators } = makeVoice({
+  it("creates the LPF for modLfoToFilterFc even at the default cutoff (lpfCutoffHz = 20000)", () => {
+    const { oscillators, filters } = makeVoice({
       lpfCutoffHz: 20000,
       modLfoToFilterFc: 1200,
     });
-    expect(oscillators).toHaveLength(0);
+    expect(filters).toHaveLength(1);
+    expect(oscillators).toHaveLength(1);
   });
 
   it("connects the mod LFO to gain.gain, depth linearized around the base velocity/volume gain", () => {
@@ -678,11 +679,22 @@ describe("modulation envelope", () => {
     expect(detuneOf(sources).setValueAtTime).not.toHaveBeenCalled();
   });
 
-  it("does nothing for modEnvToFilterFc when there's no LPF to modulate", () => {
+  it("creates the LPF for a downward modEnvToFilterFc sweep even at the default cutoff", () => {
     const { filters } = makeVoice({
       lpfCutoffHz: 20000,
-      modEnvToFilterFc: 500,
+      modEnvToFilterFc: -4800,
+      modEnvAttack: 1,
     });
+    expect(filters).toHaveLength(1);
+    // the sweep starts at the cutoff * 2^(-4800/1200) = 20000 / 16 at full envelope
+    expect(filters[0].frequency.setValueAtTime).toHaveBeenCalledWith(20000, 0);
+    expect(
+      filters[0].frequency.exponentialRampToValueAtTime,
+    ).toHaveBeenCalledWith(1250, 1);
+  });
+
+  it("creates no LPF when neither the cutoff nor any filter modulation is set", () => {
+    const { filters } = makeVoice({ lpfCutoffHz: 20000 });
     expect(filters).toHaveLength(0);
   });
 
