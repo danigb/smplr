@@ -940,6 +940,22 @@ describe("stop()", () => {
   });
 });
 
+describe("LFO cleanup", () => {
+  it("stops LFO oscillators when the source ends on its own", () => {
+    const { sources, oscillators } = makeVoice({
+      modLfoToPitch: 100,
+      vibLfoToPitch: 50,
+    });
+    expect(oscillators).toHaveLength(2);
+    const stops = oscillators.map((o) => jest.spyOn(o, "stop"));
+
+    sources[0].triggerEnded();
+
+    stops.forEach((stop) => expect(stop).toHaveBeenCalled());
+    oscillators.forEach((o) => expect(o.disconnect).toHaveBeenCalled());
+  });
+});
+
 // ---------------------------------------------------------------------------
 // isActive and onEnded
 // ---------------------------------------------------------------------------

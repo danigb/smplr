@@ -269,7 +269,11 @@ export class Voice {
       gain.disconnect();
       lpf?.disconnect();
       source.disconnect();
-      this.#lfoOscillators.forEach((osc) => osc.disconnect());
+      // LFOs keep running (and stay referenced) until stopped - stop them with the source.
+      this.#lfoOscillators.forEach((osc) => {
+        osc.stop();
+        osc.disconnect();
+      });
       this.#modDepths.forEach((depth) => depth.disconnect());
       for (const cb of this.#endedCallbacks) cb();
       this.#endedCallbacks = [];
