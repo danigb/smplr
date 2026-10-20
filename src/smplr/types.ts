@@ -10,11 +10,11 @@ export type PlaybackParams = {
   ampDelay?: number; // silence before the attack phase starts, in seconds
   ampAttack?: number; // attack time in seconds
   ampHold?: number; // time held at peak (1.0) before decay starts, in seconds
-  ampDecay?: number; // time to fall from peak to ampSustain, in seconds
+  ampDecay?: number; // time for a *full* decay (1 -> 0), in seconds; falling to ampSustain takes ampDecay * (1 - ampSustain)
   ampSustain?: number; // level held after decay, until note-off (0-1, 1 = no decay)
   ampRelease?: number; // release envelope time in seconds
   lpfCutoffHz?: number; // low-pass filter cutoff frequency in Hz
-  lpfQ?: number; // low-pass filter resonance (BiquadFilterNode.Q); 1 = no resonant peak
+  lpfQ?: number; // low-pass filter resonance in dB (BiquadFilterNode.Q); 0 = no peak, the default of 1 gives a small one. SF2's initialFilterQ is in centibels: divide by 10
   // Modulation LFO -> pitch / filter cutoff / volume (tremolo). All three destinations share
   // one oscillator. Filter and volume depths are linear approximations of SF2's exponential
   // units (cents/centibels), since Web Audio sums LFO signals linearly onto frequency/gain -
@@ -167,11 +167,11 @@ export type VoiceParams = {
   ampDelay: number; // silence before the attack phase starts, in seconds
   ampAttack: number; // attack time in seconds
   ampHold: number; // time held at peak (1.0) before decay starts, in seconds
-  ampDecay: number; // time to fall from peak to ampSustain, in seconds
+  ampDecay: number; // time for a *full* decay (1 -> 0), in seconds; falling to ampSustain takes ampDecay * (1 - ampSustain)
   ampSustain: number; // level held after decay, until note-off (0-1, 1 = no decay)
   ampRelease: number; // release envelope time in seconds
   lpfCutoffHz: number; // low-pass filter cutoff in Hz
-  lpfQ: number; // low-pass filter resonance (BiquadFilterNode.Q); 1 = no resonant peak
+  lpfQ: number; // low-pass filter resonance in dB (BiquadFilterNode.Q); 0 = no peak, the default of 1 gives a small one. SF2's initialFilterQ is in centibels: divide by 10
   modLfoToPitch: number; // pitch modulation depth in cents; 0 = no LFO
   modLfoToFilterFc: number; // filter cutoff modulation depth in cents; 0 = no effect
   modLfoToVolume: number; // volume (tremolo) modulation depth in centibels; 0 = no effect
