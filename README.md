@@ -204,6 +204,7 @@ All instruments share some configuration options, passed as the second argument 
 - `scheduler`: a shared `Scheduler` instance. Construct your own to tune scheduling — for example, `Scheduler(context, { lookaheadMs: 100, intervalMs: 25 })` — or omit to get a per-instrument default.
 - `onLoadProgress`: a function called after each sample buffer is decoded. Receives `{ loaded, total }` where `total` is the full count known before loading starts.
 - `notesToLoad`: only load the samples needed for some notes and velocities. See [Load only the notes you need](#load-only-the-notes-you-need).
+- `maxVoices`: the maximum number of voices sounding at once for this instrument. When a new note would exceed it, the oldest voices are released at the new note's start time (voices that are already releasing go first). Notes that are still fading out count until they are silent. Unlimited by default.
 - `onStart`: called when a note is dispatched to the audio engine. Receives the started note. See ⚠️ note under [Events](#events) on timing precision.
 - `onEnded`: called when each voice's audio node ends. Receives the started note.
 
