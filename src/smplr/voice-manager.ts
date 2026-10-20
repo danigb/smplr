@@ -47,6 +47,7 @@ export class VoiceManager {
    * earliest-started ones are released at that moment (voices already releasing go first).
    */
   #enforceCap(newest: Voice): void {
+    if (this.#maxVoices === Infinity) return; // no cap: skip the scan
     if (newest.endTime <= newest.startTime) return; // cancelled before it ever sounded
 
     const overlapping = [...this.#voices].filter(

@@ -382,6 +382,17 @@ describe("maxVoices", () => {
     expect(later.stop).not.toHaveBeenCalled();
   });
 
+  it("doesn't look at the voices at all when there is no cap", () => {
+    const mgr = new VoiceManager();
+    const spy = jest.fn(() => 0);
+    const voice = { ...makeVoice("a"), startTime: 0, isReleasing: false };
+    Object.defineProperty(voice, "endTime", { get: spy });
+
+    mgr.add(voice as any);
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   it("is unlimited when omitted", () => {
     const mgr = new VoiceManager();
     const voices = Array.from({ length: 200 }, (_, i) => playing(String(i), i));
