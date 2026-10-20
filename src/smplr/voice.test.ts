@@ -446,3 +446,22 @@ describe("isActive / onEnded", () => {
     expect(filters[0].disconnect).toHaveBeenCalled(); // lpf
   });
 });
+
+describe("endTime", () => {
+  it("is open-ended until stop() is called", () => {
+    const { voice } = makeVoice();
+    expect(voice.endTime).toBe(Infinity);
+  });
+
+  it("is the stop time plus the release, even when the stop is scheduled ahead", () => {
+    const { voice } = makeVoice({ ampRelease: 0.5 }, { startTime: 1 });
+    voice.stop(3);
+    expect(voice.endTime).toBe(3.5);
+  });
+
+  it("is the start time when the voice was cancelled before it sounded", () => {
+    const { voice } = makeVoice({ ampRelease: 0.5 }, { startTime: 2 });
+    voice.stop(1);
+    expect(voice.endTime).toBe(2);
+  });
+});

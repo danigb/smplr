@@ -506,6 +506,15 @@ export class SmplrImpl implements Smplr {
         time,
       );
 
+      // Auto-stop for duration — schedule directly on the audio timeline
+      // so it works in both real-time and offline (OfflineAudioContext) contexts. Done before
+      // adding the voice so the voice cap knows when it ends.
+      if (duration != null) {
+        const startT = time ?? this.context.currentTime;
+        const releaseAt = startT + duration;
+        voice.stop(releaseAt);
+      }
+
       this.#voices.add(voice);
 
       // onStart fires once on the first matched voice
@@ -517,14 +526,6 @@ export class SmplrImpl implements Smplr {
       // onEnded fires once per voice when its audio node ends
       if (onEnded) {
         voice.onEnded(() => onEnded(event));
-      }
-
-      // Auto-stop for duration — schedule directly on the audio timeline
-      // so it works in both real-time and offline (OfflineAudioContext) contexts.
-      if (duration != null) {
-        const startT = time ?? this.context.currentTime;
-        const releaseAt = startT + duration;
-        voice.stop(releaseAt);
       }
     }
   }

@@ -155,9 +155,15 @@ export class Voice {
     return this.#startAt;
   }
 
-  /** True until stop() is first called (a stopping voice is still audible but already released). */
-  get isPlaying(): boolean {
-    return this.#state === "playing";
+  /**
+   * Audio-context time the voice stops being audible: `Infinity` until a stop is requested
+   * (even one scheduled for later), then the end of its release - or its start time, if it
+   * was cancelled before it ever sounded.
+   */
+  get endTime(): number {
+    if (this.#releaseAt === undefined) return Infinity;
+    if (this.#releaseAt <= this.#startAt) return this.#startAt;
+    return this.#releaseAt + this.#ampRelease;
   }
 
   get isActive(): boolean {

@@ -260,8 +260,9 @@ describe("auto-cleanup", () => {
 // ---------------------------------------------------------------------------
 
 describe("maxVoices", () => {
-  function playing(stopId: string, startTime: number) {
-    return { ...makeVoice(stopId), startTime, isPlaying: true };
+  /** A voice sounding from `startTime` until `endTime` (Infinity = until stopped). */
+  function playing(stopId: string, startTime: number, endTime = Infinity) {
+    return { ...makeVoice(stopId), startTime, endTime };
   }
 
   it("releases the earliest-started voice at the new voice's start time when over the cap", () => {
@@ -302,14 +303,37 @@ describe("maxVoices", () => {
     expect(b.stop).not.toHaveBeenCalled();
   });
 
-  it("does not count or steal voices that are already stopping", () => {
+  it("counts notes with a duration (a stop already scheduled) while they are still audible", () => {
+    const mgr = new VoiceManager(2);
+    // sequencer: three notes scheduled ahead, each lasting 4s - all three overlap at t=2
+    const a = playing("a", 0, 4.5);
+    const b = playing("b", 1, 5.5);
+    const c = playing("c", 2, 6.5);
+    mgr.add(a as any);
+    mgr.add(b as any);
+    mgr.add(c as any);
+
+    expect(a.stop).toHaveBeenCalledWith(2);
+  });
+
+  it("counts voices that are releasing but still audible when the new one starts", () => {
     const mgr = new VoiceManager(1);
-    const releasing = { ...playing("r", 1), isPlaying: false };
+    const releasing = playing("r", 1, 3);
     const next = playing("n", 2);
     mgr.add(releasing as any);
     mgr.add(next as any);
 
-    expect(releasing.stop).not.toHaveBeenCalled();
+    expect(releasing.stop).toHaveBeenCalledWith(2);
+  });
+
+  it("doesn't count voices that have finished before the new one starts", () => {
+    const mgr = new VoiceManager(1);
+    const done = playing("done", 0, 1.5);
+    const next = playing("next", 2);
+    mgr.add(done as any);
+    mgr.add(next as any);
+
+    expect(done.stop).not.toHaveBeenCalled();
   });
 
   it("is unlimited when omitted", () => {
