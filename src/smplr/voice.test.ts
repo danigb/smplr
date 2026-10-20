@@ -743,7 +743,7 @@ describe("modulation envelope", () => {
     voice.stop(0.5);
 
     expect(detune.cancelScheduledValues).toHaveBeenCalledWith(0.5);
-    expect(detune.setValueAtTime).toHaveBeenCalledWith(500, 0.5); // 0 + 1000 * 0.5
+    expect(detune.linearRampToValueAtTime).toHaveBeenCalledWith(500, 0.5); // 0 + 1000 * 0.5
     expect(detune.linearRampToValueAtTime).toHaveBeenCalledWith(0, 2.5); // back to base over modEnvRelease (0.5 + 2)
     expect(sources[0].stoppedAt).toBe(1); // amplitude release is a different time (0.5 + 0.5)
   });
@@ -809,7 +809,7 @@ describe("stop()", () => {
     voice.stop(2); // time=2, startAt=1
 
     expect(envelope.gain.cancelScheduledValues).toHaveBeenCalledWith(2);
-    expect(envelope.gain.setValueAtTime).toHaveBeenCalledWith(1.0, 2);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(1.0, 2);
     expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 2.5); // 2 + 0.5
     expect(sources[0].stoppedAt).toBe(2.5);
   });
@@ -867,7 +867,10 @@ describe("stop()", () => {
     voice.stop(0.25);
 
     expect(envelope.gain.cancelScheduledValues).toHaveBeenCalledWith(0.25);
-    expect(envelope.gain.setValueAtTime).toHaveBeenCalledWith(0.25, 0.25);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+      0.25,
+      0.25,
+    );
     expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.75); // 0.25 + ampRelease(0.5)
     expect(sources[0].stoppedAt).toBe(0.75);
   });
@@ -881,7 +884,7 @@ describe("stop()", () => {
 
     voice.stop(1); // well past the 0.2s attack
 
-    expect(envelope.gain.setValueAtTime).toHaveBeenCalledWith(1.0, 1);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(1.0, 1);
   });
 
   it("stopped mid-decay: starts the release ramp from the decay's interpolated value", () => {
@@ -895,7 +898,10 @@ describe("stop()", () => {
 
     voice.stop(0.5);
 
-    expect(envelope.gain.setValueAtTime).toHaveBeenCalledWith(0.5, 0.5);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+      0.5,
+      0.5,
+    );
     expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.8); // 0.5 + ampRelease(0.3)
     expect(sources[0].stoppedAt).toBe(0.8);
   });
@@ -909,7 +915,7 @@ describe("stop()", () => {
 
     voice.stop(1); // well past the 0.1s decay - sitting in sustain
 
-    expect(envelope.gain.setValueAtTime).toHaveBeenCalledWith(0.4, 1);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.4, 1);
   });
 
   it("ignores repeated calls with a later or same time", () => {

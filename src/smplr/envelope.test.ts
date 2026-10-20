@@ -107,9 +107,75 @@ describe("scheduleAdsrRelease", () => {
     );
 
     expect(gain.cancelScheduledValues).toHaveBeenCalledWith(0.25);
-    expect(gain.setValueAtTime).toHaveBeenCalledWith(0.25, 0.25);
+    expect(gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.25, 0.25); // keeps the attack curve up to t
     expect(gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.75);
     expect(stopAt).toBe(0.75);
+  });
+});
+
+describe("scheduleAdsrRelease when the stop is scheduled ahead", () => {
+  /** every automation call on the param, in order, as [method, ...args] */
+  function recordingParam() {
+    const calls: unknown[][] = [];
+    const record =
+      (name: string) =>
+      (...args: unknown[]) =>
+        calls.push([name, ...args]);
+    return {
+      calls,
+      param: {
+        cancelScheduledValues: record("cancel"),
+        setValueAtTime: record("set"),
+        linearRampToValueAtTime: record("linear"),
+        exponentialRampToValueAtTime: record("exp"),
+      } as unknown as AudioParam,
+    };
+  }
+
+  it("mid-attack: cancels, ramps to the value reached at t, then releases", () => {
+    // 1s attack, stop at 0.5 (e.g. start({ duration: 0.5 })): the attack ramp ending at 1 is
+    // cancelled, so something has to keep the curve rising until 0.5.
+    const { calls, param } = recordingParam();
+    const times = computeAdsrTimes(0, { ...FLAT, attack: 1 });
+
+    scheduleAdsrRelease(param, times, 0.5, 0.25);
+
+    expect(calls).toEqual([
+      ["cancel", 0.5],
+      ["linear", 0.5, 0.5],
+      ["linear", 0, 0.75],
+    ]);
+  });
+
+  it("mid-decay: cancels, ramps to the value reached at t, then releases", () => {
+    // full decay 1s, sustain 0 -> at t=0.25 the decay is a quarter of the way down
+    const { calls, param } = recordingParam();
+    const times = computeAdsrTimes(0, { ...FLAT, decay: 1, sustain: 0 });
+
+    scheduleAdsrRelease(param, times, 0.25, 0.5);
+
+    expect(calls).toEqual([
+      ["cancel", 0.25],
+      ["linear", 0.75, 0.25],
+      ["linear", 0, 0.75],
+    ]);
+  });
+
+  it("uses the mapping's ramp type for the catch-up ramp too (exponential for filter cutoff)", () => {
+    const { calls, param } = recordingParam();
+    const times = computeAdsrTimes(0, { ...FLAT, attack: 1 });
+    const octave = {
+      toValue: (env: number) => 1000 * 2 ** env,
+      ramp: "exponential" as const,
+    };
+
+    scheduleAdsrRelease(param, times, 0.5, 1, octave);
+
+    expect(calls).toEqual([
+      ["cancel", 0.5],
+      ["exp", 1000 * 2 ** 0.5, 0.5],
+      ["exp", 1000, 1.5],
+    ]);
   });
 });
 
@@ -146,7 +212,10 @@ describe("envelope mapping (modulation targets)", () => {
       octave,
     );
 
-    expect(param.setValueAtTime).toHaveBeenCalledWith(1000 * 2 ** 0.5, 0.5);
+    expect(param.exponentialRampToValueAtTime).toHaveBeenCalledWith(
+      1000 * 2 ** 0.5,
+      0.5,
+    );
     expect(param.exponentialRampToValueAtTime).toHaveBeenCalledWith(1000, 2.5);
     expect(stopAt).toBe(2.5);
   });
