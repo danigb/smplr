@@ -1163,7 +1163,9 @@ createSoundfont: (data) => {
   sf.instruments.forEach((instrument) => {
     instrument.zones.forEach((zone) => {
       const rootKey = zone.generators[GeneratorType.OverridingRootKey]?.value;
-      if (rootKey !== undefined) (zone as any).rootKey = rootKey;
+      // -1 means "unset" in SF2; smplr ignores values outside 0..127 and falls back to
+      // the sample header's pitch.
+      if (rootKey !== undefined && rootKey >= 0) (zone as any).rootKey = rootKey;
     });
   });
   return sf;

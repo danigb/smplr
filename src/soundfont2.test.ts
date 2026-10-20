@@ -114,4 +114,25 @@ describe("sf2InstrumentToPreset", () => {
     expect(json.groups[0].regions[0].pitch).toBe(108);
     expect(json.groups[0].regions[1].pitch).toBe(104);
   });
+
+  it.each([-1, 128])(
+    "ignores an out-of-range rootKey (%d, SF2's 'unset') and uses the sample header pitch",
+    (rootKey) => {
+      const { json } = sf2InstrumentToPreset(
+        {
+          header: { name: "Test" },
+          zones: [
+            {
+              sample: makeSample("s1", 60),
+              keyRange: { lo: 0, hi: 127 },
+              rootKey,
+            },
+          ],
+        },
+        createAudioContextMock().context,
+      );
+
+      expect(json.groups[0].regions[0].pitch).toBe(60);
+    },
+  );
 });

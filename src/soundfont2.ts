@@ -60,7 +60,12 @@ export function sf2InstrumentToPreset(
     const { sample, keyRange, rootKey } = zone;
     const { header } = sample;
     const sampleName = header.name;
-    const pitch = rootKey ?? header.originalPitch;
+    // SF2's overridingRootKey is -1 when unset (meaning "use the sample header's pitch"), so
+    // anything outside the MIDI range falls back to the header.
+    const pitch =
+      rootKey !== undefined && rootKey >= 0 && rootKey <= 127
+        ? rootKey
+        : header.originalPitch;
 
     const float32 = new Float32Array(sample.data.length);
     for (let i = 0; i < sample.data.length; i++)
