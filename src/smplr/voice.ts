@@ -166,6 +166,11 @@ export class Voice {
     return this.#releaseAt + this.#ampRelease;
   }
 
+  /** True once a stop has been requested: the voice is fading out. */
+  get isReleasing(): boolean {
+    return this.#releaseAt !== undefined;
+  }
+
   get isActive(): boolean {
     return this.#state !== "stopped";
   }

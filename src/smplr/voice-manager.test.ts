@@ -262,7 +262,12 @@ describe("auto-cleanup", () => {
 describe("maxVoices", () => {
   /** A voice sounding from `startTime` until `endTime` (Infinity = until stopped). */
   function playing(stopId: string, startTime: number, endTime = Infinity) {
-    return { ...makeVoice(stopId), startTime, endTime };
+    return {
+      ...makeVoice(stopId),
+      startTime,
+      endTime,
+      isReleasing: endTime !== Infinity,
+    };
   }
 
   it("releases the earliest-started voice at the new voice's start time when over the cap", () => {
@@ -279,15 +284,15 @@ describe("maxVoices", () => {
     expect(c.stop).not.toHaveBeenCalled();
   });
 
-  it("ignores voices that only start after the new voice", () => {
+  it("never releases the voice being added at its own start time", () => {
     const mgr = new VoiceManager(1);
-    const later = playing("later", 5);
     const earlier = playing("earlier", 2);
-    mgr.add(later as any);
     mgr.add(earlier as any);
+    const later = playing("later", 3);
+    mgr.add(later as any);
 
+    expect(earlier.stop).toHaveBeenCalledWith(3);
     expect(later.stop).not.toHaveBeenCalled();
-    expect(earlier.stop).not.toHaveBeenCalled(); // never steals the voice being added
   });
 
   it("picks the earliest start among voices already sounding, not creation order", () => {
@@ -334,6 +339,47 @@ describe("maxVoices", () => {
     mgr.add(next as any);
 
     expect(done.stop).not.toHaveBeenCalled();
+  });
+
+  it("can release several voices when one added voice overlaps more than one start", () => {
+    const mgr = new VoiceManager(1);
+    const p = playing("p", 10);
+    const q = playing("q", 11);
+    mgr.add(p as any);
+    mgr.add(q as any); // releases p at 11
+    p.stop.mockClear();
+
+    // starts first and stays open: sounds with p at 10 and (the mock doesn't end p) with q at 11
+    const r = playing("r", 1);
+    mgr.add(r as any);
+
+    expect(r.stop).toHaveBeenCalledWith(10);
+    expect(p.stop).toHaveBeenCalledWith(11);
+    expect(q.stop).not.toHaveBeenCalled();
+  });
+
+  it("prefers voices that are already releasing", () => {
+    const mgr = new VoiceManager(2);
+    const old = playing("old", 0);
+    const releasing = playing("releasing", 1, 6);
+    mgr.add(old as any);
+    mgr.add(releasing as any);
+
+    mgr.add(playing("new", 3) as any);
+
+    expect(releasing.stop).toHaveBeenCalledWith(3);
+    expect(old.stop).not.toHaveBeenCalled();
+  });
+
+  it("limits voices added out of order: the older voice is released when the later one starts", () => {
+    const mgr = new VoiceManager(1);
+    const later = playing("later", 5);
+    const earlier = playing("earlier", 1);
+    mgr.add(later as any);
+    mgr.add(earlier as any); // starts first, still sounding when `later` starts
+
+    expect(earlier.stop).toHaveBeenCalledWith(5);
+    expect(later.stop).not.toHaveBeenCalled();
   });
 
   it("is unlimited when omitted", () => {
