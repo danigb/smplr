@@ -4,11 +4,48 @@
  */
 export type PlaybackParams = {
   volume?: number; // dB adjustment (0 = no change)
+  pan?: number; // stereo position: -1 (full left) to 1 (full right), 0 = center
   tune?: number; // pitch adjustment in semitones
   detune?: number; // fine pitch adjustment in cents
+  ampDelay?: number; // silence before the attack phase starts, in seconds
+  ampAttack?: number; // attack time in seconds
+  ampHold?: number; // time held at peak (1.0) before decay starts, in seconds
+  ampDecay?: number; // time for a *full* decay (1 -> 0), in seconds; falling to ampSustain takes ampDecay * (1 - ampSustain)
+  ampSustain?: number; // level held after decay, until note-off (0-1, 1 = no decay)
   ampRelease?: number; // release envelope time in seconds
-  ampAttack?: number; // attack time in seconds (not yet implemented)
   lpfCutoffHz?: number; // low-pass filter cutoff frequency in Hz
+  lpfQ?: number; // low-pass filter resonance in dB (BiquadFilterNode.Q); 0 = no peak, the default of 1 gives a small one. SF2's initialFilterQ is in centibels: divide by 10
+  // Modulation LFO -> pitch / filter cutoff / volume (tremolo). All three destinations share
+  // one oscillator. Filter and volume depths are linear approximations of SF2's exponential
+  // units (cents/centibels), since Web Audio sums LFO signals linearly onto frequency/gain -
+  // accurate for modest depths, less so for extreme sweeps. Pitch is exact (detune is cents-native).
+  // Filter and volume depths are clamped to the base cutoff / gain, so they never go below 0. A
+  // negative modEnvToFilterFc lowers the real cutoff below that base, though: a deep filter LFO
+  // combined with it can still close the filter instead of wobbling it.
+  // Pitch destinations (modLfoToPitch, vibLfoToPitch, modEnvToPitch) need
+  // AudioBufferSourceNode.detune and are skipped where it is missing (old Safari).
+  modLfoToPitch?: number; // pitch modulation depth in cents (peak deviation); 0 = no effect
+  modLfoToFilterFc?: number; // filter cutoff modulation depth in cents (peak deviation); 0 = no effect
+  modLfoToVolume?: number; // volume (tremolo) modulation depth in centibels (peak deviation); 0 = no effect
+  modLfoRateHz?: number; // modulation LFO rate in Hz
+  modLfoDelay?: number; // silence before the modulation LFO starts, in seconds
+  // Vibrato LFO -> pitch: a second, independent LFO dedicated to pitch (SF2 models these as
+  // two separate oscillators that can run at different rates/depths simultaneously).
+  vibLfoToPitch?: number; // pitch modulation depth in cents (peak deviation); 0 = no effect
+  vibLfoRateHz?: number; // vibrato LFO rate in Hz
+  vibLfoDelay?: number; // silence before the vibrato LFO starts, in seconds
+  // Modulation envelope -> pitch / filter cutoff: a second, independent delay/attack/hold/
+  // decay/sustain/release envelope (same shape as ampAttack etc. above) that can shape pitch
+  // and/or filter cutoff over time. Filter depth is a linear approximation,
+  // same caveat as the LFO's filter destination above.
+  modEnvToPitch?: number; // pitch modulation depth in cents (peak deviation); 0 = no effect
+  modEnvToFilterFc?: number; // filter cutoff modulation depth in cents (peak deviation); 0 = no effect
+  modEnvDelay?: number; // seconds of silence before the modulation envelope's attack starts
+  modEnvAttack?: number; // seconds to ramp the modulation envelope 0 -> 1
+  modEnvHold?: number; // seconds held at peak before the modulation envelope's decay starts
+  modEnvDecay?: number; // seconds for a *full* (100%) decay - see computeAdsrTimes in envelope.ts
+  modEnvSustain?: number; // level held after decay, until note-off (0-1, 1 = no decay)
+  modEnvRelease?: number; // seconds for the modulation envelope to fade to 0 after note-off
   offset?: number; // start playback from this position in seconds
   loop?: boolean;
   loopStart?: number; // loop start in seconds
@@ -131,9 +168,31 @@ export type VoiceParams = {
   detune: number; // cents (pitch transpose + tune + detune + note override)
   velocity: number; // 0-127
   volume: number; // dB gain adjustment
-  ampRelease: number; // release envelope time in seconds
+  pan: number; // stereo position: -1 (full left) to 1 (full right), 0 = center
+  ampDelay: number; // silence before the attack phase starts, in seconds
   ampAttack: number; // attack time in seconds
+  ampHold: number; // time held at peak (1.0) before decay starts, in seconds
+  ampDecay: number; // time for a *full* decay (1 -> 0), in seconds; falling to ampSustain takes ampDecay * (1 - ampSustain)
+  ampSustain: number; // level held after decay, until note-off (0-1, 1 = no decay)
+  ampRelease: number; // release envelope time in seconds
   lpfCutoffHz: number; // low-pass filter cutoff in Hz
+  lpfQ: number; // low-pass filter resonance in dB (BiquadFilterNode.Q); 0 = no peak, the default of 1 gives a small one. SF2's initialFilterQ is in centibels: divide by 10
+  modLfoToPitch: number; // pitch modulation depth in cents; 0 = no LFO
+  modLfoToFilterFc: number; // filter cutoff modulation depth in cents; 0 = no effect
+  modLfoToVolume: number; // volume (tremolo) modulation depth in centibels; 0 = no effect
+  modLfoRateHz: number; // modulation LFO rate in Hz
+  modLfoDelay: number; // silence before the modulation LFO starts, in seconds
+  vibLfoToPitch: number; // pitch modulation depth in cents; 0 = no LFO
+  vibLfoRateHz: number; // vibrato LFO rate in Hz
+  vibLfoDelay: number; // silence before the vibrato LFO starts, in seconds
+  modEnvToPitch: number; // pitch modulation depth in cents; 0 = no effect
+  modEnvToFilterFc: number; // filter cutoff modulation depth in cents; 0 = no effect
+  modEnvDelay: number; // seconds of silence before the modulation envelope's attack starts
+  modEnvAttack: number; // seconds to ramp the modulation envelope 0 -> 1
+  modEnvHold: number; // seconds held at peak before the modulation envelope's decay starts
+  modEnvDecay: number; // seconds for a *full* (100%) decay
+  modEnvSustain: number; // level held after decay, until note-off (0-1, 1 = no decay)
+  modEnvRelease: number; // seconds for the modulation envelope to fade to 0 after note-off
   offset: number; // start position in seconds
   loop: boolean;
   loopStart: number; // seconds

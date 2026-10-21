@@ -5,7 +5,7 @@
  * documented `await ready` → `instrumentNames` → `loadInstrument(name)` flow.)
  */
 
-import { Soundfont2 } from "./soundfont2";
+import { Soundfont2, sf2InstrumentToPreset } from "./soundfont2";
 import { createAudioContextMock } from "./test-helpers";
 
 function makeContext(): AudioContext {
@@ -57,4 +57,82 @@ describe("Soundfont2", () => {
       /instrument "does-not-exist" not found/,
     );
   });
+});
+
+describe("sf2InstrumentToPreset", () => {
+  function makeSample(name: string, originalPitch: number) {
+    return {
+      data: new Int16Array([0, 1000, -1000, 0]),
+      header: {
+        name,
+        sampleRate: 44100,
+        originalPitch,
+        pitchCorrection: 0,
+        start: 0,
+        end: 4,
+        startLoop: -1,
+        endLoop: -1,
+      },
+    };
+  }
+
+  it("uses the sample's originalPitch when no zone rootKey is set", () => {
+    const { json } = sf2InstrumentToPreset(
+      {
+        header: { name: "Test" },
+        zones: [{ sample: makeSample("s1", 60), keyRange: { lo: 0, hi: 127 } }],
+      },
+      createAudioContextMock().context,
+    );
+
+    expect(json.groups[0].regions[0].pitch).toBe(60);
+  });
+
+  it("prefers the zone's rootKey (SF2 overridingRootKey) over the stale sample header pitch", () => {
+    // Mirrors real-world SF2 files where every sample header reports the
+    // same stale originalPitch and the true per-zone root key only exists as the
+    // overridingRootKey generator, surfaced here as Sf2Zone.rootKey.
+    const { json } = sf2InstrumentToPreset(
+      {
+        header: { name: "Test" },
+        zones: [
+          {
+            sample: makeSample("high", 60),
+            keyRange: { lo: 105, hi: 108 },
+            rootKey: 108,
+          },
+          {
+            sample: makeSample("mid", 60),
+            keyRange: { lo: 100, hi: 104 },
+            rootKey: 104,
+          },
+        ],
+      },
+      createAudioContextMock().context,
+    );
+
+    expect(json.groups[0].regions[0].pitch).toBe(108);
+    expect(json.groups[0].regions[1].pitch).toBe(104);
+  });
+
+  it.each([-1, 128])(
+    "ignores an out-of-range rootKey (%d, SF2's 'unset') and uses the sample header pitch",
+    (rootKey) => {
+      const { json } = sf2InstrumentToPreset(
+        {
+          header: { name: "Test" },
+          zones: [
+            {
+              sample: makeSample("s1", 60),
+              keyRange: { lo: 0, hi: 127 },
+              rootKey,
+            },
+          ],
+        },
+        createAudioContextMock().context,
+      );
+
+      expect(json.groups[0].regions[0].pitch).toBe(60);
+    },
+  );
 });
