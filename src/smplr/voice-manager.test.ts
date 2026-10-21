@@ -1,3 +1,4 @@
+import { resolveParams } from "./params";
 import { Voice } from "./voice";
 import { VoiceManager } from "./voice-manager";
 
@@ -471,18 +472,15 @@ describe("maxVoices with real voices", () => {
   function setup(maxVoices: number, ampRelease: number) {
     const manager = new VoiceManager(maxVoices);
     const voices: Voice[] = [];
-    const params = {
-      detune: 0,
-      velocity: 100,
-      volume: 0,
-      ampRelease,
-      ampAttack: 0,
-      lpfCutoffHz: 20000,
-      offset: 0,
-      loop: false,
-      loopStart: 0,
-      loopEnd: 0,
-    };
+    // Real VoiceParams (all fields), so this keeps compiling when VoiceParams grows.
+    const params = resolveParams(
+      undefined,
+      { regions: [] },
+      { sample: "x" },
+      60,
+      100,
+      { ampRelease },
+    );
     return {
       voices,
       add(startTime: number, stopAt?: number) {
