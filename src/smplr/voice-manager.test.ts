@@ -1,3 +1,4 @@
+import { Voice } from "./voice";
 import { VoiceManager } from "./voice-manager";
 
 // ---------------------------------------------------------------------------
@@ -399,5 +400,91 @@ describe("maxVoices", () => {
     voices.forEach((v) => mgr.add(v as any));
 
     expect(voices.every((v) => v.stop.mock.calls.length === 0)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// maxVoices with real Voice objects
+//
+// The mocks above fake stop() without touching endTime, so they can't show whether
+// stopping a voice really shortens it. These use the real Voice.
+// ---------------------------------------------------------------------------
+
+describe("maxVoices with real voices", () => {
+  const param = () => ({
+    value: 1,
+    cancelScheduledValues: jest.fn(),
+    setValueAtTime: jest.fn(),
+    linearRampToValueAtTime: jest.fn(),
+  });
+  const node = () => ({ connect: jest.fn(), disconnect: jest.fn() });
+
+  /** Just enough of an AudioContext for Voice: nothing is rendered. */
+  const context = {
+    currentTime: 0,
+    createBufferSource: () => ({
+      ...node(),
+      detune: param(),
+      playbackRate: param(),
+      start: jest.fn(),
+      stop: jest.fn(),
+    }),
+    createGain: () => ({ ...node(), gain: param() }),
+  } as unknown as BaseAudioContext;
+  const buffer = { duration: 10 } as AudioBuffer;
+  const destination = {} as AudioNode;
+
+  function setup(maxVoices: number, ampRelease: number) {
+    const manager = new VoiceManager(maxVoices);
+    const voices: Voice[] = [];
+    const params = {
+      detune: 0,
+      velocity: 100,
+      volume: 0,
+      ampRelease,
+      ampAttack: 0,
+      lpfCutoffHz: 20000,
+      offset: 0,
+      loop: false,
+      loopStart: 0,
+      loopEnd: 0,
+    };
+    return {
+      voices,
+      add(startTime: number, stopAt?: number) {
+        const voice = new Voice(
+          context,
+          buffer,
+          params,
+          destination,
+          `n${voices.length}`,
+          undefined,
+          startTime,
+        );
+        if (stopAt !== undefined) voice.stop(stopAt);
+        voices.push(voice);
+        manager.add(voice);
+        return voice;
+      },
+      /** how many voices are audible at time `t` */
+      soundingAt: (t: number) =>
+        voices.filter((v) => v.startTime <= t && v.endTime > t).length,
+    };
+  }
+
+  it("keeps the cap while earlier voices are still fading out (long release tail)", () => {
+    const { add, soundingAt } = setup(1, 5);
+    add(0, 1); // released at 1, fades until 6
+    add(2);
+    add(3);
+
+    expect(soundingAt(3.5)).toBeLessThanOrEqual(1);
+  });
+
+  it("keeps the cap when several voices start at the same time (a chord)", () => {
+    const { add, soundingAt } = setup(2, 0.3);
+    [60, 64, 67, 72].forEach(() => add(1));
+
+    expect(soundingAt(1.5)).toBeLessThanOrEqual(2);
   });
 });
