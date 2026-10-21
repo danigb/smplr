@@ -308,9 +308,7 @@ export class Voice {
   }
 
   /**
-   * Sums `source`'s output, scaled by `depth`, onto `target`. No-op when `depth` is 0. `source`
-   * is either an LFO oscillator or a modulation envelope's shaper gain (both are plain AudioNode
-   * outputs from this point on).
+   * Sums an LFO oscillator's output, scaled by `depth`, onto `target`. No-op when `depth` is 0.
    */
   #connectModDepth(
     context: BaseAudioContext,

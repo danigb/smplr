@@ -128,7 +128,7 @@ export function scheduleAdsrRelease(
 ): number {
   const valueAtT = mapping.toValue(adsrValueAt(times, t));
   const stopAt = t + releaseSeconds;
-  /** 
+  /**
    * cancelScheduledValues(t) drops the attack/decay ramp that ends after `t`. Without a
    * replacement, a release scheduled ahead of time would hold the previous value until `t` and
    * then jump. Ramping to valueAtT keeps the curve up to `t`.
