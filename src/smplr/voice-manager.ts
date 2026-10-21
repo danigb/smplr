@@ -12,10 +12,13 @@ export class VoiceManager {
   #byGroup: Map<number, Set<Voice>> = new Map();
   #maxVoices: number;
 
-  /** @param maxVoices Cap on simultaneous voices; unlimited when omitted. */
+  /**
+   * @param maxVoices Cap on simultaneous voices, rounded down. Unlimited when omitted or when
+   * it isn't a number of at least 1 (0, negative, NaN).
+   */
   constructor(maxVoices?: number) {
-    this.#maxVoices =
-      maxVoices !== undefined && maxVoices > 0 ? maxVoices : Infinity;
+    const cap = Math.floor(maxVoices ?? NaN);
+    this.#maxVoices = cap >= 1 ? cap : Infinity;
   }
 
   /**

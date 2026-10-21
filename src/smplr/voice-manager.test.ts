@@ -407,6 +407,27 @@ describe("maxVoices", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
+  it.each([0, -1, 0.5, NaN])(
+    "treats maxVoices %p as unlimited",
+    (maxVoices) => {
+      const mgr = new VoiceManager(maxVoices);
+      const voices = [1, 2, 3].map((t) => playing(String(t), t));
+      voices.forEach((v) => mgr.add(v as any));
+
+      expect(voices.every((v) => v.steal.mock.calls.length === 0)).toBe(true);
+    },
+  );
+
+  it("rounds a non-integer cap down", () => {
+    const mgr = new VoiceManager(1.9);
+    const a = playing("a", 1);
+    const b = playing("b", 2);
+    mgr.add(a as any);
+    mgr.add(b as any);
+
+    expect(a.steal).toHaveBeenCalledWith(2); // cap is 1, not 2
+  });
+
   it("is unlimited when omitted", () => {
     const mgr = new VoiceManager();
     const voices = Array.from({ length: 200 }, (_, i) => playing(String(i), i));

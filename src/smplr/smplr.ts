@@ -47,8 +47,13 @@ export type SmplrOptions = {
   /** Called when each voice's audio node ends. */
   onEnded?: (event: NoteEvent) => void;
   /**
-   * Max voices sounding at once for this instrument. When a new voice would exceed it, the voice
-   * that started earliest is released at the new voice's start time. Unlimited when omitted.
+   * Max voices sounding at once for this instrument (a voice is one sample playing: a note
+   * can use several, e.g. layered regions). Voices that overlap in time with a new voice count,
+   * including ones still releasing. When a new voice would exceed the cap, the oldest voices
+   * (already-releasing ones first) are released at its start time; if the rest start at the
+   * same time (a chord), the most recently added are cancelled instead, although `onStart`
+   * has already fired for them. Rounded down; unlimited when omitted, or when less than 1 or
+   * not a number.
    */
   maxVoices?: number;
 };
