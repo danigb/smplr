@@ -1,4 +1,5 @@
 import { SmplrImpl } from "./smplr";
+import { VoiceManager } from "./voice-manager";
 import { SmplrPreset } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -1086,5 +1087,85 @@ describe("notesToLoad", () => {
     expect(warn.mock.calls[0][0]).toContain('"kik", "C#44"');
     expect(fetchedSamples()).toEqual(["C4.ogg"]);
     warn.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// maxVoices
+// ---------------------------------------------------------------------------
+
+describe("maxVoices", () => {
+  it("is passed from the options to the voice cap", async () => {
+    const ctx = makeContext(0) as any;
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
+      maxVoices: 1,
+    });
+    await smplr.ready;
+
+    smplr.start({ note: "C4" });
+    ctx.currentTime = 1;
+    smplr.start({ note: "C4" });
+
+    // the first voice is faded out (10 ms) when the second one starts
+    expect(ctx._sources[0].stop).toHaveBeenLastCalledWith(1.01);
+    expect(ctx._sources[1].stop).not.toHaveBeenCalled();
+  });
+
+  it("doesn't limit voices when it isn't set", async () => {
+    const ctx = makeContext(0) as any;
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
+    await smplr.ready;
+
+    smplr.start({ note: "C4" });
+    ctx.currentTime = 1;
+    smplr.start({ note: "C4" });
+
+    expect(ctx._sources[0].stop).not.toHaveBeenCalled();
+  });
+
+  it("counts notes started with a duration while they are still audible", async () => {
+    const ctx = makeContext(0) as any;
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
+      maxVoices: 1,
+    });
+    await smplr.ready;
+
+    smplr.start({ note: "C4", duration: 10 }); // sounds until 10 (+ release)
+    ctx.currentTime = 1;
+    smplr.start({ note: "C4" });
+
+    expect(ctx._sources[0].stop).toHaveBeenLastCalledWith(1.01);
+  });
+
+  it("doesn't count a duration note that has already ended", async () => {
+    const ctx = makeContext(0) as any;
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson(), {
+      maxVoices: 1,
+    });
+    await smplr.ready;
+
+    smplr.start({ note: "C4", duration: 0.5 }); // silent after 0.8 (default release 0.3)
+    ctx.currentTime = 2;
+    smplr.start({ note: "C4" });
+
+    expect(ctx._sources[0].stop).toHaveBeenCalledTimes(1); // only the duration stop
+    expect(ctx._sources[0].stop).toHaveBeenCalledWith(0.8);
+  });
+
+  it("schedules the duration stop before the voice is added, so the cap knows when it ends", async () => {
+    const endTimes: number[] = [];
+    const add = jest
+      .spyOn(VoiceManager.prototype, "add")
+      .mockImplementation(function (voice) {
+        endTimes.push(voice.endTime);
+      });
+    const ctx = makeContext(0) as any;
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
+    await smplr.ready;
+
+    smplr.start({ note: "C4", duration: 1 });
+
+    expect(endTimes).toEqual([1.3]); // 1s + the default 0.3s release, not Infinity
+    add.mockRestore();
   });
 });
