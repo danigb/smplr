@@ -46,6 +46,16 @@ export type SmplrOptions = {
   onStart?: (event: NoteEvent) => void;
   /** Called when each voice's audio node ends. */
   onEnded?: (event: NoteEvent) => void;
+  /**
+   * Max voices sounding at once for this instrument (a voice is one sample playing: a note
+   * can use several, e.g. layered regions). Voices that overlap in time with a new voice count,
+   * including ones still releasing. When a new voice would exceed the cap, the oldest voices
+   * (already-releasing ones first) are released at its start time; if the rest start at the
+   * same time (a chord), the most recently added are cancelled instead, although `onStart`
+   * has already fired for them. Rounded down; unlimited when omitted, or when less than 1 or
+   * not a number.
+   */
+  maxVoices?: number;
 };
 
 /** Options accepted by `loadInstrument(json, options)`. */
@@ -203,7 +213,7 @@ export class SmplrImpl implements Smplr {
     this.#matcher = new RegionMatcher(json ?? EMPTY_JSON);
 
     // 4. Voice manager — tracks active voices for stop operations
-    this.#voices = new VoiceManager();
+    this.#voices = new VoiceManager(options?.maxVoices);
 
     // 5. Sample loader — shared or private
     this.loader =
@@ -501,6 +511,15 @@ export class SmplrImpl implements Smplr {
         time,
       );
 
+      // Auto-stop for duration — schedule directly on the audio timeline
+      // so it works in both real-time and offline (OfflineAudioContext) contexts. Done before
+      // adding the voice so the voice cap knows when it ends.
+      if (duration != null) {
+        const startT = time ?? this.context.currentTime;
+        const releaseAt = startT + duration;
+        voice.stop(releaseAt);
+      }
+
       this.#voices.add(voice);
 
       // onStart fires once on the first matched voice
@@ -512,14 +531,6 @@ export class SmplrImpl implements Smplr {
       // onEnded fires once per voice when its audio node ends
       if (onEnded) {
         voice.onEnded(() => onEnded(event));
-      }
-
-      // Auto-stop for duration — schedule directly on the audio timeline
-      // so it works in both real-time and offline (OfflineAudioContext) contexts.
-      if (duration != null) {
-        const startT = time ?? this.context.currentTime;
-        const releaseAt = startT + duration;
-        voice.stop(releaseAt);
       }
     }
   }

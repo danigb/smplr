@@ -10,6 +10,16 @@ export class VoiceManager {
   #voices: Set<Voice> = new Set();
   #byStopId: Map<string | number, Set<Voice>> = new Map();
   #byGroup: Map<number, Set<Voice>> = new Map();
+  #maxVoices: number;
+
+  /**
+   * @param maxVoices Cap on simultaneous voices, rounded down. Unlimited when omitted or when
+   * it isn't a number of at least 1 (0, negative, NaN).
+   */
+  constructor(maxVoices?: number) {
+    const cap = Math.floor(maxVoices ?? NaN);
+    this.#maxVoices = cap >= 1 ? cap : Infinity;
+  }
 
   /**
    * Register a voice. Indexes it by stopId and group, then auto-removes it
@@ -28,6 +38,59 @@ export class VoiceManager {
 
     // Auto-remove when the voice's source node fires onended
     voice.onEnded(() => this.#remove(voice));
+
+    this.#enforceCap(voice);
+  }
+
+  /**
+   * Keep the voices that sound together with `newest` within the cap. Every voice whose sound
+   * overlaps the new one counts, including ones that are releasing or have a stop scheduled.
+   * Voices are scheduled ahead and may be added out of order, so the count is checked at each
+   * moment a voice starts within the new voice's span; wherever there are too many, the
+   * earliest-started ones are released at that moment (voices already releasing go first). If
+   * that isn't enough because the rest start at that very moment (a chord, or layered regions),
+   * the most recently added of those are cancelled before they sound.
+   */
+  #enforceCap(newest: Voice): void {
+    if (this.#maxVoices === Infinity) return; // no cap: skip the scan
+    if (newest.endTime <= newest.startTime) return; // cancelled before it ever sounded
+
+    const overlapping = [...this.#voices].filter(
+      (v) =>
+        v.endTime > v.startTime &&
+        v.startTime < newest.endTime &&
+        v.endTime > newest.startTime,
+    );
+    // Earlier moments were checked when those voices were added.
+    const checkAt = new Set([newest.startTime]);
+    for (const v of overlapping) {
+      if (v.startTime > newest.startTime) checkAt.add(v.startTime);
+    }
+
+    const released = new Set<Voice>();
+    for (const t of [...checkAt].sort((a, b) => a - b)) {
+      const sounding = overlapping.filter(
+        (v) => !released.has(v) && v.startTime <= t && v.endTime > t,
+      );
+      const older = sounding
+        .filter((v) => v.startTime < t)
+        .sort(
+          (a, b) =>
+            Number(b.isReleasing) - Number(a.isReleasing) ||
+            a.startTime - b.startTime,
+        );
+      // Same start time: nothing is older, so the newest additions give way. Insertion order
+      // is add order.
+      const sameStart = sounding.filter((v) => v.startTime === t).reverse();
+      const victims = [...older, ...sameStart];
+      for (const victim of victims.slice(
+        0,
+        Math.max(0, sounding.length - this.#maxVoices),
+      )) {
+        victim.steal(t);
+        released.add(victim);
+      }
+    }
   }
 
   /** Stop all active voices. */

@@ -139,6 +139,37 @@ export class Voice {
   }
 
   /**
+   * Fade out quickly from `time`, even if a (longer) release is already running. Used when the
+   * voice cap needs this voice gone: `stop()` ignores a later time than the one already
+   * requested, so it can't shorten a release in progress. No-op if the voice already ends
+   * within `fade` seconds of `time`.
+   */
+  steal(time: number, fade = 0.01): void {
+    if (this.#state === "stopped") return;
+    if (this.endTime <= time + fade) return;
+
+    // Before it sounds: cancel it entirely, same as stop()
+    if (time <= this.#startAt) return this.stop(time);
+
+    // Where the envelope is at `time`: flat until the release starts, then falling linearly.
+    const releaseAt = this.#releaseAt;
+    const level =
+      releaseAt === undefined || time <= releaseAt
+        ? 1.0
+        : Math.max(0, 1 - (time - releaseAt) / this.#ampRelease);
+
+    this.#state = "stopping";
+    this.#releaseAt = time;
+    this.#ampRelease = fade;
+
+    const stopAt = time + fade;
+    this.#envelope.gain.cancelScheduledValues(time);
+    this.#envelope.gain.setValueAtTime(level, time);
+    this.#envelope.gain.linearRampToValueAtTime(0, stopAt);
+    this.#source.stop(stopAt);
+  }
+
+  /**
    * Register a callback to be called when the source node fires its onended event.
    * If the voice has already stopped, the callback is invoked immediately.
    */
@@ -148,6 +179,27 @@ export class Voice {
     } else {
       this.#endedCallbacks.push(cb);
     }
+  }
+
+  /** Audio-context time the voice starts (or started) sounding. */
+  get startTime(): number {
+    return this.#startAt;
+  }
+
+  /**
+   * Audio-context time the voice stops being audible: `Infinity` until a stop is requested
+   * (even one scheduled for later), then the end of its release - or its start time, if it
+   * was cancelled before it ever sounded.
+   */
+  get endTime(): number {
+    if (this.#releaseAt === undefined) return Infinity;
+    if (this.#releaseAt <= this.#startAt) return this.#startAt;
+    return this.#releaseAt + this.#ampRelease;
+  }
+
+  /** True once a stop has been requested: the voice is fading out. */
+  get isReleasing(): boolean {
+    return this.#releaseAt !== undefined;
   }
 
   get isActive(): boolean {

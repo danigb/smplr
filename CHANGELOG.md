@@ -1,5 +1,17 @@
 # smplr
 
+## Unreleased
+
+### Added
+
+- **`maxVoices` option** for every instrument: caps how many voices sound at
+  once. When a new note would exceed it, the oldest voices are released at the
+  new note's start time, fading out over about 10 ms (voices that are already
+  releasing go first). If the rest start at the same time, such as the notes of
+  a chord, the most recently added are cancelled instead. Notes still fading
+  out count until they are silent, and the cap counts voices, not notes.
+  Unlimited by default.
+
 ## 1.1.0
 
 ### Added
