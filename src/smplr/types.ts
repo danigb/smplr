@@ -19,6 +19,11 @@ export type PlaybackParams = {
   // one oscillator. Filter and volume depths are linear approximations of SF2's exponential
   // units (cents/centibels), since Web Audio sums LFO signals linearly onto frequency/gain -
   // accurate for modest depths, less so for extreme sweeps. Pitch is exact (detune is cents-native).
+  // Filter and volume depths are clamped to the base cutoff / gain, so they never go below 0. A
+  // negative modEnvToFilterFc lowers the real cutoff below that base, though: a deep filter LFO
+  // combined with it can still close the filter instead of wobbling it.
+  // Pitch destinations (modLfoToPitch, vibLfoToPitch, modEnvToPitch) need
+  // AudioBufferSourceNode.detune and are skipped where it is missing (old Safari).
   modLfoToPitch?: number; // pitch modulation depth in cents (peak deviation); 0 = no effect
   modLfoToFilterFc?: number; // filter cutoff modulation depth in cents (peak deviation); 0 = no effect
   modLfoToVolume?: number; // volume (tremolo) modulation depth in centibels (peak deviation); 0 = no effect

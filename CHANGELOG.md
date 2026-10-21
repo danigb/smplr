@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Added
+
+- **Voice shaping** in presets (group, region and defaults): a full amp envelope
+  (`ampDelay`, `ampAttack`, `ampHold`, `ampDecay`, `ampSustain`), `pan`, `lpfQ`, a
+  modulation LFO (pitch, filter, volume), a vibrato LFO, and a modulation envelope
+  (pitch, filter). All off by default, so existing instruments sound the same.
+  Pitch modulation needs `AudioBufferSourceNode.detune` and is skipped where it
+  is missing (old Safari).
+
 ### Fixed
 
 - **`Soundfont2` now honors a zone's `overridingRootKey`.** `Sf2Zone` gained an optional
