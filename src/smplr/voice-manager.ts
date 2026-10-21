@@ -44,7 +44,9 @@ export class VoiceManager {
    * overlaps the new one counts, including ones that are releasing or have a stop scheduled.
    * Voices are scheduled ahead and may be added out of order, so the count is checked at each
    * moment a voice starts within the new voice's span; wherever there are too many, the
-   * earliest-started ones are released at that moment (voices already releasing go first).
+   * earliest-started ones are released at that moment (voices already releasing go first). If
+   * that isn't enough because the rest start at that very moment (a chord, or layered regions),
+   * the most recently added of those are cancelled before they sound.
    */
   #enforceCap(newest: Voice): void {
     if (this.#maxVoices === Infinity) return; // no cap: skip the scan
@@ -67,13 +69,17 @@ export class VoiceManager {
       const sounding = overlapping.filter(
         (v) => !released.has(v) && v.startTime <= t && v.endTime > t,
       );
-      const victims = sounding
+      const older = sounding
         .filter((v) => v.startTime < t)
         .sort(
           (a, b) =>
             Number(b.isReleasing) - Number(a.isReleasing) ||
             a.startTime - b.startTime,
         );
+      // Same start time: nothing is older, so the newest additions give way. Insertion order
+      // is add order.
+      const sameStart = sounding.filter((v) => v.startTime === t).reverse();
+      const victims = [...older, ...sameStart];
       for (const victim of victims.slice(
         0,
         Math.max(0, sounding.length - this.#maxVoices),

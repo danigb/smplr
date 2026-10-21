@@ -287,6 +287,17 @@ describe("maxVoices", () => {
     expect(c.steal).not.toHaveBeenCalled();
   });
 
+  it("cancels the newest voices when several start at the same time (a chord)", () => {
+    const mgr = new VoiceManager(2);
+    const chord = [60, 64, 67, 72].map((n) => playing(String(n), 1));
+    chord.forEach((v) => mgr.add(v as any));
+
+    expect(chord[0].steal).not.toHaveBeenCalled();
+    expect(chord[1].steal).not.toHaveBeenCalled();
+    expect(chord[2].steal).toHaveBeenCalledWith(1);
+    expect(chord[3].steal).toHaveBeenCalledWith(1);
+  });
+
   it("never releases the voice being added at its own start time", () => {
     const mgr = new VoiceManager(1);
     const earlier = playing("earlier", 2);
@@ -481,6 +492,18 @@ describe("maxVoices with real voices", () => {
     add(3);
 
     expect(soundingAt(3.5)).toBeLessThanOrEqual(1);
+  });
+
+  it("releases an older voice before cancelling chord notes", () => {
+    const { add, voices, soundingAt } = setup(2, 0.3);
+    add(0); // older, still playing
+    [60, 64, 67].forEach(() => add(1)); // chord
+
+    expect(soundingAt(1.5)).toBe(2);
+    expect(voices[0].endTime).toBeCloseTo(1.01); // the older voice went first
+    expect(voices[1].endTime).toBe(Infinity); // first chord note survives
+    expect(voices[2].endTime).toBe(Infinity);
+    expect(voices[3].endTime).toBe(1); // newest chord note cancelled
   });
 
   it("keeps the cap when several voices start at the same time (a chord)", () => {
