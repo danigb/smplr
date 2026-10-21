@@ -78,7 +78,7 @@ export class VoiceManager {
         0,
         Math.max(0, sounding.length - this.#maxVoices),
       )) {
-        victim.stop(t);
+        victim.steal(t);
         released.add(victim);
       }
     }

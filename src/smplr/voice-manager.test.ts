@@ -12,6 +12,7 @@ function makeVoice(
   stopId: string | number;
   group: number | undefined;
   stop: jest.Mock;
+  steal: jest.Mock;
   onEnded: (cb: () => void) => void;
   /** Simulate the Web Audio engine firing onended */
   triggerEnded: () => void;
@@ -21,6 +22,7 @@ function makeVoice(
     stopId,
     group,
     stop: jest.fn(),
+    steal: jest.fn(),
     onEnded(cb: () => void) {
       endedCb = cb;
     },
@@ -280,9 +282,9 @@ describe("maxVoices", () => {
     mgr.add(b as any);
     mgr.add(c as any);
 
-    expect(a.stop).toHaveBeenCalledWith(3);
-    expect(b.stop).not.toHaveBeenCalled();
-    expect(c.stop).not.toHaveBeenCalled();
+    expect(a.steal).toHaveBeenCalledWith(3);
+    expect(b.steal).not.toHaveBeenCalled();
+    expect(c.steal).not.toHaveBeenCalled();
   });
 
   it("never releases the voice being added at its own start time", () => {
@@ -292,8 +294,8 @@ describe("maxVoices", () => {
     const later = playing("later", 3);
     mgr.add(later as any);
 
-    expect(earlier.stop).toHaveBeenCalledWith(3);
-    expect(later.stop).not.toHaveBeenCalled();
+    expect(earlier.steal).toHaveBeenCalledWith(3);
+    expect(later.steal).not.toHaveBeenCalled();
   });
 
   it("picks the earliest start among voices already sounding, not creation order", () => {
@@ -305,8 +307,8 @@ describe("maxVoices", () => {
     mgr.add(a as any);
     mgr.add(c as any);
 
-    expect(a.stop).toHaveBeenCalledWith(3);
-    expect(b.stop).not.toHaveBeenCalled();
+    expect(a.steal).toHaveBeenCalledWith(3);
+    expect(b.steal).not.toHaveBeenCalled();
   });
 
   it("counts notes with a duration (a stop already scheduled) while they are still audible", () => {
@@ -319,7 +321,7 @@ describe("maxVoices", () => {
     mgr.add(b as any);
     mgr.add(c as any);
 
-    expect(a.stop).toHaveBeenCalledWith(2);
+    expect(a.steal).toHaveBeenCalledWith(2);
   });
 
   it("counts voices that are releasing but still audible when the new one starts", () => {
@@ -329,7 +331,7 @@ describe("maxVoices", () => {
     mgr.add(releasing as any);
     mgr.add(next as any);
 
-    expect(releasing.stop).toHaveBeenCalledWith(2);
+    expect(releasing.steal).toHaveBeenCalledWith(2);
   });
 
   it("doesn't count voices that have finished before the new one starts", () => {
@@ -339,7 +341,7 @@ describe("maxVoices", () => {
     mgr.add(done as any);
     mgr.add(next as any);
 
-    expect(done.stop).not.toHaveBeenCalled();
+    expect(done.steal).not.toHaveBeenCalled();
   });
 
   it("can release several voices when one added voice overlaps more than one start", () => {
@@ -348,15 +350,15 @@ describe("maxVoices", () => {
     const q = playing("q", 11);
     mgr.add(p as any);
     mgr.add(q as any); // releases p at 11
-    p.stop.mockClear();
+    p.steal.mockClear();
 
     // starts first and stays open: sounds with p at 10 and (the mock doesn't end p) with q at 11
     const r = playing("r", 1);
     mgr.add(r as any);
 
-    expect(r.stop).toHaveBeenCalledWith(10);
-    expect(p.stop).toHaveBeenCalledWith(11);
-    expect(q.stop).not.toHaveBeenCalled();
+    expect(r.steal).toHaveBeenCalledWith(10);
+    expect(p.steal).toHaveBeenCalledWith(11);
+    expect(q.steal).not.toHaveBeenCalled();
   });
 
   it("prefers voices that are already releasing", () => {
@@ -368,8 +370,8 @@ describe("maxVoices", () => {
 
     mgr.add(playing("new", 3) as any);
 
-    expect(releasing.stop).toHaveBeenCalledWith(3);
-    expect(old.stop).not.toHaveBeenCalled();
+    expect(releasing.steal).toHaveBeenCalledWith(3);
+    expect(old.steal).not.toHaveBeenCalled();
   });
 
   it("limits voices added out of order: the older voice is released when the later one starts", () => {
@@ -379,8 +381,8 @@ describe("maxVoices", () => {
     mgr.add(later as any);
     mgr.add(earlier as any); // starts first, still sounding when `later` starts
 
-    expect(earlier.stop).toHaveBeenCalledWith(5);
-    expect(later.stop).not.toHaveBeenCalled();
+    expect(earlier.steal).toHaveBeenCalledWith(5);
+    expect(later.steal).not.toHaveBeenCalled();
   });
 
   it("doesn't look at the voices at all when there is no cap", () => {
