@@ -3,6 +3,7 @@ import { VoiceParams } from "./types";
 import {
   AdsrTimes,
   EnvelopeMapping,
+  adsrValueAt,
   computeAdsrTimes,
   hasAdsrShape,
   scheduleAdsr,
@@ -29,6 +30,8 @@ export class Voice {
   #releaseAt: number | undefined;
   #ampEnvTimes: AdsrTimes;
   #ampRelease: number;
+  /** Amp envelope level at #releaseAt, where the release ramp starts from. */
+  #releaseLevel = 0;
   #lfoOscillators: OscillatorNode[] = [];
   #modDepths: GainNode[] = [];
   #modEnv: ModEnv | undefined;
@@ -348,6 +351,7 @@ export class Voice {
     } else {
       // Apply release envelope then stop the source, starting the release from wherever the
       // envelope actually was at time t - see scheduleAdsrRelease.
+      this.#releaseLevel = adsrValueAt(this.#ampEnvTimes, t);
       const stopAt = scheduleAdsrRelease(
         this.#envelope.gain,
         this.#ampEnvTimes,
@@ -369,6 +373,49 @@ export class Voice {
   }
 
   /**
+   * Fade out quickly from `time`, even if a (longer) release is already running. Used when the
+   * voice cap needs this voice gone: `stop()` ignores a later time than the one already
+   * requested, so it can't shorten a release in progress. No-op if the voice already ends
+   * within `fade` seconds of `time`.
+   */
+  steal(time: number, fade = 0.01): void {
+    if (this.#state === "stopped") return;
+    if (this.endTime <= time + fade) return;
+
+    // Before it sounds: cancel it entirely, same as stop()
+    if (time <= this.#startAt) return this.stop(time);
+
+    // Fade from wherever the envelope is at `time` (attack, decay, sustain or a running
+    // release), so the stolen voice doesn't jump up before fading.
+    const level = this.#ampLevelAt(time);
+
+    this.#state = "stopping";
+    this.#releaseAt = time;
+    this.#releaseLevel = level;
+    this.#ampRelease = fade;
+
+    const stopAt = time + fade;
+    // Same as scheduleAdsrRelease: cancelScheduledValues(time) drops any ramp ending after
+    // `time`, so ramp (not jump) to `level` to keep the curve up to `time`.
+    this.#envelope.gain.cancelScheduledValues(time);
+    this.#envelope.gain.linearRampToValueAtTime(level, time);
+    this.#envelope.gain.linearRampToValueAtTime(0, stopAt);
+    this.#source.stop(stopAt);
+    this.#lfoOscillators.forEach((osc) => osc.stop(stopAt));
+  }
+
+  /** Amp envelope level at `t`: the ADSR shape, or the linear release once it has started. */
+  #ampLevelAt(t: number): number {
+    const releaseAt = this.#releaseAt;
+    if (releaseAt === undefined || t <= releaseAt) {
+      return adsrValueAt(this.#ampEnvTimes, t);
+    }
+    const elapsed = t - releaseAt;
+    if (elapsed >= this.#ampRelease) return 0;
+    return this.#releaseLevel * (1 - elapsed / this.#ampRelease);
+  }
+
+  /**
    * Register a callback to be called when the source node fires its onended event.
    * If the voice has already stopped, the callback is invoked immediately.
    */
@@ -378,6 +425,27 @@ export class Voice {
     } else {
       this.#endedCallbacks.push(cb);
     }
+  }
+
+  /** Audio-context time the voice starts (or started) sounding. */
+  get startTime(): number {
+    return this.#startAt;
+  }
+
+  /**
+   * Audio-context time the voice stops being audible: `Infinity` until a stop is requested
+   * (even one scheduled for later), then the end of its release - or its start time, if it
+   * was cancelled before it ever sounded.
+   */
+  get endTime(): number {
+    if (this.#releaseAt === undefined) return Infinity;
+    if (this.#releaseAt <= this.#startAt) return this.#startAt;
+    return this.#releaseAt + this.#ampRelease;
+  }
+
+  /** True once a stop has been requested: the voice is fading out. */
+  get isReleasing(): boolean {
+    return this.#releaseAt !== undefined;
   }
 
   get isActive(): boolean {

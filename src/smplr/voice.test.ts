@@ -1049,3 +1049,173 @@ describe("isActive / onEnded", () => {
     expect(filters[0].disconnect).toHaveBeenCalled(); // lpf
   });
 });
+
+describe("endTime", () => {
+  it("is open-ended until stop() is called", () => {
+    const { voice } = makeVoice();
+    expect(voice.endTime).toBe(Infinity);
+  });
+
+  it("is the stop time plus the release, even when the stop is scheduled ahead", () => {
+    const { voice } = makeVoice({ ampRelease: 0.5 }, { startTime: 1 });
+    voice.stop(3);
+    expect(voice.endTime).toBe(3.5);
+  });
+
+  it("is the start time when the voice was cancelled before it sounded", () => {
+    const { voice } = makeVoice({ ampRelease: 0.5 }, { startTime: 2 });
+    voice.stop(1);
+    expect(voice.endTime).toBe(2);
+  });
+});
+
+describe("steal()", () => {
+  it("fades out quickly from the given time and updates endTime", () => {
+    const { voice, sources, gains } = makeVoice(
+      { ampRelease: 2 },
+      { currentTime: 0 },
+    );
+    const envelope = gains[1];
+
+    voice.steal(1);
+
+    expect(envelope.gain.cancelScheduledValues).toHaveBeenCalledWith(1);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(1.0, 1);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 1.01);
+    expect(sources[0].stoppedAt).toBe(1.01);
+    expect(voice.endTime).toBe(1.01);
+    expect(voice.isReleasing).toBe(true);
+  });
+
+  it("cuts short a release that is already running (stop() ignores a later time)", () => {
+    const { voice, sources } = makeVoice({ ampRelease: 5 }, { currentTime: 0 });
+    voice.stop(1); // would fade until 6
+
+    voice.steal(2);
+
+    expect(sources[0].stoppedAt).toBe(2.01);
+    expect(voice.endTime).toBe(2.01);
+  });
+
+  it("starts from where the running release has got to, not from full volume", () => {
+    const { voice, gains } = makeVoice({ ampRelease: 4 }, { currentTime: 0 });
+    const envelope = gains[1];
+    voice.stop(1); // falls linearly 1 -> 0 over 1..5
+
+    voice.steal(2); // a quarter of the way down
+
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.75, 2);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenLastCalledWith(
+      0,
+      2.01,
+    );
+  });
+
+  it("starts mid-attack from the attack's level, not full volume", () => {
+    const { voice, gains } = makeVoice({ ampAttack: 1 }, { currentTime: 0 });
+    const envelope = gains[1];
+
+    voice.steal(0.25); // a quarter of the way up
+
+    expect(envelope.gain.cancelScheduledValues).toHaveBeenCalledWith(0.25);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+      0.25,
+      0.25,
+    );
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenLastCalledWith(
+      0,
+      0.26,
+    );
+  });
+
+  it("starts from the sustain level once the decay is done", () => {
+    const { voice, gains } = makeVoice(
+      { ampDecay: 1, ampSustain: 0.4 },
+      { currentTime: 0 },
+    );
+    const envelope = gains[1];
+
+    voice.steal(2);
+
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.4, 2);
+  });
+
+  it("follows a release that started below full volume", () => {
+    const { voice, gains } = makeVoice(
+      { ampSustain: 0.5, ampDecay: 1, ampRelease: 4 },
+      { currentTime: 0 },
+    );
+    const envelope = gains[1];
+    voice.stop(1); // sustain 0.5, falls 0.5 -> 0 over 1..5
+
+    voice.steal(3); // halfway down
+
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.25, 3);
+  });
+
+  it("uses the envelope level, not the release, when stealing before a stop scheduled ahead", () => {
+    const { voice, gains } = makeVoice(
+      { ampAttack: 1, ampRelease: 4 },
+      { currentTime: 0 },
+    );
+    const envelope = gains[1];
+    voice.stop(3); // release scheduled for later
+
+    voice.steal(0.5); // still mid-attack
+
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+      0.5,
+      0.5,
+    );
+    expect(voice.endTime).toBeCloseTo(0.51);
+  });
+
+  it("stops the LFOs with the source", () => {
+    const { voice, oscillators } = makeVoice(
+      { modLfoToPitch: 50, ampRelease: 2 },
+      { currentTime: 0 },
+    );
+
+    voice.steal(1);
+
+    expect(oscillators[0].stoppedAt).toBe(1.01);
+  });
+
+  it("uses a custom fade time", () => {
+    const { voice } = makeVoice({ ampRelease: 2 }, { currentTime: 0 });
+    voice.steal(1, 0.05);
+    expect(voice.endTime).toBeCloseTo(1.05);
+  });
+
+  it("does nothing when the voice already ends within the fade", () => {
+    const { voice, sources } = makeVoice(
+      { ampRelease: 0.005 },
+      { currentTime: 0 },
+    );
+    voice.stop(1); // ends at 1.005
+    sources[0].stoppedAt = undefined;
+
+    voice.steal(1);
+
+    expect(sources[0].stoppedAt).toBeUndefined();
+    expect(voice.endTime).toBeCloseTo(1.005);
+  });
+
+  it("cancels a voice that hasn't started yet", () => {
+    const { voice, sources } = makeVoice({}, { currentTime: 0, startTime: 3 });
+
+    voice.steal(2);
+
+    expect(sources[0].stoppedAt).toBe(2);
+    expect(voice.endTime).toBe(3);
+  });
+
+  it("does nothing after the voice has ended", () => {
+    const { voice, sources } = makeVoice({}, { currentTime: 0 });
+    sources[0].triggerEnded();
+
+    voice.steal(1);
+
+    expect(sources[0].stoppedAt).toBeUndefined();
+  });
+});

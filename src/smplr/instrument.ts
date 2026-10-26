@@ -175,6 +175,7 @@ const SMPLR_OPTION_KEYS = [
   "notesToLoad",
   "onStart",
   "onEnded",
+  "maxVoices",
 ] as const;
 
 function splitOptions<O>(options: O & Partial<SmplrOptions>): {
