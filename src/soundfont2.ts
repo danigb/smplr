@@ -15,6 +15,14 @@ type Sf2Instrument = {
 type Sf2Zone = {
   sample: Sf2Sample;
   keyRange?: { lo: number; hi: number };
+  /**
+   * Overrides the sample's recorded root pitch for this zone (SF2 "overridingRootKey"
+   * generator, id 58). Many SF2 files leave every `sample.header.originalPitch` at a stale
+   * default and rely entirely on this per-zone generator to declare the true root key -
+   * without it, every zone but the one actually rooted at that default gets pitch-shifted
+   * from the wrong base note. Falls back to `sample.header.originalPitch` when omitted.
+   */
+  rootKey?: number;
 };
 
 type Sf2Sample = {
@@ -49,9 +57,15 @@ export function sf2InstrumentToPreset(
   const regions: SmplrGroup["regions"] = [];
 
   for (const zone of sf2Instrument.zones) {
-    const { sample, keyRange } = zone;
+    const { sample, keyRange, rootKey } = zone;
     const { header } = sample;
     const sampleName = header.name;
+    // SF2's overridingRootKey is -1 when unset (meaning "use the sample header's pitch"), so
+    // anything outside the MIDI range falls back to the header.
+    const pitch =
+      rootKey !== undefined && rootKey >= 0 && rootKey <= 127
+        ? rootKey
+        : header.originalPitch;
 
     const float32 = new Float32Array(sample.data.length);
     for (let i = 0; i < sample.data.length; i++)
@@ -68,7 +82,7 @@ export function sf2InstrumentToPreset(
 
     regions.push({
       sample: sampleName,
-      pitch: header.originalPitch,
+      pitch,
       ...(keyRange && {
         keyRange: [keyRange.lo, keyRange.hi] as [number, number],
       }),

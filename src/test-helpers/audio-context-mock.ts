@@ -51,11 +51,22 @@ class BufferSourceMock extends NodeMock {
 }
 
 class AudioBufferMock {
+  private channels: Float32Array[];
+
   constructor(
     public numberOfChannels: number,
     public length: number,
     public sampleRate: number,
-  ) {}
+  ) {
+    this.channels = Array.from(
+      { length: numberOfChannels },
+      () => new Float32Array(length),
+    );
+  }
+
+  getChannelData(channel: number): Float32Array {
+    return this.channels[channel];
+  }
 
   get buffer() {
     return this as unknown as AudioBuffer;

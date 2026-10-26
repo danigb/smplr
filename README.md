@@ -1149,6 +1149,30 @@ sampler.ready.then(() => {
 });
 ```
 
+**Root key overrides.** Many real-world .sf2 files leave every sample's
+`originalPitch` at a stale default and instead declare each zone's true root pitch via the SF2
+"overridingRootKey" generator (id 58) — passing `data` straight through `createSoundfont` as
+above ignores it, and (aside from the zone coincidentally rooted at that default) every note
+plays pitch-shifted from the wrong base. If your source file uses it, map the generator onto
+`Sf2Zone.rootKey` when building the object handed back from `createSoundfont`:
+
+```ts
+import { SoundFont2, GeneratorType } from "soundfont2";
+
+createSoundfont: (data) => {
+  const sf = new SoundFont2(data);
+  sf.instruments.forEach((instrument) => {
+    instrument.zones.forEach((zone) => {
+      const rootKey = zone.generators[GeneratorType.OverridingRootKey]?.value;
+      // -1 means "unset" in SF2; smplr ignores values outside 0..127 and falls back to
+      // the sample header's pitch.
+      if (rootKey !== undefined && rootKey >= 0) (zone as any).rootKey = rootKey;
+    });
+  });
+  return sf;
+};
+```
+
 ## Defining your own instrument
 
 If none of the bundled instruments fits your use case, you can author your own with the `Instrument` builder and the `Smplr` interface.
