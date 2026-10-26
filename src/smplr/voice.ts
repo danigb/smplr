@@ -3,6 +3,7 @@ import { VoiceParams } from "./types";
 import {
   AdsrTimes,
   EnvelopeMapping,
+  adsrValueAt,
   computeAdsrTimes,
   hasAdsrShape,
   scheduleAdsr,
@@ -29,6 +30,8 @@ export class Voice {
   #releaseAt: number | undefined;
   #ampEnvTimes: AdsrTimes;
   #ampRelease: number;
+  /** Amp envelope level at #releaseAt, where the release ramp starts from. */
+  #releaseLevel = 0;
   #lfoOscillators: OscillatorNode[] = [];
   #modDepths: GainNode[] = [];
   #modEnv: ModEnv | undefined;
@@ -348,6 +351,7 @@ export class Voice {
     } else {
       // Apply release envelope then stop the source, starting the release from wherever the
       // envelope actually was at time t - see scheduleAdsrRelease.
+      this.#releaseLevel = adsrValueAt(this.#ampEnvTimes, t);
       const stopAt = scheduleAdsrRelease(
         this.#envelope.gain,
         this.#ampEnvTimes,
@@ -381,22 +385,34 @@ export class Voice {
     // Before it sounds: cancel it entirely, same as stop()
     if (time <= this.#startAt) return this.stop(time);
 
-    // Where the envelope is at `time`: flat until the release starts, then falling linearly.
-    const releaseAt = this.#releaseAt;
-    const level =
-      releaseAt === undefined || time <= releaseAt
-        ? 1.0
-        : Math.max(0, 1 - (time - releaseAt) / this.#ampRelease);
+    // Fade from wherever the envelope is at `time` (attack, decay, sustain or a running
+    // release), so the stolen voice doesn't jump up before fading.
+    const level = this.#ampLevelAt(time);
 
     this.#state = "stopping";
     this.#releaseAt = time;
+    this.#releaseLevel = level;
     this.#ampRelease = fade;
 
     const stopAt = time + fade;
+    // Same as scheduleAdsrRelease: cancelScheduledValues(time) drops any ramp ending after
+    // `time`, so ramp (not jump) to `level` to keep the curve up to `time`.
     this.#envelope.gain.cancelScheduledValues(time);
-    this.#envelope.gain.setValueAtTime(level, time);
+    this.#envelope.gain.linearRampToValueAtTime(level, time);
     this.#envelope.gain.linearRampToValueAtTime(0, stopAt);
     this.#source.stop(stopAt);
+    this.#lfoOscillators.forEach((osc) => osc.stop(stopAt));
+  }
+
+  /** Amp envelope level at `t`: the ADSR shape, or the linear release once it has started. */
+  #ampLevelAt(t: number): number {
+    const releaseAt = this.#releaseAt;
+    if (releaseAt === undefined || t <= releaseAt) {
+      return adsrValueAt(this.#ampEnvTimes, t);
+    }
+    const elapsed = t - releaseAt;
+    if (elapsed >= this.#ampRelease) return 0;
+    return this.#releaseLevel * (1 - elapsed / this.#ampRelease);
   }
 
   /**

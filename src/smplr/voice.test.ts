@@ -1080,7 +1080,7 @@ describe("steal()", () => {
     voice.steal(1);
 
     expect(envelope.gain.cancelScheduledValues).toHaveBeenCalledWith(1);
-    expect(envelope.gain.setValueAtTime).toHaveBeenCalledWith(1.0, 1);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(1.0, 1);
     expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 1.01);
     expect(sources[0].stoppedAt).toBe(1.01);
     expect(voice.endTime).toBe(1.01);
@@ -1104,7 +1104,81 @@ describe("steal()", () => {
 
     voice.steal(2); // a quarter of the way down
 
-    expect(envelope.gain.setValueAtTime).toHaveBeenLastCalledWith(0.75, 2);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.75, 2);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenLastCalledWith(
+      0,
+      2.01,
+    );
+  });
+
+  it("starts mid-attack from the attack's level, not full volume", () => {
+    const { voice, gains } = makeVoice({ ampAttack: 1 }, { currentTime: 0 });
+    const envelope = gains[1];
+
+    voice.steal(0.25); // a quarter of the way up
+
+    expect(envelope.gain.cancelScheduledValues).toHaveBeenCalledWith(0.25);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+      0.25,
+      0.25,
+    );
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenLastCalledWith(
+      0,
+      0.26,
+    );
+  });
+
+  it("starts from the sustain level once the decay is done", () => {
+    const { voice, gains } = makeVoice(
+      { ampDecay: 1, ampSustain: 0.4 },
+      { currentTime: 0 },
+    );
+    const envelope = gains[1];
+
+    voice.steal(2);
+
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.4, 2);
+  });
+
+  it("follows a release that started below full volume", () => {
+    const { voice, gains } = makeVoice(
+      { ampSustain: 0.5, ampDecay: 1, ampRelease: 4 },
+      { currentTime: 0 },
+    );
+    const envelope = gains[1];
+    voice.stop(1); // sustain 0.5, falls 0.5 -> 0 over 1..5
+
+    voice.steal(3); // halfway down
+
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.25, 3);
+  });
+
+  it("uses the envelope level, not the release, when stealing before a stop scheduled ahead", () => {
+    const { voice, gains } = makeVoice(
+      { ampAttack: 1, ampRelease: 4 },
+      { currentTime: 0 },
+    );
+    const envelope = gains[1];
+    voice.stop(3); // release scheduled for later
+
+    voice.steal(0.5); // still mid-attack
+
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+      0.5,
+      0.5,
+    );
+    expect(voice.endTime).toBeCloseTo(0.51);
+  });
+
+  it("stops the LFOs with the source", () => {
+    const { voice, oscillators } = makeVoice(
+      { modLfoToPitch: 50, ampRelease: 2 },
+      { currentTime: 0 },
+    );
+
+    voice.steal(1);
+
+    expect(oscillators[0].stoppedAt).toBe(1.01);
   });
 
   it("uses a custom fade time", () => {
