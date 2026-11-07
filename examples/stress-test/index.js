@@ -5,8 +5,8 @@ const NUMBER_OF_NOTES = 2000;
 const audioContext = new AudioContext();
 
 // Piano
-const piano = new SplendidGrandPiano(audioContext, {});
-piano.loaded().then(() => {
+const piano = SplendidGrandPiano(audioContext, {});
+piano.ready.then(() => {
   document.getElementById("btn-piano").disabled = false;
   document.getElementById("btn-scheduler").disabled = false;
 });
