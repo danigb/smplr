@@ -45,6 +45,13 @@ export interface Smplr {
   readonly loadProgress: LoadProgress;
 
   start(event: NoteEvent): StopFn;
+
+  /**
+   * Stop the voices that are playing and cancel the notes scheduled for later.
+   * With a `stopId`, only those with that id; with a `time`, voices stop at
+   * `time` and only the scheduled notes that start at or after it are
+   * cancelled. Only affects this instrument, even with a shared scheduler.
+   */
   stop(target?: StopTarget): void;
   setCC(cc: number, value: number): void;
 
@@ -70,8 +77,9 @@ export interface Smplr {
   setReverse(reverse: boolean): void;
 
   /**
-   * Stop all voices, dispose the output channel, and stop the scheduler.
-   * The instance must not be used after this call — subsequent `start`/`stop`/
+   * Stop all voices, cancel this instrument's scheduled notes, and dispose
+   * the output channel. Stops the scheduler only if this instance created it
+   * (no `scheduler` option). The instance must not be used after this call — subsequent `start`/`stop`/
    * `setCC`/`getCC`/`setControlValue`/`loadInstrument` calls throw. Subsequent
    * `dispose()` calls are no-ops.
    */

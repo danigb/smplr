@@ -1,5 +1,19 @@
 # smplr
 
+## Unreleased
+
+### Fixed
+
+- **`stop()` now cancels the notes scheduled for later.** Notes started with a
+  `time` beyond the scheduler's lookahead (200 ms by default) kept playing
+  after `stop()`, which only stopped the voices already sounding. Each form of
+  `stop()` now also cancels the matching scheduled notes: all of them, those
+  with a `stopId`, or those that start at or after `time`. Only this
+  instrument's notes are cancelled, even with a shared `scheduler`.
+- **`dispose()` no longer cancels other instruments' notes on a shared
+  scheduler.** It cancels only its own scheduled notes, and stops the scheduler
+  only if the instrument created it.
+
 ## 1.2.0
 
 ### Added
