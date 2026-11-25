@@ -86,6 +86,16 @@ type NormalizedNoteEvent = {
   onEnded?: (event: NoteEvent) => void;
 };
 
+/**
+ * A note queued in the scheduler that hasn't been dispatched yet (it has no
+ * voice). Tracked per instrument so `stop()` can cancel it.
+ */
+type PendingEvent = {
+  stopId: string | number;
+  time: number;
+  cancel: StopFn;
+};
+
 function compose<T>(
   a: ((e: T) => void) | undefined,
   b: ((e: T) => void) | undefined,
@@ -161,6 +171,8 @@ export class SmplrImpl implements Smplr {
   #onStart: ((event: NoteEvent) => void) | undefined;
   #onEnded: ((event: NoteEvent) => void) | undefined;
   #ccState: Map<number, number> = new Map();
+  #pending: Set<PendingEvent> = new Set();
+  #ownsScheduler: boolean;
   #disposed = false;
 
   #assertNotDisposed(action: string): void {
@@ -207,6 +219,7 @@ export class SmplrImpl implements Smplr {
     });
 
     // 2. Scheduler — shared or private
+    this.#ownsScheduler = options?.scheduler === undefined;
     this.scheduler = options?.scheduler ?? Scheduler(context);
 
     // 3. Region matcher — pre-processes groups/regions once
@@ -360,32 +373,61 @@ export class SmplrImpl implements Smplr {
     this.#assertNotDisposed("start a note");
     const normalized = this.#normalizeNoteEvent(event);
 
+    // Set when the note is queued; the dispatch callback removes it from
+    // #pending. A note within the lookahead dispatches synchronously, before
+    // `schedule()` returns, so it is never registered.
+    let pending: PendingEvent | undefined;
+    let dispatched = false;
     const schedulerStop = this.scheduler.schedule(
       normalized as NoteEvent,
-      (e) => this.#playNote(e as NormalizedNoteEvent),
+      (e) => {
+        dispatched = true;
+        if (pending) this.#pending.delete(pending);
+        this.#playNote(e as NormalizedNoteEvent);
+      },
     );
+    if (!dispatched) {
+      pending = {
+        stopId: normalized.stopId,
+        time: normalized.time ?? this.context.currentTime,
+        cancel: schedulerStop,
+      };
+      this.#pending.add(pending);
+    }
 
     return (time?: number) => {
-      schedulerStop(); // cancel from queue if not yet dispatched
-      this.#voices.stopById(normalized.stopId, time); // stop if already playing
+      // cancel from queue if not yet dispatched
+      schedulerStop();
+      if (pending) this.#pending.delete(pending);
+      // stop if already playing
+      this.#voices.stopById(normalized.stopId, time);
     };
   }
 
   /**
-   * Stop voices.
+   * Stop the voices that are playing and cancel the notes scheduled for later
+   * (queued by `start()` with a future `time`, not yet dispatched).
    *
-   * - No argument → stop all active voices
-   * - String or number → stop all voices with that stopId
-   * - `{ stopId }` → stop voices with that stopId, optionally at a future time
-   * - `{ time }` (no stopId) → stop all voices at a future time
+   * - No argument → stop all voices and cancel all scheduled notes
+   * - String or number → stop the voices and cancel the scheduled notes with
+   *   that stopId
+   * - `{ stopId, time? }` → stop the voices with that stopId at `time`, and
+   *   cancel the scheduled notes with that stopId that start at or after `time`
+   * - `{ time }` (no stopId) → stop all voices at `time`, and cancel the
+   *   scheduled notes that start at or after `time`
+   *
+   * Only affects this instrument, even when its scheduler is shared.
    */
   stop(target?: StopTarget): void {
     this.#assertNotDisposed("stop voices");
     if (target === undefined) {
+      this.#cancelPending();
       this.#voices.stopAll();
     } else if (typeof target === "string" || typeof target === "number") {
+      this.#cancelPending(target);
       this.#voices.stopById(target);
     } else {
+      this.#cancelPending(target.stopId, target.time);
       if (target.stopId !== undefined) {
         this.#voices.stopById(target.stopId, target.time);
       } else {
@@ -395,7 +437,10 @@ export class SmplrImpl implements Smplr {
   }
 
   /**
-   * Stop all voices, dispose the output channel, and stop the scheduler.
+   * Stop all voices, cancel this instrument's scheduled notes, and dispose the
+   * output channel. The scheduler is stopped only if this instance created it
+   * (no `scheduler` option): a shared scheduler keeps the notes of the other
+   * instruments on it.
    * The instance must not be used after this call — subsequent
    * `start`/`stop`/`setCC`/`getCC`/`loadInstrument` calls throw.
    * Subsequent `dispose()` calls are no-ops.
@@ -403,14 +448,29 @@ export class SmplrImpl implements Smplr {
   dispose(): void {
     if (this.#disposed) return;
     this.#disposed = true;
+    this.#cancelPending();
     this.#voices.stopAll();
     this.#channel.disconnect();
-    this.scheduler.stop();
+    if (this.#ownsScheduler) this.scheduler.stop();
   }
 
   /** @deprecated Use {@link dispose} instead. */
   disconnect(): void {
     this.dispose();
+  }
+
+  /**
+   * Cancel the scheduled (not yet dispatched) notes of this instrument that
+   * match `stopId` (all when undefined) and start at or after `time` (all
+   * when undefined).
+   */
+  #cancelPending(stopId?: string | number, time?: number): void {
+    for (const pending of this.#pending) {
+      if (stopId !== undefined && pending.stopId !== stopId) continue;
+      if (time !== undefined && pending.time < time) continue;
+      pending.cancel();
+      this.#pending.delete(pending);
+    }
   }
 
   #getBuffer(sample: string, reverse: boolean): AudioBuffer | undefined {

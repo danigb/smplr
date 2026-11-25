@@ -1,3 +1,4 @@
+import { Scheduler } from "./scheduler";
 import { SmplrImpl } from "./smplr";
 import { VoiceManager } from "./voice-manager";
 import { SmplrPreset } from "./types";
@@ -394,6 +395,178 @@ describe("stop()", () => {
 });
 
 // ---------------------------------------------------------------------------
+// stop() — notes scheduled beyond the lookahead
+// ---------------------------------------------------------------------------
+
+describe("stop() cancels scheduled notes", () => {
+  /** Preset with C4 and D4 regions. */
+  const twoNotes = (): SmplrPreset => ({
+    samples: { baseUrl: "https://example.com", formats: ["ogg"] },
+    groups: [
+      {
+        regions: [
+          { sample: "C4", key: 60 },
+          { sample: "D4", key: 62 },
+        ],
+      },
+    ],
+  });
+
+  /** Move the clock and let the scheduler interval dispatch due notes. */
+  function advanceTo(ctx: FakeContext, time: number) {
+    ctx.currentTime = time;
+    jest.advanceTimersByTime(50);
+  }
+
+  async function setup(options?: { scheduler?: Scheduler }) {
+    const ctx = makeContext(0);
+    const started: Array<string | number> = [];
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, twoNotes(), {
+      ...options,
+      onStart: (e) => started.push(typeof e === "object" ? e.note : e),
+    });
+    await smplr.ready;
+    return { ctx, smplr, started };
+  }
+
+  it("stop() cancels every note scheduled for later", async () => {
+    const { ctx, smplr } = await setup();
+    for (let i = 1; i <= 8; i++) smplr.start({ note: "C4", time: i });
+
+    smplr.stop();
+    for (let t = 0; t <= 9; t += 0.5) advanceTo(ctx, t);
+
+    expect(ctx.createBufferSource).not.toHaveBeenCalled();
+  });
+
+  it("stop() stops the sounding notes and cancels the later ones", async () => {
+    const { ctx, smplr, started } = await setup();
+    smplr.start({ note: "C4" });
+    smplr.start({ note: "D4", time: 2 });
+
+    smplr.stop();
+    advanceTo(ctx, 2);
+
+    expect(started).toEqual(["C4"]);
+    expect(ctx._sources[0].stop).toHaveBeenCalled();
+  });
+
+  it("stop(stopId) cancels only the scheduled notes with that stopId", async () => {
+    const { ctx, smplr, started } = await setup();
+    smplr.start({ note: "C4", time: 1 });
+    smplr.start({ note: "D4", time: 1.5 });
+    smplr.start({ note: "C4", time: 2 });
+
+    smplr.stop("C4");
+    for (let t = 1; t <= 2.5; t += 0.5) advanceTo(ctx, t);
+
+    expect(started).toEqual(["D4"]);
+  });
+
+  it("stop({ stopId }) cancels the scheduled notes with that stopId", async () => {
+    const { ctx, smplr, started } = await setup();
+    smplr.start({ note: "C4", time: 1, stopId: "melody" });
+    smplr.start({ note: "D4", time: 1 });
+
+    smplr.stop({ stopId: "melody" });
+    advanceTo(ctx, 1);
+
+    expect(started).toEqual(["D4"]);
+  });
+
+  it("stop({ time }) keeps the scheduled notes that start before time", async () => {
+    const { ctx, smplr, started } = await setup();
+    smplr.start({ note: "C4", time: 1 });
+    smplr.start({ note: "D4", time: 2 });
+    smplr.start({ note: "C4", time: 3 });
+
+    smplr.stop({ time: 2 });
+    for (let t = 1; t <= 3.5; t += 0.5) advanceTo(ctx, t);
+
+    expect(started).toEqual(["C4"]);
+  });
+
+  it("stop({ stopId, time }) cancels the notes with that stopId from time on", async () => {
+    const { ctx, smplr, started } = await setup();
+    smplr.start({ note: "C4", time: 1 });
+    smplr.start({ note: "C4", time: 3 });
+    smplr.start({ note: "D4", time: 3 });
+
+    smplr.stop({ stopId: "C4", time: 2 });
+    for (let t = 1; t <= 3.5; t += 0.5) advanceTo(ctx, t);
+
+    expect(started).toEqual(["C4", "D4"]);
+  });
+
+  it("stop() still stops a scheduled note after it is dispatched", async () => {
+    const { ctx, smplr, started } = await setup();
+    smplr.start({ note: "C4", time: 1 });
+    advanceTo(ctx, 1);
+    expect(started).toEqual(["C4"]);
+
+    smplr.stop();
+    expect(ctx._sources[0].stop).toHaveBeenCalled();
+  });
+
+  it("start() can schedule notes again after stop()", async () => {
+    const { ctx, smplr, started } = await setup();
+    smplr.start({ note: "C4", time: 1 });
+    smplr.stop();
+    smplr.start({ note: "D4", time: 2 });
+    for (let t = 1; t <= 2; t += 0.5) advanceTo(ctx, t);
+
+    expect(started).toEqual(["D4"]);
+  });
+
+  describe("shared scheduler", () => {
+    async function setupShared() {
+      const ctx = makeContext(0);
+      const scheduler = Scheduler(ctx as unknown as AudioContext);
+      const startedA: Array<string | number> = [];
+      const startedB: Array<string | number> = [];
+      const record = (list: Array<string | number>) => (e: unknown) =>
+        list.push((e as { note: string }).note);
+      const a = new SmplrImpl(ctx as unknown as AudioContext, twoNotes(), {
+        scheduler,
+        onStart: record(startedA),
+      });
+      const b = new SmplrImpl(ctx as unknown as AudioContext, twoNotes(), {
+        scheduler,
+        onStart: record(startedB),
+      });
+      await Promise.all([a.ready, b.ready]);
+      return { ctx, scheduler, a, b, startedA, startedB };
+    }
+
+    it("stop() of one instrument doesn't cancel the other's notes", async () => {
+      const { ctx, a, b, startedA, startedB } = await setupShared();
+      a.start({ note: "C4", time: 1 });
+      b.start({ note: "C4", time: 1 });
+
+      a.stop();
+      advanceTo(ctx, 1);
+
+      expect(startedA).toEqual([]);
+      expect(startedB).toEqual(["C4"]);
+    });
+
+    it("dispose() of one instrument doesn't cancel the other's notes", async () => {
+      const { ctx, scheduler, a, b, startedA, startedB } = await setupShared();
+      const stopSpy = jest.spyOn(scheduler, "stop");
+      a.start({ note: "C4", time: 1 });
+      b.start({ note: "D4", time: 1 });
+
+      a.dispose();
+      advanceTo(ctx, 1);
+
+      expect(stopSpy).not.toHaveBeenCalled();
+      expect(startedA).toEqual([]);
+      expect(startedB).toEqual(["D4"]);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
 // dispose()
 // ---------------------------------------------------------------------------
 
@@ -407,6 +580,19 @@ describe("dispose()", () => {
     smplr.dispose();
 
     expect(ctx._sources[0].stop).toHaveBeenCalled();
+  });
+
+  it("cancels the notes scheduled for later", async () => {
+    const ctx = makeContext(0);
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, makeJson());
+    await smplr.ready;
+
+    smplr.start({ note: "C4", time: 1 });
+    smplr.dispose();
+    ctx.currentTime = 1;
+    jest.advanceTimersByTime(50);
+
+    expect(ctx.createBufferSource).not.toHaveBeenCalled();
   });
 
   it("is safe to call when no voices are active", () => {

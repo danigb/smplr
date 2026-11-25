@@ -232,7 +232,7 @@ Bear in mind that you may need to call [`context.resume()` before playing a note
 Instruments have a global `stop` function that can be used to stop all notes:
 
 ```js
-// This will stop all notes
+// This will stop all notes, including the ones scheduled for later
 piano.stop();
 ```
 
@@ -242,6 +242,8 @@ Or stop the specified one. The argument is a `stopId` — by default the same va
 piano.stop("C4"); // stop the note(s) started with `note: "C4"`
 piano.stop(60); // stop the note(s) started with `note: 60`
 ```
+
+`stop` also cancels the notes scheduled for later that match: `piano.stop("C4")` cancels the scheduled C4 notes, and `piano.stop({ time })` cancels the ones that start at or after `time`. It only affects this instrument, even when it shares its scheduler with others.
 
 Stopping also works for notes started with a `duration`: an earlier stop time overrides the one scheduled by `duration` (a later one is ignored), so `piano.stop()` cuts a sounding note right away.
 
@@ -372,7 +374,7 @@ Global callbacks will be invoked regardless of whether local events are defined.
 
 ### Dispose
 
-When you're done with an instrument, call `dispose()` to stop all voices, tear down the audio graph, and stop the scheduler. The instance must not be used after this call.
+When you're done with an instrument, call `dispose()` to stop all voices, cancel the notes scheduled for later, and tear down the audio graph. It also stops the scheduler, unless it was shared through the `scheduler` option. The instance must not be used after this call.
 
 ```js
 useEffect(() => {
