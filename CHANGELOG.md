@@ -1,6 +1,6 @@
 # smplr
 
-## Unreleased
+## 1.2.1
 
 ### Fixed
 
