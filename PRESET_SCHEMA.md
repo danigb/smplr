@@ -60,7 +60,10 @@ Inheritable playback parameters. Can appear at `defaults`, group, or region leve
 | `tune`        | `number`  | Pitch adjustment in semitones.                                          |
 | `detune`      | `number`  | Fine pitch adjustment in cents.                                         |
 | `ampRelease`  | `number`  | Release envelope time in seconds.                                       |
-| `ampAttack`   | `number`  | Attack time in seconds. _(Not yet implemented — accepted but ignored.)_ |
+| `ampAttack`   | `number`  | Attack time in seconds.                                                 |
+| `ampVelTrack` | `number`  | How much velocity affects volume, 0–1 (default `1`; `0` = every velocity at full volume). |
+| `ampVelDb`    | `number`  | Dynamic range: dB quieter at velocity 1 than at 127 (default ≈84.15, the `(vel/127)²` square law). |
+| `ampVelCurve` | `Curve`   | Explicit velocity → amplitude shape: `"linear"`, `"soft"`, `"hard"` or `[[x, y], ...]` breakpoints on 0–1. Overrides `ampVelDb`. |
 | `lpfCutoffHz` | `number`  | Low-pass filter cutoff frequency in Hz.                                 |
 | `offset`      | `number`  | Start playback from this position in seconds.                           |
 | `loop`        | `boolean` | Loop the sample.                                                        |

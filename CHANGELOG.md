@@ -10,6 +10,11 @@
   - Both affect only the voices of that `start()` call, can be chained, and can be called before a scheduled note starts.
   - `stopId` and `voiceCount` are read-only.
   - The `NoteHandle` type is exported.
+- **Velocity curves.**
+  - The `velocityCurve` option and property on every instrument maps played velocities before layer selection and gain. It accepts `"linear"`, `"soft"`, `"hard"` or `[x, y]` breakpoints.
+  - Presets gain `ampVelTrack` (velocity depth), `ampVelDb` (dynamic range) and `ampVelCurve` (explicit shape). The defaults keep the exact `(vel/127)²` response.
+  - The SFZ import maps `amp_veltrack` and every `amp_velcurve_N` point.
+  - The `Curve` type is exported.
 
 ## 1.2.1
 

@@ -2,6 +2,7 @@ import { Scheduler } from "./scheduler";
 import { SmplrImpl } from "./smplr";
 import { VoiceManager } from "./voice-manager";
 import { Voice } from "./voice";
+import { Instrument } from "./instrument";
 import { SmplrPreset } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -412,6 +413,100 @@ describe("NoteHandle", () => {
     expect(note.voiceCount).toBe(0);
     note.fadeTo(-6, 1);
     expect(fadeSpy).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// velocityCurve (input curve)
+// ---------------------------------------------------------------------------
+
+describe("velocityCurve", () => {
+  /** Two velocity layers on C4; each buffer is tagged with its URL. */
+  function layeredJson(): SmplrPreset {
+    return makeJson({
+      groups: [
+        {
+          regions: [
+            { sample: "soft", key: 60, velRange: [0, 63] },
+            { sample: "loud", key: 60, velRange: [64, 127] },
+          ],
+        },
+      ],
+    });
+  }
+
+  function playedSample(ctx: FakeContext, i = 0): string {
+    return (ctx._sources[i].buffer as unknown as { url: string }).url;
+  }
+
+  beforeEach(() => {
+    mockLoadBuffer.mockImplementation((_ctx: unknown, url: string) =>
+      Promise.resolve({ sampleRate: 44100, duration: 1, url }),
+    );
+  });
+
+  it("uses velocities as played by default", async () => {
+    const ctx = makeContext() as FakeContext;
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, layeredJson());
+    await smplr.ready;
+
+    smplr.start({ note: "C4", velocity: 40 });
+
+    expect(smplr.velocityCurve).toBeUndefined();
+    expect(playedSample(ctx)).toContain("soft");
+  });
+
+  it("maps the velocity before choosing the layer", async () => {
+    const ctx = makeContext() as FakeContext;
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, layeredJson(), {
+      velocityCurve: "soft",
+    });
+    await smplr.ready;
+
+    // 127 * (40/127)^0.6 ~= 63.4 -> 63 (soft); 50 -> ~73 (loud)
+    smplr.start({ note: "C4", velocity: 50 });
+
+    expect(playedSample(ctx)).toContain("loud");
+  });
+
+  it("the setter applies to the next note", async () => {
+    const ctx = makeContext() as FakeContext;
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, layeredJson());
+    await smplr.ready;
+
+    smplr.start({ note: "C4", velocity: 50 });
+    smplr.velocityCurve = [
+      [0, 1],
+      [1, 1],
+    ];
+    smplr.start({ note: "C4", velocity: 50 });
+
+    expect(playedSample(ctx, 0)).toContain("soft");
+    expect(playedSample(ctx, 1)).toContain("loud");
+  });
+
+  it("passes through the Instrument() builder options", () => {
+    const ctx = makeContext();
+    const Inst = Instrument(() => {});
+    const inst = Inst(ctx as unknown as AudioContext, {
+      velocityCurve: "hard",
+    });
+    expect(inst.velocityCurve).toBe("hard");
+  });
+
+  it("onStart receives the original velocity", async () => {
+    const ctx = makeContext() as FakeContext;
+    const onStart = jest.fn();
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, layeredJson(), {
+      velocityCurve: "soft",
+    });
+    await smplr.ready;
+
+    smplr.start({ note: "C4", velocity: 50, onStart });
+
+    expect(onStart).toHaveBeenCalledWith(
+      expect.objectContaining({ velocity: 50 }),
+    );
   });
 });
 
