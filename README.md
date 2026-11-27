@@ -247,6 +247,11 @@ piano.stop(60); // stop the note(s) started with `note: 60`
 
 Stopping also works for notes started with a `duration`: an earlier stop time overrides the one scheduled by `duration` (a later one is ignored), so `piano.stop()` cuts a sounding note right away.
 
+Presets can change these rules (see [PRESET_SCHEMA.md](./PRESET_SCHEMA.md)):
+- `oneShot` samples play to their end, ignoring the note's stop and `duration`. Only `piano.stop()` with no id, chokes and retriggers end them.
+- `retrigger` sets what a repeated note does to the previous one: keep it, release it, or cut it.
+- `chokeFade` sets how fast a voice fades out when another sound chokes it.
+
 #### Control a sounding note
 
 The handle returned by `start` can also change the note while it sounds:

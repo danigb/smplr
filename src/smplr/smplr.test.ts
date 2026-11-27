@@ -511,6 +511,92 @@ describe("velocityCurve", () => {
 });
 
 // ---------------------------------------------------------------------------
+// oneShot, retrigger, chokeFade
+// ---------------------------------------------------------------------------
+
+describe("oneShot / retrigger / chokeFade", () => {
+  async function setup(json: SmplrPreset) {
+    const ctx = makeContext() as FakeContext;
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, json);
+    await smplr.ready;
+    return { ctx, smplr };
+  }
+
+  it("oneShot ignores the handle stop and duration, but stop() ends it", async () => {
+    const { ctx, smplr } = await setup(
+      makeJson({ defaults: { oneShot: true } }),
+    );
+
+    const note = smplr.start({ note: "C4", duration: 0.5 });
+    note();
+    smplr.stop("C4");
+    expect(ctx._sources[0].stop).not.toHaveBeenCalled();
+
+    smplr.stop();
+    expect(ctx._sources[0].stop).toHaveBeenCalled();
+  });
+
+  it("retrigger cut fades out the previous voice of the same note", async () => {
+    const { ctx, smplr } = await setup(
+      makeJson({ defaults: { retrigger: "cut" } }),
+    );
+
+    smplr.start({ note: "C4", time: 0 });
+    smplr.start({ note: "C4", time: 0.1 });
+
+    expect(ctx._sources[0].stop).toHaveBeenCalledWith(expect.closeTo(0.11));
+    expect(ctx._sources[1].stop).not.toHaveBeenCalled();
+  });
+
+  it("retrigger cut also ends one-shot voices", async () => {
+    const { ctx, smplr } = await setup(
+      makeJson({ defaults: { retrigger: "cut", oneShot: true } }),
+    );
+
+    smplr.start({ note: "C4", time: 0 });
+    smplr.start({ note: "C4", time: 0.1 });
+
+    expect(ctx._sources[0].stop).toHaveBeenCalled();
+  });
+
+  it("retrigger layer (default) keeps the previous voice", async () => {
+    const { ctx, smplr } = await setup(makeJson());
+
+    smplr.start({ note: "C4", time: 0 });
+    smplr.start({ note: "C4", time: 0.1 });
+
+    expect(ctx._sources[0].stop).not.toHaveBeenCalled();
+  });
+
+  it("a choked voice fades over its chokeFade", async () => {
+    const { ctx, smplr } = await setup(
+      makeJson({
+        groups: [
+          {
+            regions: [
+              // open hi-hat: long release, quick choke
+              {
+                sample: "open",
+                key: 46,
+                group: 1,
+                ampRelease: 2,
+                chokeFade: 0.05,
+              },
+              { sample: "closed", key: 42, offBy: 1 },
+            ],
+          },
+        ],
+      }),
+    );
+
+    smplr.start({ note: 46, time: 0 });
+    smplr.start({ note: 42, time: 0.1 }); // within the lookahead: dispatched now
+
+    expect(ctx._sources[0].stop).toHaveBeenCalledWith(expect.closeTo(0.15));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // start() — future scheduling
 // ---------------------------------------------------------------------------
 

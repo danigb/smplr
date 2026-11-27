@@ -98,6 +98,9 @@ export function sfzToPreset(
   };
 }
 
+/** Fade used for SFZ `off_mode=fast`, in seconds. */
+const SFZ_OFF_MODE_FAST = 0.006;
+
 // ---------------------------------------------------------------------------
 // Group / Region builders
 // ---------------------------------------------------------------------------
@@ -209,6 +212,20 @@ function buildRegion(
 
   const ampVelCurve = velCurve(props);
   if (ampVelCurve) region.ampVelCurve = ampVelCurve;
+
+  // One-shot playback: the sample plays to its end, ignoring note-off
+  if (str(props, "loop_mode") === "one_shot") region.oneShot = true;
+
+  // How this region dies when its group is choked (off_by)
+  const offMode = str(props, "off_mode");
+  if (offMode === "fast") {
+    region.chokeFade = SFZ_OFF_MODE_FAST;
+  } else if (offMode === "time") {
+    const offTime = num(props, "off_time");
+    if (offTime !== undefined) region.chokeFade = offTime;
+  }
+  // `offset` and `end` are not mapped: SFZ gives them in sample frames, and the
+  // sample rate is unknown until the audio is decoded.
 
   return region;
 }

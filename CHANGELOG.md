@@ -15,6 +15,12 @@
   - Presets gain `ampVelTrack` (velocity depth), `ampVelDb` (dynamic range) and `ampVelCurve` (explicit shape). The defaults keep the exact `(vel/127)²` response.
   - The SFZ import maps `amp_veltrack` and every `amp_velcurve_N` point.
   - The `Curve` type is exported.
+- **Playback control in presets:**
+  - `end` stops a sample at a position.
+  - `oneShot` plays to the end, ignoring per-note stops. `stop()` still ends it.
+  - `retrigger: "layer" | "release" | "cut"` sets what a repeated note does to the previous one.
+  - `chokeFade` sets a dedicated fade when a voice is choked by `offBy`. Choked voices used to always use their release.
+  - The SFZ import maps `loop_mode=one_shot`, `off_mode=fast` and `off_mode=time` with `off_time`.
 
 ## 1.2.1
 

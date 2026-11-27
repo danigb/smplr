@@ -66,6 +66,10 @@ Inheritable playback parameters. Can appear at `defaults`, group, or region leve
 | `ampVelCurve` | `Curve`   | Explicit velocity → amplitude shape: `"linear"`, `"soft"`, `"hard"` or `[[x, y], ...]` breakpoints on 0–1. Overrides `ampVelDb`. |
 | `lpfCutoffHz` | `number`  | Low-pass filter cutoff frequency in Hz.                                 |
 | `offset`      | `number`  | Start playback from this position in seconds.                           |
+| `end`         | `number`  | Stop playback at this position in seconds (`0` = end of buffer). Ignored when looping; in reverse, `[offset, end]` plays backwards from `end`. |
+| `oneShot`     | `boolean` | Play to the end of the sample: per-note stops (the note handle, `stop(stopId)`, `duration`) are ignored. `stop()` with no id, chokes, retrigger and the voice cap still end it. |
+| `retrigger`   | `"layer" \| "release" \| "cut"` | What a new note with the same `stopId` does to older voices: keep them (`"layer"`, default), release them, or fade them out in 10 ms (`"cut"`). |
+| `chokeFade`   | `number`  | When this voice is choked by another region's `offBy`, fade out over this many seconds instead of its `ampRelease`. |
 | `loop`        | `boolean` | Loop the sample.                                                        |
 | `loopStart`   | `number`  | Loop start in seconds. (For a fraction of the buffer, use `loopAuto`.)  |
 | `loopEnd`     | `number`  | Loop end in seconds (`0` means end of buffer).                          |

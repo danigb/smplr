@@ -4,7 +4,10 @@ import { DEFAULT_AMP_VEL_DB } from "./volume";
 /**
  * Hardcoded defaults — the baseline when nothing else is specified.
  */
-export const PARAM_DEFAULTS: Required<Omit<PlaybackParams, "ampVelCurve">> = {
+/** PlaybackParams keys that are optional and have no default. */
+type NoDefaultKeys = "ampVelCurve" | "chokeFade";
+
+export const PARAM_DEFAULTS: Required<Omit<PlaybackParams, NoDefaultKeys>> = {
   volume: 0,
   ampVelTrack: 1,
   ampVelDb: DEFAULT_AMP_VEL_DB,
@@ -38,6 +41,9 @@ export const PARAM_DEFAULTS: Required<Omit<PlaybackParams, "ampVelCurve">> = {
   modEnvSustain: 1,
   modEnvRelease: 0,
   offset: 0,
+  end: 0,
+  oneShot: false,
+  retrigger: "layer",
   loop: false,
   loopStart: 0,
   loopEnd: 0,
@@ -48,6 +54,7 @@ export const PARAM_DEFAULTS: Required<Omit<PlaybackParams, "ampVelCurve">> = {
 const PLAYBACK_KEYS = [
   ...Object.keys(PARAM_DEFAULTS),
   "ampVelCurve",
+  "chokeFade",
 ] as (keyof PlaybackParams)[];
 
 /**
@@ -98,8 +105,8 @@ export function resolveParams(
   overrides?: NoteOverrides,
 ): VoiceParams {
   // Merge: hardcoded defaults → json.defaults → group → region
-  const merged: Required<Omit<PlaybackParams, "ampVelCurve">> &
-    Pick<PlaybackParams, "ampVelCurve"> = {
+  const merged: Required<Omit<PlaybackParams, NoDefaultKeys>> &
+    Pick<PlaybackParams, NoDefaultKeys> = {
     ...PARAM_DEFAULTS,
     ...defaults,
     ...pickPlaybackParams(group),
@@ -152,6 +159,10 @@ export function resolveParams(
     modEnvSustain: merged.modEnvSustain,
     modEnvRelease: merged.modEnvRelease,
     offset: merged.offset,
+    end: merged.end,
+    oneShot: merged.oneShot,
+    chokeFade: merged.chokeFade,
+    retrigger: merged.retrigger,
     loop: overrides?.loop ?? merged.loop,
     loopStart: merged.loopStart,
     loopEnd: merged.loopEnd,
