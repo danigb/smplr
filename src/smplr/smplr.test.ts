@@ -1,6 +1,7 @@
 import { Scheduler } from "./scheduler";
 import { SmplrImpl } from "./smplr";
 import { VoiceManager } from "./voice-manager";
+import { Voice } from "./voice";
 import { SmplrPreset } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -288,6 +289,129 @@ describe("start()", () => {
 
     // Source node should be stopped (stop() triggers the release envelope path)
     expect(ctx._sources[0].stop).toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// start() — NoteHandle
+// ---------------------------------------------------------------------------
+
+describe("NoteHandle", () => {
+  let fadeSpy: jest.SpyInstance;
+  let glideSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    fadeSpy = jest
+      .spyOn(Voice.prototype, "fadeTo")
+      .mockImplementation(function (this: Voice) {});
+    glideSpy = jest
+      .spyOn(Voice.prototype, "glideTo")
+      .mockImplementation(function (this: Voice) {});
+  });
+
+  afterEach(() => {
+    fadeSpy.mockRestore();
+    glideSpy.mockRestore();
+  });
+
+  async function setup(json = makeJson(), currentTime = 0) {
+    const ctx = makeContext(currentTime) as FakeContext;
+    const smplr = new SmplrImpl(ctx as unknown as AudioContext, json);
+    await smplr.ready;
+    return { ctx, smplr };
+  }
+
+  it("exposes stopId and counts the voices of the call", async () => {
+    const { smplr } = await setup();
+    const note = smplr.start({ note: "C4" });
+    expect(note.stopId).toBe("C4");
+    expect(note.voiceCount).toBe(1);
+  });
+
+  it("fadeTo and glideTo reach the voices of the call, with now as default time", async () => {
+    const { smplr } = await setup(makeJson(), 0.5);
+    const note = smplr.start({ note: "C4" });
+
+    note.fadeTo(-6, 1).glideTo(2, 0.1, 3);
+
+    expect(fadeSpy).toHaveBeenCalledWith(-6, 1, 0.5);
+    expect(glideSpy).toHaveBeenCalledWith(2, 0.1, 3);
+  });
+
+  it("only affects the voices of its own start() call", async () => {
+    const { smplr } = await setup();
+    const first = smplr.start({ note: "C4" });
+    const second = smplr.start({ note: "C4" });
+
+    first.fadeTo(-12, 1);
+
+    expect(fadeSpy).toHaveBeenCalledTimes(1);
+    const target = fadeSpy.mock.instances[0];
+    expect(first.voiceCount).toBe(1);
+    expect(second.voiceCount).toBe(1);
+    second.fadeTo(-3, 1);
+    expect(fadeSpy.mock.instances[1]).not.toBe(target);
+  });
+
+  it("calling the handle keeps stopping every voice with its stopId", async () => {
+    const { ctx, smplr } = await setup();
+    const first = smplr.start({ note: "C4" });
+    smplr.start({ note: "C4" });
+
+    first();
+
+    expect(ctx._sources[0].stop).toHaveBeenCalled();
+    expect(ctx._sources[1].stop).toHaveBeenCalled();
+  });
+
+  it("handle.stop() is the same as calling it", async () => {
+    const { ctx, smplr } = await setup();
+    smplr.start({ note: "C4" }).stop();
+    expect(ctx._sources[0].stop).toHaveBeenCalled();
+  });
+
+  it("reaches every layered voice of one call", async () => {
+    const { smplr } = await setup(
+      makeJson({
+        groups: [
+          { regions: [{ sample: "C4", key: 60 }] },
+          { regions: [{ sample: "C4b", key: 60 }] },
+        ],
+      }),
+    );
+    const note = smplr.start({ note: "C4" });
+
+    note.glideTo(-12, 1);
+
+    expect(note.voiceCount).toBe(2);
+    expect(glideSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("queues operations on a scheduled note and applies them when it starts", async () => {
+    const { ctx, smplr } = await setup();
+    const note = smplr.start({ note: "C4", time: 1 });
+
+    note.fadeTo(-6, 0.5);
+    expect(fadeSpy).not.toHaveBeenCalled();
+    expect(note.voiceCount).toBe(0);
+
+    ctx.currentTime = 0.9;
+    jest.advanceTimersByTime(50);
+
+    expect(note.voiceCount).toBe(1);
+    // Requested at time 0; Voice clamps it to its start time
+    expect(fadeSpy).toHaveBeenCalledWith(-6, 0.5, 0);
+  });
+
+  it("forgets voices once they end", async () => {
+    const { ctx, smplr } = await setup();
+    const note = smplr.start({ note: "C4" });
+
+    ctx._sources[0].onended?.();
+
+    expect(note.voiceCount).toBe(0);
+    note.fadeTo(-6, 1);
+    expect(fadeSpy).not.toHaveBeenCalled();
   });
 });
 

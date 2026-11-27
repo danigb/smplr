@@ -6,7 +6,7 @@ import type {
   LoadProgress,
   NoteEvent,
   SmplrPreset,
-  StopFn,
+  NoteHandle,
 } from "../smplr/types";
 
 const DEFAULT_BASE_URL = "https://smpldsnds.github.io";
@@ -517,7 +517,7 @@ export type DrumAbuseExtras = {
   getMachineId(): string | null;
   getSetPath(): string | null;
   getPackId(): DrumAbusePackId;
-  start(event: NoteEvent): StopFn;
+  start(event: NoteEvent): NoteHandle;
 };
 
 export const DrumAbuse = Instrument<DrumAbuseOptions, DrumAbuseExtras>(
