@@ -1,9 +1,5 @@
 import { evalCurve } from "./curve";
-import {
-  DEFAULT_AMP_VEL_DB,
-  midiVelToGain,
-  velocityToGain,
-} from "./volume";
+import { DEFAULT_AMP_VEL_DB, midiVelToGain, velocityToGain } from "./volume";
 import { resolveParams } from "./params";
 
 describe("evalCurve", () => {
@@ -59,8 +55,9 @@ describe("velocityToGain", () => {
 
   it("the default db is the square law (non-fast path agrees)", () => {
     // A curve-free call with db nudged by 0 through a different object still matches
-    expect(velocityToGain(64, { track: 0.999999999, db: DEFAULT_AMP_VEL_DB }))
-      .toBeCloseTo(midiVelToGain(64), 6);
+    expect(
+      velocityToGain(64, { track: 0.999999999, db: DEFAULT_AMP_VEL_DB }),
+    ).toBeCloseTo(midiVelToGain(64), 6);
   });
 
   it("track 0 gives full gain at any velocity", () => {

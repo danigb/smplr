@@ -488,7 +488,9 @@ describe("velocityCurve", () => {
   it("passes through the Instrument() builder options", () => {
     const ctx = makeContext();
     const Inst = Instrument(() => {});
-    const inst = Inst(ctx as unknown as AudioContext, { velocityCurve: "hard" });
+    const inst = Inst(ctx as unknown as AudioContext, {
+      velocityCurve: "hard",
+    });
     expect(inst.velocityCurve).toBe("hard");
   });
 
