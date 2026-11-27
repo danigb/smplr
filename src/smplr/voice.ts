@@ -1,4 +1,4 @@
-import { dbToGain, midiVelToGain } from "./volume";
+import { DEFAULT_AMP_VEL_DB, dbToGain, velocityToGain } from "./volume";
 import { VoiceParams } from "./types";
 import {
   AdsrTimes,
@@ -118,7 +118,12 @@ export class Voice {
 
     // Velocity gain × dB volume
     const gain = context.createGain();
-    gain.gain.value = midiVelToGain(params.velocity) * dbToGain(params.volume);
+    gain.gain.value =
+      velocityToGain(params.velocity, {
+        track: params.ampVelTrack ?? 1,
+        db: params.ampVelDb ?? DEFAULT_AMP_VEL_DB,
+        curve: params.ampVelCurve,
+      }) * dbToGain(params.volume);
 
     // Stereo pan — only inserted when off-center
     let panner: StereoPannerNode | undefined;

@@ -17,6 +17,7 @@ import {
   StopTarget,
 } from "./types";
 import { Voice } from "./voice";
+import { Curve, evalCurve } from "./curve";
 import { VoiceManager } from "./voice-manager";
 import {
   addNoteVoice,
@@ -39,6 +40,13 @@ export type SmplrOptions = {
   pan?: number;
   /** Default note velocity when not specified in NoteEvent (0–127). Defaults to 100. */
   velocity?: number;
+  /**
+   * Input velocity curve: maps each played velocity (0–127) to the velocity the
+   * instrument uses, before choosing velocity layers and computing gain. Use it
+   * to adapt the response to a keyboard or a playing style. Defaults to none
+   * (velocities are used as played).
+   */
+  velocityCurve?: Curve;
   /** Shared SampleLoader instance. If omitted, a private one is created. */
   loader?: SampleLoader;
   /** Shared Scheduler instance. If omitted, a private one is created. */
@@ -169,6 +177,7 @@ export class SmplrImpl implements Smplr {
   #reversedBuffers: Map<string, AudioBuffer> = new Map();
   #defaults: PlaybackParams | undefined;
   #defaultVelocity: number;
+  #velocityCurve: Curve | undefined;
   #aliases: Map<string, number> | undefined;
   #notesToLoad: NotesToLoad | undefined;
   #fallback: NotesToLoad["fallback"];
@@ -210,6 +219,7 @@ export class SmplrImpl implements Smplr {
     const json = fullJson && this.#filter(fullJson, this.#notesToLoad);
     this.#defaults = json?.defaults;
     this.#defaultVelocity = options?.velocity ?? 100;
+    this.#velocityCurve = options?.velocityCurve;
     this.#onLoadProgress = options?.onLoadProgress;
     this.#onStart = options?.onStart;
     this.#onEnded = options?.onEnded;
@@ -349,6 +359,19 @@ export class SmplrImpl implements Smplr {
   getCC(cc: number): number {
     this.#assertNotDisposed("read CC");
     return this.#ccState.get(cc) ?? 0;
+  }
+
+  /**
+   * Input velocity curve applied to every future note before layer selection and
+   * gain (see {@link SmplrOptions.velocityCurve}). `undefined` uses velocities as
+   * played.
+   */
+  get velocityCurve(): Curve | undefined {
+    return this.#velocityCurve;
+  }
+
+  set velocityCurve(curve: Curve | undefined) {
+    this.#velocityCurve = curve;
   }
 
   /**
@@ -513,7 +536,6 @@ export class SmplrImpl implements Smplr {
   #playNote(event: NormalizedNoteEvent, ref?: NoteRef): void {
     const {
       midi,
-      velocity,
       time,
       stopId,
       duration,
@@ -525,6 +547,10 @@ export class SmplrImpl implements Smplr {
       onStart,
       onEnded,
     } = event;
+
+    const velocity = this.#velocityCurve
+      ? Math.round(127 * evalCurve(this.#velocityCurve, event.velocity / 127))
+      : event.velocity;
 
     // Notes that weren't loaded (see notesToLoad) play the nearest loaded
     // note when fallback is "nearest", pitch-shifted to the played note.

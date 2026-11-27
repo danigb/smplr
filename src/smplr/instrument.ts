@@ -1,3 +1,4 @@
+import type { Curve } from "./curve";
 import type { OutputChannel } from "./channel";
 import type { SampleLoader } from "./sample-loader";
 import type { Scheduler } from "./scheduler";
@@ -60,6 +61,12 @@ export interface Smplr {
    * not been set (matches MIDI's "undefined controller defaults to 0" convention).
    */
   getCC(cc: number): number;
+
+  /**
+   * Input velocity curve: maps each played velocity before layer selection and
+   * gain. `undefined` (the default) uses velocities as played.
+   */
+  velocityCurve: Curve | undefined;
 
   /**
    * Set the cents detune applied to every future note. Mutates the instrument's
@@ -177,6 +184,7 @@ const SMPLR_OPTION_KEYS = [
   "volumeToGain",
   "pan",
   "velocity",
+  "velocityCurve",
   "loader",
   "scheduler",
   "onLoadProgress",

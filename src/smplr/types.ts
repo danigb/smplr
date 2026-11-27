@@ -1,9 +1,16 @@
+import type { Curve } from "./curve";
+
 /**
  * Inheritable playback parameters. Can appear at global defaults, group, or region level.
  * More specific levels override less specific ones.
  */
 export type PlaybackParams = {
   volume?: number; // dB adjustment (0 = no change)
+  // Velocity -> gain. shape = ampVelCurve(v), or v^(ampVelDb / 42.08) when unset, with v = vel/127.
+  // gain = (1 - ampVelTrack) + ampVelTrack * shape. The defaults give exactly (vel/127)^2.
+  ampVelTrack?: number; // depth of velocity's effect on gain, 0..1 (default 1; 0 = every velocity at full gain)
+  ampVelDb?: number; // dynamic range: attenuation in dB at velocity 1 relative to 127 (default ~84.15, the square law)
+  ampVelCurve?: Curve; // explicit velocity (0..1) -> amplitude (0..1) shape; overrides ampVelDb
   pan?: number; // stereo position: -1 (full left) to 1 (full right), 0 = center
   tune?: number; // pitch adjustment in semitones
   detune?: number; // fine pitch adjustment in cents
@@ -195,6 +202,9 @@ export type LoadProgress = {
 export type VoiceParams = {
   detune: number; // cents (pitch transpose + tune + detune + note override)
   velocity: number; // 0-127
+  ampVelTrack?: number; // see PlaybackParams; default 1
+  ampVelDb?: number; // see PlaybackParams; default the square law
+  ampVelCurve?: Curve; // see PlaybackParams
   volume: number; // dB gain adjustment
   pan: number; // stereo position: -1 (full left) to 1 (full right), 0 = center
   ampDelay: number; // silence before the attack phase starts, in seconds

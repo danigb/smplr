@@ -329,6 +329,33 @@ sampler.setReverse(true); // play samples reversed for all future notes
 sampler.setReverse(false); // back to forward playback
 ```
 
+#### Velocity response
+
+Use the `velocityCurve` option (or property) to change how the instrument responds to velocity. It maps each velocity *before* the instrument picks a velocity layer and computes the volume, so it changes both loudness and timbre.
+
+It applies to **every** note the instrument plays: notes from a MIDI keyboard, from the `Sequencer` and from your code alike. To adapt the response of one keyboard only, transform the velocity before calling `start` instead.
+
+```js
+const piano = SplendidGrandPiano(context, { velocityCurve: "soft" });
+piano.velocityCurve = "hard"; // applies to the next notes
+piano.velocityCurve = [
+  [0, 0.2], // velocity 0 plays as ~25
+  [0.5, 0.7],
+  [1, 1],
+]; // breakpoints [in, out], both 0..1
+piano.velocityCurve = undefined; // velocities as played (the default)
+```
+
+The presets are `"linear"`, `"soft"` (more output for a light touch) and `"hard"` (needs a heavier touch). `onStart` and `onEnded` still receive the original velocity.
+
+Instrument authors can also set how velocity turns into volume, in presets (see [PRESET_SCHEMA.md](./PRESET_SCHEMA.md)):
+
+- `ampVelTrack` (0–1) is how much velocity affects volume. `0` means every velocity plays at full volume.
+- `ampVelDb` is the dynamic range: how many dB quieter velocity 1 is than velocity 127. A layered instrument whose samples already get softer can use a smaller range, such as `30`.
+- `ampVelCurve` sets an explicit velocity-to-amplitude shape.
+
+The default is the standard `(velocity/127)²` response.
+
 #### MIDI CC
 
 Set and read MIDI Control Change values on the instrument:

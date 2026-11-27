@@ -1,10 +1,13 @@
 import { PlaybackParams, SmplrGroup, SmplrRegion, VoiceParams } from "./types";
+import { DEFAULT_AMP_VEL_DB } from "./volume";
 
 /**
  * Hardcoded defaults — the baseline when nothing else is specified.
  */
-export const PARAM_DEFAULTS: Required<PlaybackParams> = {
+export const PARAM_DEFAULTS: Required<Omit<PlaybackParams, "ampVelCurve">> = {
   volume: 0,
+  ampVelTrack: 1,
+  ampVelDb: DEFAULT_AMP_VEL_DB,
   pan: 0,
   tune: 0,
   detune: 0,
@@ -41,7 +44,11 @@ export const PARAM_DEFAULTS: Required<PlaybackParams> = {
   reverse: false,
 };
 
-const PLAYBACK_KEYS = Object.keys(PARAM_DEFAULTS) as (keyof PlaybackParams)[];
+/** Every PlaybackParams key, including the optional ones without a default. */
+const PLAYBACK_KEYS = [
+  ...Object.keys(PARAM_DEFAULTS),
+  "ampVelCurve",
+] as (keyof PlaybackParams)[];
 
 /**
  * Extract only PlaybackParams fields from a group or region object,
@@ -91,7 +98,8 @@ export function resolveParams(
   overrides?: NoteOverrides,
 ): VoiceParams {
   // Merge: hardcoded defaults → json.defaults → group → region
-  const merged: Required<PlaybackParams> = {
+  const merged: Required<Omit<PlaybackParams, "ampVelCurve">> &
+    Pick<PlaybackParams, "ampVelCurve"> = {
     ...PARAM_DEFAULTS,
     ...defaults,
     ...pickPlaybackParams(group),
@@ -114,6 +122,9 @@ export function resolveParams(
   return {
     detune,
     velocity,
+    ampVelTrack: merged.ampVelTrack,
+    ampVelDb: merged.ampVelDb,
+    ampVelCurve: merged.ampVelCurve,
     volume: merged.volume,
     pan: merged.pan,
     ampDelay: merged.ampDelay,

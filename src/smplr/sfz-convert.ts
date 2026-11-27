@@ -201,7 +201,37 @@ function buildRegion(
   const ampRelease = num(props, "ampeg_release");
   if (ampRelease !== undefined) region.ampRelease = ampRelease;
 
+  // Velocity tracking (SFZ percent; negative inverted tracking is not supported)
+  const ampVeltrack = num(props, "amp_veltrack");
+  if (ampVeltrack !== undefined) {
+    region.ampVelTrack = Math.min(100, Math.max(0, ampVeltrack)) / 100;
+  }
+
+  const ampVelCurve = velCurve(props);
+  if (ampVelCurve) region.ampVelCurve = ampVelCurve;
+
   return region;
+}
+
+/**
+ * Collect every `amp_velcurve_N=value` into breakpoints `[N/127, value]`.
+ * As in SFZ, velocity 0 is 0 and velocity 127 is 1 unless they are given.
+ */
+function velCurve(
+  props: Record<string, string | number>,
+): [number, number][] | undefined {
+  const points: [number, number][] = [];
+  for (const [key, value] of Object.entries(props)) {
+    const match = /^amp_velcurve_(\d+)$/.exec(key);
+    if (!match || typeof value !== "number") continue;
+    const vel = Number(match[1]);
+    if (vel > 127) continue;
+    points.push([vel / 127, value]);
+  }
+  if (points.length === 0) return undefined;
+  if (!points.some(([x]) => x === 0)) points.push([0, 0]);
+  if (!points.some(([x]) => x === 1)) points.push([1, 1]);
+  return points.sort((a, b) => a[0] - b[0]);
 }
 
 // ---------------------------------------------------------------------------
