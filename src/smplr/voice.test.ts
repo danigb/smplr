@@ -1292,7 +1292,9 @@ describe("glideTo", () => {
 
     voice.glideTo(12, 0.5, 1);
 
-    expect((sources[0] as any).detune.cancelScheduledValues).not.toHaveBeenCalled();
+    expect(
+      (sources[0] as any).detune.cancelScheduledValues,
+    ).not.toHaveBeenCalled();
     expect((sources[0] as any).detune.value).toBe(200);
   });
 
@@ -1306,10 +1308,7 @@ describe("glideTo", () => {
     voice.glideTo(12, 0.5, 1);
 
     const rate = sources[0].playbackRate;
-    expect(rate.setValueAtTime).toHaveBeenCalledWith(
-      expect.closeTo(base),
-      1,
-    );
+    expect(rate.setValueAtTime).toHaveBeenCalledWith(expect.closeTo(base), 1);
     expect(rate.exponentialRampToValueAtTime).toHaveBeenCalledWith(
       expect.closeTo(base * 2),
       1.5,

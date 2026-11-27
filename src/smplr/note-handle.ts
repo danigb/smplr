@@ -68,7 +68,12 @@ export function createNoteHandle(
       return handle;
     },
     glideTo(semitones: number, duration: number, time?: number) {
-      request({ kind: "glide", value: semitones, duration, time: time ?? now() });
+      request({
+        kind: "glide",
+        value: semitones,
+        duration,
+        time: time ?? now(),
+      });
       return handle;
     },
   }) as NoteHandle;
