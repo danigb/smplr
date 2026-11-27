@@ -26,6 +26,8 @@ type ModEnv = {
 export class Voice {
   readonly stopId: string | number;
   readonly group: number | undefined;
+  /** Ignores stops that aren't forced (see PlaybackParams.oneShot). */
+  readonly oneShot: boolean;
 
   #context: BaseAudioContext;
   #source: AudioBufferSourceNode;
@@ -49,6 +51,7 @@ export class Voice {
    * signal without changing the handle API.
    */
   #rateRamp: ParamRamp;
+  #chokeFade: number | undefined;
 
   constructor(
     context: BaseAudioContext,
@@ -62,6 +65,8 @@ export class Voice {
     this.#context = context;
     this.stopId = stopId;
     this.group = group;
+    this.oneShot = params.oneShot ?? false;
+    this.#chokeFade = params.chokeFade;
     this.#ampRelease = params.ampRelease;
 
     const startAt = startTime ?? context.currentTime;
@@ -288,7 +293,19 @@ export class Voice {
         ? buffer.duration - params.offset
         : params.offset;
     }
-    source.start(startAt, offsetSec);
+    /**
+     * End: only without looping. In reverse the segment [offset, end] of the original buffer
+     * plays backwards, starting from `end` (at duration - end in the reversed buffer).
+     */
+    const end = params.end ?? 0;
+    if (!source.loop && end > 0 && end > params.offset) {
+      const length = Math.min(end, buffer.duration) - params.offset;
+      if (params.reverse)
+        offsetSec = buffer.duration - Math.min(end, buffer.duration);
+      source.start(startAt, offsetSec, length);
+    } else {
+      source.start(startAt, offsetSec);
+    }
 
     this.#source = source;
     this.#envelope = envelope;
@@ -355,8 +372,9 @@ export class Voice {
    * On subsequent calls, allows stopping at an earlier time than previously requested (e.g.
    * to immediately stop a currently playing voice).
    */
-  stop(time?: number): void {
+  stop(time?: number, options?: { force?: boolean }): void {
     if (this.#state === "stopped") return;
+    if (this.oneShot && !options?.force) return;
 
     const t = time ?? this.#context.currentTime;
 
@@ -393,6 +411,16 @@ export class Voice {
         }
       }
     }
+  }
+
+  /**
+   * Stop because another region's `offBy` chokes this voice's group: fade out over
+   * `chokeFade` when the preset sets it, otherwise release normally. Ends one-shot voices too.
+   */
+  choke(time?: number): void {
+    const t = time ?? this.#context.currentTime;
+    if (this.#chokeFade !== undefined) this.steal(t, this.#chokeFade);
+    else this.stop(t, { force: true });
   }
 
   /**

@@ -102,15 +102,17 @@ function makeSource({ withDetune = true } = {}) {
     onended: null as (() => void) | null,
     startedAt: undefined as number | undefined,
     startedOffset: undefined as number | undefined,
+    startedDuration: undefined as number | undefined,
     stoppedAt: undefined as number | undefined,
     connected: [] as unknown[],
     connect(dest: unknown) {
       this.connected.push(dest);
     },
     disconnect: jest.fn(),
-    start(when?: number, offset?: number) {
+    start(when?: number, offset?: number, duration?: number) {
       this.startedAt = when;
       this.startedOffset = offset;
+      this.startedDuration = duration;
     },
     stop(when?: number) {
       this.stoppedAt = when;
@@ -1313,5 +1315,89 @@ describe("glideTo", () => {
       expect.closeTo(base * 2),
       1.5,
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// end, oneShot, choke
+// ---------------------------------------------------------------------------
+
+describe("end", () => {
+  it("plays from offset to end", () => {
+    const { sources } = makeVoice({ offset: 0.2, end: 0.5 });
+    expect(sources[0].startedOffset).toBeCloseTo(0.2);
+    expect(sources[0].startedDuration).toBeCloseTo(0.3);
+  });
+
+  it("0 means the end of the buffer (no duration)", () => {
+    const { sources } = makeVoice({ end: 0 });
+    expect(sources[0].startedDuration).toBeUndefined();
+  });
+
+  it("is clamped to the buffer duration", () => {
+    const { sources } = makeVoice({ end: 10 }); // buffer is 2 s
+    expect(sources[0].startedDuration).toBeCloseTo(2);
+  });
+
+  it("is ignored when looping", () => {
+    const { sources } = makeVoice({ end: 0.5, loop: true });
+    expect(sources[0].startedDuration).toBeUndefined();
+  });
+
+  it("in reverse, plays [offset, end] backwards from end", () => {
+    // buffer is 2 s: original 1.5 is at 0.5 in the reversed buffer
+    const { sources } = makeVoice({ offset: 0.5, end: 1.5, reverse: true });
+    expect(sources[0].startedOffset).toBeCloseTo(0.5);
+    expect(sources[0].startedDuration).toBeCloseTo(1);
+  });
+});
+
+describe("oneShot", () => {
+  it("ignores a plain stop", () => {
+    const { voice, sources } = makeVoice({ oneShot: true }, { currentTime: 0 });
+    voice.stop(1);
+    expect(sources[0].stoppedAt).toBeUndefined();
+    expect(voice.isReleasing).toBe(false);
+  });
+
+  it("a forced stop ends it", () => {
+    const { voice, sources } = makeVoice(
+      { oneShot: true, ampRelease: 0.3 },
+      { currentTime: 0 },
+    );
+    voice.stop(1, { force: true });
+    expect(sources[0].stoppedAt).toBeCloseTo(1.3);
+  });
+
+  it("steal (voice cap, fade to silence) still ends it", () => {
+    const { voice, sources } = makeVoice({ oneShot: true }, { currentTime: 0 });
+    voice.steal(1, 0.05);
+    expect(sources[0].stoppedAt).toBeCloseTo(1.05);
+  });
+});
+
+describe("choke", () => {
+  it("uses the normal release without chokeFade", () => {
+    const { voice, sources } = makeVoice({ ampRelease: 2 }, { currentTime: 0 });
+    voice.choke(1);
+    expect(sources[0].stoppedAt).toBeCloseTo(3);
+  });
+
+  it("fades out over chokeFade when set", () => {
+    const { voice, sources } = makeVoice(
+      { ampRelease: 2, chokeFade: 0.05 },
+      { currentTime: 0 },
+    );
+    voice.choke(1);
+    expect(sources[0].stoppedAt).toBeCloseTo(1.05);
+  });
+
+  it("ends one-shot voices", () => {
+    const { voice, sources } = makeVoice(
+      { oneShot: true, ampRelease: 0.3 },
+      { currentTime: 0 },
+    );
+    voice.choke(1);
+    expect(sources[0].stoppedAt).toBeCloseTo(1.3);
   });
 });

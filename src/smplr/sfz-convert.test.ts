@@ -64,3 +64,29 @@ describe("sfzToPreset velocity opcodes", () => {
     expect(region.ampVelCurve).toBeUndefined();
   });
 });
+
+describe("sfzToPreset playback opcodes", () => {
+  it("maps loop_mode=one_shot to oneShot", () => {
+    const region = firstRegion(
+      "<region> sample=a.wav key=60 loop_mode=one_shot",
+    );
+    expect(region.oneShot).toBe(true);
+  });
+
+  it("maps off_mode=fast to a short chokeFade", () => {
+    const region = firstRegion("<region> sample=a.wav key=60 off_mode=fast");
+    expect(region.chokeFade).toBeCloseTo(0.006);
+  });
+
+  it("maps off_mode=time + off_time to chokeFade", () => {
+    const region = firstRegion(
+      "<region> sample=a.wav key=60 off_mode=time off_time=0.2",
+    );
+    expect(region.chokeFade).toBeCloseTo(0.2);
+  });
+
+  it("leaves off_mode=normal on the release", () => {
+    const region = firstRegion("<region> sample=a.wav key=60 off_mode=normal");
+    expect(region.chokeFade).toBeUndefined();
+  });
+});

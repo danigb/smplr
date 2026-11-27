@@ -54,6 +54,10 @@ export type PlaybackParams = {
   modEnvSustain?: number; // level held after decay, until note-off (0-1, 1 = no decay)
   modEnvRelease?: number; // seconds for the modulation envelope to fade to 0 after note-off
   offset?: number; // start playback from this position in seconds
+  end?: number; // stop playback at this position in seconds (0 = end of buffer); ignored when looping. In reverse, [offset, end] plays backwards from end
+  oneShot?: boolean; // ignore per-note stops (the note handle, stop(stopId), duration): the sample plays to its end. Instrument-wide stop(), choke, retrigger and the voice cap still end it
+  retrigger?: "layer" | "release" | "cut"; // a new note with the same stopId: "layer" (default) keeps older voices, "release" releases them, "cut" fades them out in 10 ms
+  chokeFade?: number; // when this voice is choked by another region's offBy, fade out over this many seconds instead of its ampRelease
   loop?: boolean;
   loopStart?: number; // loop start in seconds
   loopEnd?: number; // loop end in seconds (0 = end of buffer)
@@ -205,6 +209,10 @@ export type VoiceParams = {
   ampVelTrack?: number; // see PlaybackParams; default 1
   ampVelDb?: number; // see PlaybackParams; default the square law
   ampVelCurve?: Curve; // see PlaybackParams
+  end?: number; // see PlaybackParams; 0 or unset = end of buffer
+  oneShot?: boolean; // see PlaybackParams
+  chokeFade?: number; // see PlaybackParams
+  retrigger?: "layer" | "release" | "cut"; // see PlaybackParams; applied by the instrument
   volume: number; // dB gain adjustment
   pan: number; // stereo position: -1 (full left) to 1 (full right), 0 = center
   ampDelay: number; // silence before the attack phase starts, in seconds

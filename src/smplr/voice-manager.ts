@@ -6,6 +6,9 @@ import { Voice } from "./voice";
  * Replaces the old broadcast-stop pattern (O(n) signal to all voices)
  * with direct Set lookups keyed by stopId and group number.
  */
+/** Fade used by `retrigger: "cut"`, in seconds. */
+const RETRIGGER_CUT_FADE = 0.01;
+
 export class VoiceManager {
   #voices: Set<Voice> = new Set();
   #byStopId: Map<string | number, Set<Voice>> = new Map();
@@ -93,12 +96,12 @@ export class VoiceManager {
     }
   }
 
-  /** Stop all active voices. */
+  /** Stop all active voices, one-shot voices included. */
   stopAll(time?: number): void {
     // Snapshot before iterating — stop() may synchronously trigger onEnded
     // which removes voices from the set while we're iterating.
     for (const voice of [...this.#voices]) {
-      voice.stop(time);
+      voice.stop(time, { force: true });
     }
   }
 
@@ -111,12 +114,31 @@ export class VoiceManager {
     }
   }
 
-  /** Stop all voices that belong to an exclusive group number. */
+  /** Choke all voices that belong to an exclusive group number (see Voice.choke). */
   stopGroup(group: number, time?: number): void {
     const voices = this.#byGroup.get(group);
     if (!voices) return;
     for (const voice of [...voices]) {
-      voice.stop(time);
+      voice.choke(time);
+    }
+  }
+
+  /**
+   * Apply a retrigger policy to the voices with `stopId` that start before `time`:
+   * "release" releases them, "cut" fades them out in 10 ms. One-shot voices included.
+   */
+  retrigger(
+    stopId: string | number,
+    mode: "layer" | "release" | "cut",
+    time: number,
+  ): void {
+    if (mode === "layer") return;
+    const voices = this.#byStopId.get(stopId);
+    if (!voices) return;
+    for (const voice of [...voices]) {
+      if (voice.startTime >= time) continue;
+      if (mode === "cut") voice.steal(time, RETRIGGER_CUT_FADE);
+      else voice.stop(time, { force: true });
     }
   }
 

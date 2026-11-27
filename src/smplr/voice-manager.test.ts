@@ -14,6 +14,8 @@ function makeVoice(
   group: number | undefined;
   stop: jest.Mock;
   steal: jest.Mock;
+  choke: jest.Mock;
+  startTime: number;
   onEnded: (cb: () => void) => void;
   /** Simulate the Web Audio engine firing onended */
   triggerEnded: () => void;
@@ -24,6 +26,8 @@ function makeVoice(
     group,
     stop: jest.fn(),
     steal: jest.fn(),
+    choke: jest.fn(),
+    startTime: 0,
     onEnded(cb: () => void) {
       endedCb = cb;
     },
@@ -88,7 +92,8 @@ describe("stopAll()", () => {
 
     mgr.stopAll(1.5);
 
-    expect(v.stop).toHaveBeenCalledWith(1.5);
+    // Forced: stopAll ends one-shot voices too
+    expect(v.stop).toHaveBeenCalledWith(1.5, { force: true });
   });
 
   it("stops voices added after previous stopAll", () => {
@@ -172,10 +177,10 @@ describe("stopGroup()", () => {
 
     mgr.stopGroup(1);
 
-    expect(g1a.stop).toHaveBeenCalledTimes(1);
-    expect(g1b.stop).toHaveBeenCalledTimes(1);
-    expect(g2.stop).not.toHaveBeenCalled();
-    expect(ungrouped.stop).not.toHaveBeenCalled();
+    expect(g1a.choke).toHaveBeenCalledTimes(1);
+    expect(g1b.choke).toHaveBeenCalledTimes(1);
+    expect(g2.choke).not.toHaveBeenCalled();
+    expect(ungrouped.choke).not.toHaveBeenCalled();
   });
 
   it("passes time to stop()", () => {
@@ -185,7 +190,7 @@ describe("stopGroup()", () => {
 
     mgr.stopGroup(3, 0.8);
 
-    expect(v.stop).toHaveBeenCalledWith(0.8);
+    expect(v.choke).toHaveBeenCalledWith(0.8);
   });
 
   it("does nothing when no voice is in the group", () => {
@@ -530,5 +535,44 @@ describe("maxVoices with real voices", () => {
     [60, 64, 67, 72].forEach(() => add(1));
 
     expect(soundingAt(1.5)).toBeLessThanOrEqual(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// retrigger()
+// ---------------------------------------------------------------------------
+
+describe("retrigger()", () => {
+  function setup() {
+    const mgr = new VoiceManager();
+    const older = { ...makeVoice("C4"), startTime: 1 };
+    const sameTime = { ...makeVoice("C4"), startTime: 2 };
+    const other = { ...makeVoice("D4"), startTime: 1 };
+    mgr.add(older as any);
+    mgr.add(sameTime as any);
+    mgr.add(other as any);
+    return { mgr, older, sameTime, other };
+  }
+
+  it("layer leaves every voice alone", () => {
+    const { mgr, older } = setup();
+    mgr.retrigger("C4", "layer", 2);
+    expect(older.stop).not.toHaveBeenCalled();
+    expect(older.steal).not.toHaveBeenCalled();
+  });
+
+  it("release force-stops older voices with the stopId", () => {
+    const { mgr, older, sameTime, other } = setup();
+    mgr.retrigger("C4", "release", 2);
+    expect(older.stop).toHaveBeenCalledWith(2, { force: true });
+    expect(sameTime.stop).not.toHaveBeenCalled();
+    expect(other.stop).not.toHaveBeenCalled();
+  });
+
+  it("cut fades older voices out in 10 ms", () => {
+    const { mgr, older, sameTime } = setup();
+    mgr.retrigger("C4", "cut", 2);
+    expect(older.steal).toHaveBeenCalledWith(2, 0.01);
+    expect(sameTime.steal).not.toHaveBeenCalled();
   });
 });

@@ -15,6 +15,7 @@ import {
   SmplrPreset,
   StopFn,
   StopTarget,
+  VoiceParams,
 } from "./types";
 import { Voice } from "./voice";
 import { Curve, evalCurve } from "./curve";
@@ -579,9 +580,14 @@ export class SmplrImpl implements Smplr {
       }
     }
 
-    // Create a voice for each matched region
-    let voiceStarted = false;
+    // Resolve every matched region first: the retrigger policy must be applied
+    // to older voices before this note's voices exist.
     const effectiveReverse = reverse ?? this.#defaults?.reverse ?? false;
+    const planned: {
+      match: (typeof matches)[number];
+      buffer: AudioBuffer;
+      params: ReturnType<typeof resolveParams>;
+    }[] = [];
     for (const match of matches) {
       const buffer = this.#getBuffer(match.sample, effectiveReverse);
       if (!buffer) continue;
@@ -607,7 +613,24 @@ export class SmplrImpl implements Smplr {
           reverse,
         },
       );
+      planned.push({ match, buffer, params });
+    }
 
+    // Retrigger: the strongest policy among the matched regions wins.
+    const retrigger = strongestRetrigger(
+      planned.map((p) => p.params.retrigger),
+    );
+    if (retrigger !== "layer") {
+      this.#voices.retrigger(
+        stopId,
+        retrigger,
+        time ?? this.context.currentTime,
+      );
+    }
+
+    // Create a voice for each matched region
+    let voiceStarted = false;
+    for (const { match, buffer, params } of planned) {
       const voice = new Voice(
         this.context,
         buffer,
@@ -697,4 +720,13 @@ function filterAndWarn(
     );
   }
   return result;
+}
+
+/** cut > release > layer. */
+function strongestRetrigger(
+  modes: (VoiceParams["retrigger"] | undefined)[],
+): "layer" | "release" | "cut" {
+  if (modes.includes("cut")) return "cut";
+  if (modes.includes("release")) return "release";
+  return "layer";
 }
