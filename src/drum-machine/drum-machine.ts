@@ -5,7 +5,7 @@ import {
   NoteEvent,
   SmplrGroup,
   SmplrPreset,
-  StopFn,
+  NoteHandle,
 } from "../smplr/types";
 import {
   DrumMachineInstrument,
@@ -64,7 +64,7 @@ type DrumMachineExtras = {
   getSampleNames(): string[];
   getGroupNames(): string[];
   getSampleNamesForGroup(groupName: string): string[];
-  start(event: NoteEvent): StopFn;
+  start(event: NoteEvent): NoteHandle;
 };
 
 export const DrumMachine = Instrument(

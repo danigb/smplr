@@ -13,6 +13,7 @@ function makeGain() {
       cancelScheduledValues: jest.fn(),
       setValueAtTime: jest.fn(),
       linearRampToValueAtTime: jest.fn(),
+      exponentialRampToValueAtTime: jest.fn(),
     },
     connected: [] as unknown[],
     connect(dest: unknown) {
@@ -94,7 +95,7 @@ function makeSource({ withDetune = true } = {}) {
   return {
     buffer: null as AudioBuffer | null,
     ...(withDetune ? { detune: makeDetune() } : {}),
-    playbackRate: { value: 1 },
+    playbackRate: makeParam(1),
     loop: false,
     loopStart: 0,
     loopEnd: 0,
@@ -1217,5 +1218,100 @@ describe("steal()", () => {
     voice.steal(1);
 
     expect(sources[0].stoppedAt).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Note-handle fades and glides
+// ---------------------------------------------------------------------------
+
+describe("fadeTo", () => {
+  it("ramps the velocity gain exponentially to db relative to the start gain", () => {
+    const { voice, gains } = makeVoice({ velocity: 100 }, { currentTime: 0 });
+    const base = midiVelToGain(100);
+
+    voice.fadeTo(-6, 1, 2);
+
+    const g = gains[0].gain;
+    expect(g.setValueAtTime).toHaveBeenCalledWith(base, 2);
+    expect(g.exponentialRampToValueAtTime).toHaveBeenCalledWith(
+      expect.closeTo(base * dbToGain(-6)),
+      3,
+    );
+  });
+
+  it("does not touch the envelope gain", () => {
+    const { voice, gains } = makeVoice({}, { currentTime: 0 });
+    const envelope = gains[gains.length - 1];
+
+    voice.fadeTo(-6, 1, 2);
+
+    expect(envelope.gain.cancelScheduledValues).not.toHaveBeenCalled();
+  });
+
+  it("clamps a time before the voice start to the start", () => {
+    const { voice, gains } = makeVoice({}, { currentTime: 0, startTime: 3 });
+
+    voice.fadeTo(-6, 1, 1);
+
+    expect(gains[0].gain.cancelScheduledValues).toHaveBeenCalledWith(3);
+  });
+
+  it("-Infinity fades to silence and ends the voice", () => {
+    const { voice, sources } = makeVoice({}, { currentTime: 0 });
+
+    voice.fadeTo(-Infinity, 0.1, 1);
+
+    expect(sources[0].stoppedAt).toBeCloseTo(1.1);
+    expect(voice.endTime).toBeCloseTo(1.1);
+  });
+
+  it("does nothing after the voice has ended", () => {
+    const { voice, sources, gains } = makeVoice({}, { currentTime: 0 });
+    sources[0].triggerEnded();
+
+    voice.fadeTo(-6, 1, 1);
+
+    expect(gains[0].gain.cancelScheduledValues).not.toHaveBeenCalled();
+  });
+});
+
+describe("glideTo", () => {
+  it("ramps playbackRate to the semitone ratio", () => {
+    const { voice, sources } = makeVoice({ detune: 200 }, { currentTime: 0 });
+
+    voice.glideTo(12, 0.5, 1);
+
+    const rate = sources[0].playbackRate;
+    expect(rate.setValueAtTime).toHaveBeenCalledWith(1, 1);
+    expect(rate.exponentialRampToValueAtTime).toHaveBeenCalledWith(2, 1.5);
+  });
+
+  it("leaves detune automation alone", () => {
+    const { voice, sources } = makeVoice({ detune: 200 }, { currentTime: 0 });
+
+    voice.glideTo(12, 0.5, 1);
+
+    expect(
+      (sources[0] as any).detune.cancelScheduledValues,
+    ).not.toHaveBeenCalled();
+    expect((sources[0] as any).detune.value).toBe(200);
+  });
+
+  it("Safari path: glides from the detune ratio", () => {
+    const { voice, sources } = makeVoice(
+      { detune: 200 },
+      { safari: true, currentTime: 0 },
+    );
+    const base = Math.pow(2, 200 / 1200);
+
+    voice.glideTo(12, 0.5, 1);
+
+    const rate = sources[0].playbackRate;
+    expect(rate.setValueAtTime).toHaveBeenCalledWith(expect.closeTo(base), 1);
+    expect(rate.exponentialRampToValueAtTime).toHaveBeenCalledWith(
+      expect.closeTo(base * 2),
+      1.5,
+    );
   });
 });

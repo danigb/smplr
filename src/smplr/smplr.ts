@@ -10,6 +10,7 @@ import { Scheduler } from "./scheduler";
 import {
   LoadProgress,
   NoteEvent,
+  NoteHandle,
   PlaybackParams,
   SmplrPreset,
   StopFn,
@@ -17,6 +18,13 @@ import {
 } from "./types";
 import { Voice } from "./voice";
 import { VoiceManager } from "./voice-manager";
+import {
+  addNoteVoice,
+  createNoteHandle,
+  createNoteRef,
+  dispatchNote,
+  NoteRef,
+} from "./note-handle";
 
 export type SmplrOptions = {
   /** Custom storage backend for sample fetching (e.g. CacheStorage). */
@@ -366,12 +374,16 @@ export class SmplrImpl implements Smplr {
   }
 
   /**
-   * Start playing a note. Returns a StopFn that cancels the note if it hasn't
-   * played yet, or stops the resulting voices if it has.
+   * Start playing a note. Returns a {@link NoteHandle}.
+   *
+   * Calling the handle cancels the note if it hasn't played yet, or stops every voice with
+   * its stopId if it has. Its `fadeTo` and `glideTo` methods act on the voices of this call
+   * only.
    */
-  start(event: NoteEvent): StopFn {
+  start(event: NoteEvent): NoteHandle {
     this.#assertNotDisposed("start a note");
     const normalized = this.#normalizeNoteEvent(event);
+    const ref = createNoteRef();
 
     // Set when the note is queued; the dispatch callback removes it from
     // #pending. A note within the lookahead dispatches synchronously, before
@@ -383,7 +395,7 @@ export class SmplrImpl implements Smplr {
       (e) => {
         dispatched = true;
         if (pending) this.#pending.delete(pending);
-        this.#playNote(e as NormalizedNoteEvent);
+        this.#playNote(e as NormalizedNoteEvent, ref);
       },
     );
     if (!dispatched) {
@@ -395,13 +407,19 @@ export class SmplrImpl implements Smplr {
       this.#pending.add(pending);
     }
 
-    return (time?: number) => {
+    const stop: StopFn = (time?: number) => {
       // cancel from queue if not yet dispatched
       schedulerStop();
       if (pending) this.#pending.delete(pending);
       // stop if already playing
       this.#voices.stopById(normalized.stopId, time);
     };
+    return createNoteHandle(
+      ref,
+      stop,
+      normalized.stopId,
+      () => this.context.currentTime,
+    );
   }
 
   /**
@@ -492,7 +510,7 @@ export class SmplrImpl implements Smplr {
     return reversed;
   }
 
-  #playNote(event: NormalizedNoteEvent): void {
+  #playNote(event: NormalizedNoteEvent, ref?: NoteRef): void {
     const {
       midi,
       velocity,
@@ -519,7 +537,10 @@ export class SmplrImpl implements Smplr {
       const nearest = findNearestKey(midi, (key) =>
         this.#matcher.hasMatch(key, velocity, this.#ccState),
       );
-      if (nearest === undefined) return;
+      if (nearest === undefined) {
+        if (ref) dispatchNote(ref);
+        return;
+      }
       matchMidi = nearest;
     }
 
@@ -581,6 +602,7 @@ export class SmplrImpl implements Smplr {
       }
 
       this.#voices.add(voice);
+      if (ref) addNoteVoice(ref, voice);
 
       // onStart fires once on the first matched voice
       if (!voiceStarted) {
@@ -593,6 +615,8 @@ export class SmplrImpl implements Smplr {
         voice.onEnded(() => onEnded(event));
       }
     }
+
+    if (ref) dispatchNote(ref);
   }
 
   /** Apply notesToLoad to a preset given at construction (Pattern A). */

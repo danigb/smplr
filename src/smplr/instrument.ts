@@ -10,7 +10,7 @@ import type {
   LoadProgress,
   NoteEvent,
   SmplrPreset,
-  StopFn,
+  NoteHandle,
   StopTarget,
 } from "./types";
 
@@ -44,7 +44,7 @@ export interface Smplr {
 
   readonly loadProgress: LoadProgress;
 
-  start(event: NoteEvent): StopFn;
+  start(event: NoteEvent): NoteHandle;
 
   /**
    * Stop the voices that are playing and cancel the notes scheduled for later.

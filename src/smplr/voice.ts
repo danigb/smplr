@@ -9,6 +9,10 @@ import {
   scheduleAdsr,
   scheduleAdsrRelease,
 } from "./envelope";
+import { ParamRamp } from "./param-ramp";
+
+/** Shortest fade used when a note handle fades a voice to silence. */
+const MIN_SILENCE_FADE = 0.005;
 
 /** A param driven by the modulation envelope, and how envelope values map onto its units. */
 type ModEnvTarget = { param: AudioParam; mapping: EnvelopeMapping };
@@ -37,6 +41,14 @@ export class Voice {
   #modEnv: ModEnv | undefined;
   #state: "playing" | "stopping" | "stopped" = "playing";
   #endedCallbacks: (() => void)[] = [];
+  /** Note-handle fades: the static velocity x volume gain node. */
+  #gainRamp: ParamRamp;
+  /**
+   * Note-handle glides. Rate is the only pitch path a note handle uses: `detune` belongs to
+   * the mod envelope and LFOs. The shared-mod-bus work may move this to a connected base
+   * signal without changing the handle API.
+   */
+  #rateRamp: ParamRamp;
 
   constructor(
     context: BaseAudioContext,
@@ -275,6 +287,12 @@ export class Voice {
 
     this.#source = source;
     this.#envelope = envelope;
+    this.#gainRamp = new ParamRamp(gain.gain, gain.gain.value);
+    // Safari fallback: playbackRate already carries the detune ratio
+    this.#rateRamp = new ParamRamp(
+      source.playbackRate,
+      source.detune ? 1 : Math.pow(2, cents / 1200),
+    );
 
     // Cleanup when the source naturally ends or is stopped
     source.onended = () => {
@@ -402,6 +420,35 @@ export class Voice {
     this.#envelope.gain.linearRampToValueAtTime(0, stopAt);
     this.#source.stop(stopAt);
     this.#lfoOscillators.forEach((osc) => osc.stop(stopAt));
+  }
+
+  /**
+   * Ramp the voice gain to `db` relative to its start gain (velocity x volume), reaching it
+   * `duration` seconds after `time` (clamped to the voice start). `db <= -100` or
+   * `-Infinity` fades to silence and ends the voice.
+   */
+  fadeTo(db: number, duration: number, time: number): void {
+    if (this.#state === "stopped") return;
+    const t = Math.max(time, this.#startAt);
+    if (!(db > -100)) {
+      this.steal(t, Math.max(duration, MIN_SILENCE_FADE));
+      return;
+    }
+    this.#gainRamp.rampTo(this.#gainRamp.base * dbToGain(db), duration, t);
+  }
+
+  /**
+   * Ramp the pitch to `semitones` relative to the start pitch, reaching it `duration`
+   * seconds after `time` (clamped to the voice start). Linear in semitones.
+   */
+  glideTo(semitones: number, duration: number, time: number): void {
+    if (this.#state === "stopped") return;
+    const t = Math.max(time, this.#startAt);
+    this.#rateRamp.rampTo(
+      this.#rateRamp.base * Math.pow(2, semitones / 12),
+      duration,
+      t,
+    );
   }
 
   /** Amp envelope level at `t`: the ADSR shape, or the linear release once it has started. */

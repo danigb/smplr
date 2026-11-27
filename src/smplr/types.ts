@@ -153,6 +153,34 @@ export type StopTarget =
 export type StopFn = (time?: number) => void;
 
 /**
+ * Returned by `start()`.
+ *
+ * Calling it works like a {@link StopFn}: it cancels the note if it is still scheduled,
+ * otherwise it releases every voice with its `stopId`.
+ *
+ * `fadeTo` and `glideTo` act only on the voices that this `start()` call created. They can
+ * be called before the note sounds, and are then applied when it starts. Both return the
+ * handle, so calls can be chained.
+ */
+export type NoteHandle = StopFn & {
+  readonly stopId: string | number;
+  /** Same as calling the handle. */
+  stop(time?: number): void;
+  /**
+   * Ramp the gain to `db`, relative to the note's start gain, over `duration` seconds from
+   * `time` (default: now). `-Infinity`, or any value <= -100, fades out and ends the note.
+   */
+  fadeTo(db: number, duration: number, time?: number): NoteHandle;
+  /**
+   * Ramp the pitch to `semitones`, relative to the start pitch, over `duration` seconds
+   * from `time` (default: now).
+   */
+  glideTo(semitones: number, duration: number, time?: number): NoteHandle;
+  /** Voices currently sounding for this call: 0 before the note starts and after it ends. */
+  readonly voiceCount: number;
+};
+
+/**
  * Loading progress snapshot. total is known before loading starts.
  */
 export type LoadProgress = {

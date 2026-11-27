@@ -18,6 +18,7 @@ export type {
   NoteEvent,
   StopTarget,
   StopFn,
+  NoteHandle,
   LoadProgress,
   VoiceParams,
 } from "./types";
