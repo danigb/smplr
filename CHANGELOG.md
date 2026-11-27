@@ -1,5 +1,16 @@
 # smplr
 
+## Unreleased
+
+### Added
+
+- **`start()` returns a `NoteHandle`** that can change a note while it sounds. It is still callable exactly like the previous stop function, so existing code keeps working.
+  - `fadeTo(db, duration, time?)` ramps the note's volume relative to its start volume. `-Infinity` fades out and ends the note.
+  - `glideTo(semitones, duration, time?)` ramps its pitch relative to the start pitch.
+  - Both affect only the voices of that `start()` call, can be chained, and can be called before a scheduled note starts.
+  - `stopId` and `voiceCount` are read-only.
+  - The `NoteHandle` type is exported.
+
 ## 1.2.1
 
 ### Fixed

@@ -220,11 +220,11 @@ piano.start({ note: "C4", velocity: 80, time: 5, duration: 1 });
 
 `velocity` (0–127) represents how hard the key is pressed: louder at higher values, and on some instruments it also changes timbre.
 
-The `start` function returns a `stop` function for the given note:
+The `start` function returns a handle for the note. You can call it to stop the note:
 
 ```js
 const stopNote = piano.start({ note: 60 });
-stopNote({ time: 10 });
+stopNote(10); // stop at audio time 10 (omit the time to stop now)
 ```
 
 Bear in mind that you may need to call [`context.resume()` before playing a note](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices#autoplay_policy)
@@ -246,6 +246,27 @@ piano.stop(60); // stop the note(s) started with `note: 60`
 `stop` also cancels the notes scheduled for later that match: `piano.stop("C4")` cancels the scheduled C4 notes, and `piano.stop({ time })` cancels the ones that start at or after `time`. It only affects this instrument, even when it shares its scheduler with others.
 
 Stopping also works for notes started with a `duration`: an earlier stop time overrides the one scheduled by `duration` (a later one is ignored), so `piano.stop()` cuts a sounding note right away.
+
+#### Control a sounding note
+
+The handle returned by `start` can also change the note while it sounds:
+
+```js
+const note = strings.start({ note: "C4" });
+const t = context.currentTime;
+
+note.fadeTo(-12, 2); // fade 12 dB down over 2 seconds, starting now
+note.glideTo(2, 0.2, t + 3); // at t+3, bend up a whole tone over 200 ms
+note.glideTo(0, 0.2, t + 4); // and back
+note.fadeTo(-Infinity, 0.05, t + 6); // quick fade-out: this ends the note
+```
+
+- `fadeTo(db, duration, time?)` ramps the volume to `db` relative to the note's start volume. A value of `0` restores it. `-Infinity`, or any value at or below `-100`, fades out and ends the note.
+- `glideTo(semitones, duration, time?)` ramps the pitch to `semitones` relative to the start pitch. A value of `0` restores it.
+- `time` defaults to now. Each ramp starts from wherever the previous one left the value, so calls can be chained (both methods return the handle) or overlapped.
+- Both act only on the voices started by that `start` call. Another note with the same `stopId` is not affected. Calling the handle, or `handle.stop()`, still stops every voice with its `stopId`.
+- You can call them before a scheduled note starts. They are applied when the note starts.
+- `note.voiceCount` is the number of voices still sounding for that call.
 
 #### Schedule notes
 
